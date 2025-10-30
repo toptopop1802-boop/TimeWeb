@@ -1,3 +1,26 @@
+// === AUTH CHECK ===
+// Проверяем авторизацию перед загрузкой приложения
+let currentUser = null;
+
+(async function initAuth() {
+    try {
+        const authData = await requireAuth();
+        if (!authData) {
+            return; // Редирект на login произойдет в requireAuth
+        }
+        
+        currentUser = authData;
+        
+        // Настраиваем UI в зависимости от роли
+        setupRoleBasedUI(authData);
+        
+        console.log('✅ Авторизован как:', authData.user.username, '| Роль:', authData.user.role);
+    } catch (error) {
+        console.error('Auth error:', error);
+        window.location.href = '/login.html';
+    }
+})();
+
 // API Base URL (can be overridden via window.API_URL or ?api=...)
 const API_URL = (function() {
     const qp = new URLSearchParams(window.location.search).get('api');
@@ -1517,6 +1540,12 @@ async function uploadMap(file) {
         });
 
         xhr.open('POST', `${API_URL}/api/maps/upload`);
+        
+        // Добавляем токен авторизации
+        if (currentUser && currentUser.token) {
+            xhr.setRequestHeader('Authorization', `Bearer ${currentUser.token}`);
+        }
+        
         xhr.send(formData);
     } catch (error) {
         showToast(`Ошибка: ${error.message}`);
@@ -1529,7 +1558,14 @@ async function uploadMap(file) {
 async function loadMaps() {
     try {
         console.log('🔄 Загрузка карт из API:', `${API_URL}/api/maps`);
-        const response = await fetch(`${API_URL}/api/maps`);
+        
+        // Добавляем токен авторизации
+        const headers = {};
+        if (currentUser && currentUser.token) {
+            headers['Authorization'] = `Bearer ${currentUser.token}`;
+        }
+        
+        const response = await fetch(`${API_URL}/api/maps`, { headers });
         
         console.log('📡 Ответ сервера:', response.status, response.statusText);
         
@@ -1691,8 +1727,15 @@ function setupDeleteConfirmModal() {
             closeModal();
 
             try {
+                // Добавляем токен авторизации
+                const headers = {};
+                if (currentUser && currentUser.token) {
+                    headers['Authorization'] = `Bearer ${currentUser.token}`;
+                }
+                
                 const response = await fetch(`${API_URL}/api/maps/${mapId}`, {
-                    method: 'DELETE'
+                    method: 'DELETE',
+                    headers
                 });
 
                 if (response.ok) {
