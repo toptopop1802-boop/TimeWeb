@@ -348,18 +348,34 @@ function createApp() {
             // List all files from Storage bucket
             const { data: files, error } = await supabase.storage
                 .from('maps')
-                .list('', {
+                .list('maps/', {
                     limit: 100,
                     offset: 0,
                     sortBy: { column: 'created_at', order: 'desc' }
                 });
 
-            if (error) throw error;
+            if (error) {
+                console.error('Supabase storage error:', error);
+                // Если bucket не существует или нет доступа
+                if (error.message && error.message.includes('not found')) {
+                    return res.json([]); // Возвращаем пустой массив
+                }
+                throw error;
+            }
+
+            // Фильтруем только файлы (не папки) и с расширением .map
+            const mapFiles = (files || []).filter(file => 
+                !file.id && // не папка
+                file.name && 
+                path.extname(file.name).toLowerCase() === '.map'
+            );
 
             // Transform files to map format
-            const maps = (files || []).map(file => {
+            const maps = mapFiles.map(file => {
                 const fileExt = path.extname(file.name);
-                const mapId = path.basename(file.name, fileExt);
+                const fileName = path.basename(file.name, fileExt);
+                // Убираем префикс 'maps/' если он есть
+                const mapId = fileName.replace('maps/', '');
                 const metadata = file.metadata || {};
                 
                 return {
@@ -371,6 +387,7 @@ function createApp() {
                 };
             });
 
+            console.log(`Found ${maps.length} maps in storage`);
             res.json(maps);
         } catch (error) {
             console.error('Error fetching maps:', error);
