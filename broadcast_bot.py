@@ -3723,42 +3723,6 @@ def main() -> None:
         try:
             content = message.content.strip().lower()
             
-            # Проверяем ограничение: 1 запись от пользователя раз в 30 минут
-            if bot.db and message.guild:
-                from datetime import datetime, timedelta
-                
-                # Получаем последнюю запись пользователя
-                recent_signups = await bot.db.get_user_wipe_signups(
-                    guild_id=message.guild.id,
-                    user_id=message.author.id,
-                    limit=1
-                )
-                
-                if recent_signups:
-                    last_signup_time = datetime.fromisoformat(recent_signups[0]['created_at'].replace('Z', '+00:00'))
-                    time_since_last = datetime.now(last_signup_time.tzinfo) - last_signup_time
-                    
-                    # Если прошло меньше 30 минут
-                    if time_since_last < timedelta(minutes=30):
-                        remaining_time = timedelta(minutes=30) - time_since_last
-                        minutes_left = int(remaining_time.total_seconds() / 60) + 1
-                        
-                        try:
-                            # Удаляем сообщение
-                            await message.delete()
-                            # Отправляем уведомление в ЛС
-                            await message.author.send(
-                                f"⏱️ Вы уже записывались на вайп недавно. "
-                                f"Следующая запись будет доступна через **{minutes_left} минут**."
-                            )
-                            logging.info(
-                                f"Rate limit: {message.author.id} tried to signup too soon "
-                                f"({time_since_last.total_seconds():.0f}s since last)"
-                            )
-                        except discord.HTTPException:
-                            pass
-                        return
-            
             # Проверяем паттерны
             embed_title = None
             embed_color = None

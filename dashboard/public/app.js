@@ -143,8 +143,6 @@ const API_URL = (function() {
 
 // Global State
 let chart = null;
-let wipeSignupLookingChart = null;
-let wipeSignupReadyChart = null;
 let autoRefreshInterval = null;
 let currentChartData = null;
 let currentChartView = 'all';
@@ -284,7 +282,6 @@ async function loadAnalytics(days = 30) {
         // Store chart data and update
         currentChartData = timelineNormalized;
         updateChart(currentChartData, currentChartView);
-        updateWipeSignupCharts(timelineNormalized);
         updateLastUpdateTime();
     } catch (error) {
         console.error('Error loading analytics:', error);
@@ -328,7 +325,6 @@ async function loadAnalytics(days = 30) {
         }
         currentChartData = timelineNormalized;
         updateChart(currentChartData, currentChartView);
-        updateWipeSignupCharts(timelineNormalized);
         updateLastUpdateTime();
     }
 }
@@ -495,6 +491,61 @@ function updateChart(timeline, view = 'all') {
             pointHoverBackgroundColor: getAccentRgba(1),
             spanGaps: true
         }];
+    } else if (view === 'wipe-signup') {
+        // Три линии: ищут игроков, готовы зайти, не зайдут
+        datasets = [
+            {
+                label: 'Ищут игроков',
+                data: timeline.map(t => t.wipe_signup_looking || 0),
+                borderColor: '#3b9bf9',
+                backgroundColor: buildGradient(ctx, 'rgba(59, 155, 249, 1)'),
+                fill: true,
+                tension: 0.4,
+                borderWidth: 3,
+                pointRadius: 0,
+                pointHoverRadius: 6,
+                pointBackgroundColor: '#ffffff',
+                pointBorderColor: '#3b9bf9',
+                pointBorderWidth: 2,
+                pointHoverBorderWidth: 3,
+                pointHoverBackgroundColor: '#3b9bf9',
+                spanGaps: true
+            },
+            {
+                label: 'Готовы зайти',
+                data: timeline.map(t => t.wipe_signup_ready || 0),
+                borderColor: '#57F287',
+                backgroundColor: buildSecondaryGradient(ctx, 'rgba(87, 242, 135, 1)'),
+                fill: true,
+                tension: 0.4,
+                borderWidth: 2,
+                pointRadius: 0,
+                pointHoverRadius: 5,
+                pointBackgroundColor: '#ffffff',
+                pointBorderColor: '#57F287',
+                pointBorderWidth: 2,
+                pointHoverBorderWidth: 3,
+                pointHoverBackgroundColor: '#57F287',
+                spanGaps: true
+            },
+            {
+                label: 'Не зайдут',
+                data: timeline.map(t => t.wipe_signup_not_coming || 0),
+                borderColor: '#ED4245',
+                backgroundColor: buildSecondaryGradient(ctx, 'rgba(237, 66, 69, 1)'),
+                fill: true,
+                tension: 0.4,
+                borderWidth: 2,
+                pointRadius: 0,
+                pointHoverRadius: 5,
+                pointBackgroundColor: '#ffffff',
+                pointBorderColor: '#ED4245',
+                pointBorderWidth: 2,
+                pointHoverBorderWidth: 3,
+                pointHoverBackgroundColor: '#ED4245',
+                spanGaps: true
+            }
+        ];
     }
 
     const maxValue = Math.max(1, ...datasets.flatMap(ds => ds.data));
@@ -605,194 +656,6 @@ function updateChart(timeline, view = 'all') {
                 }
             }
         });
-    }
-}
-
-// ============================================
-// WIPE SIGNUP SEPARATE CHARTS
-// ============================================
-
-function updateWipeSignupCharts(timeline) {
-    const firstDate = timeline.length ? new Date(timeline[0].date) : null;
-    const lastDate = timeline.length ? new Date(timeline[timeline.length - 1].date) : null;
-    const isSameDay = firstDate && lastDate && firstDate.toDateString() === lastDate.toDateString();
-
-    const labels = timeline.map(t => {
-        const date = new Date(t.date);
-        return isSameDay
-            ? date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
-            : date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
-    });
-
-    // График 1: Ищут игроков
-    const ctx1 = document.getElementById('wipe-signup-looking-chart')?.getContext('2d');
-    if (ctx1) {
-        const gradient = ctx1.createLinearGradient(0, 0, 0, ctx1.canvas.height || 220);
-        gradient.addColorStop(0, 'rgba(59, 155, 249, 0.45)');
-        gradient.addColorStop(0.5, 'rgba(59, 155, 249, 0.2)');
-        gradient.addColorStop(1, 'rgba(59, 155, 249, 0)');
-
-        const dataset = {
-            label: 'Ищут игроков',
-            data: timeline.map(t => t.wipe_signup_looking || 0),
-            borderColor: '#3b9bf9',
-            backgroundColor: gradient,
-            fill: true,
-            tension: 0.4,
-            borderWidth: 3,
-            pointRadius: 0,
-            pointHoverRadius: 6,
-            pointBackgroundColor: '#ffffff',
-            pointBorderColor: '#3b9bf9',
-            pointBorderWidth: 2,
-            pointHoverBorderWidth: 3,
-            pointHoverBackgroundColor: '#3b9bf9',
-            spanGaps: true
-        };
-
-        const maxValue1 = Math.max(1, ...dataset.data);
-        const stepSize1 = maxValue1 <= 10 ? 1 : undefined;
-
-        if (wipeSignupLookingChart) {
-            wipeSignupLookingChart.data.labels = labels;
-            wipeSignupLookingChart.data.datasets = [dataset];
-            wipeSignupLookingChart.options.scales.y.suggestedMax = maxValue1 + 1;
-            wipeSignupLookingChart.options.scales.y.ticks.stepSize = stepSize1;
-            wipeSignupLookingChart.update('none');
-        } else {
-            wipeSignupLookingChart = new Chart(ctx1, {
-                type: 'line',
-                data: { labels, datasets: [dataset] },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: { mode: 'index', intersect: false },
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            titleColor: '#fff',
-                            bodyColor: '#fff',
-                            borderColor: '#3b9bf9',
-                            borderWidth: 1,
-                            padding: 12,
-                            displayColors: false
-                        }
-                    },
-                    scales: {
-                        x: {
-                            grid: { display: false },
-                            ticks: { maxRotation: 0, autoSkipPadding: 20 }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            suggestedMax: maxValue1 + 1,
-                            ticks: { stepSize: stepSize1, precision: 0 },
-                            grid: { color: 'rgba(255, 255, 255, 0.05)' }
-                        }
-                    }
-                }
-            });
-        }
-    }
-
-    // График 2: Готовы зайти и Не зайдут
-    const ctx2 = document.getElementById('wipe-signup-ready-chart')?.getContext('2d');
-    if (ctx2) {
-        const gradientGreen = ctx2.createLinearGradient(0, 0, 0, ctx2.canvas.height || 220);
-        gradientGreen.addColorStop(0, 'rgba(87, 242, 135, 0.35)');
-        gradientGreen.addColorStop(0.5, 'rgba(87, 242, 135, 0.15)');
-        gradientGreen.addColorStop(1, 'rgba(87, 242, 135, 0)');
-
-        const gradientRed = ctx2.createLinearGradient(0, 0, 0, ctx2.canvas.height || 220);
-        gradientRed.addColorStop(0, 'rgba(237, 66, 69, 0.35)');
-        gradientRed.addColorStop(0.5, 'rgba(237, 66, 69, 0.15)');
-        gradientRed.addColorStop(1, 'rgba(237, 66, 69, 0)');
-
-        const datasets = [
-            {
-                label: 'Готовы зайти',
-                data: timeline.map(t => t.wipe_signup_ready || 0),
-                borderColor: '#57F287',
-                backgroundColor: gradientGreen,
-                fill: true,
-                tension: 0.4,
-                borderWidth: 3,
-                pointRadius: 0,
-                pointHoverRadius: 6,
-                pointBackgroundColor: '#ffffff',
-                pointBorderColor: '#57F287',
-                pointBorderWidth: 2,
-                pointHoverBorderWidth: 3,
-                pointHoverBackgroundColor: '#57F287',
-                spanGaps: true
-            },
-            {
-                label: 'Не зайдут',
-                data: timeline.map(t => t.wipe_signup_not_coming || 0),
-                borderColor: '#ED4245',
-                backgroundColor: gradientRed,
-                fill: true,
-                tension: 0.4,
-                borderWidth: 2,
-                pointRadius: 0,
-                pointHoverRadius: 5,
-                pointBackgroundColor: '#ffffff',
-                pointBorderColor: '#ED4245',
-                pointBorderWidth: 2,
-                pointHoverBorderWidth: 3,
-                pointHoverBackgroundColor: '#ED4245',
-                spanGaps: true
-            }
-        ];
-
-        const maxValue2 = Math.max(1, ...datasets.flatMap(ds => ds.data));
-        const stepSize2 = maxValue2 <= 10 ? 1 : undefined;
-
-        if (wipeSignupReadyChart) {
-            wipeSignupReadyChart.data.labels = labels;
-            wipeSignupReadyChart.data.datasets = datasets;
-            wipeSignupReadyChart.options.scales.y.suggestedMax = maxValue2 + 1;
-            wipeSignupReadyChart.options.scales.y.ticks.stepSize = stepSize2;
-            wipeSignupReadyChart.update('none');
-        } else {
-            wipeSignupReadyChart = new Chart(ctx2, {
-                type: 'line',
-                data: { labels, datasets },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: { mode: 'index', intersect: false },
-                    plugins: {
-                        legend: {
-                            display: true,
-                            position: 'top',
-                            labels: { usePointStyle: true, padding: 15 }
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            titleColor: '#fff',
-                            bodyColor: '#fff',
-                            borderColor: '#57F287',
-                            borderWidth: 1,
-                            padding: 12
-                        }
-                    },
-                    scales: {
-                        x: {
-                            grid: { display: false },
-                            ticks: { maxRotation: 0, autoSkipPadding: 20 }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            suggestedMax: maxValue2 + 1,
-                            ticks: { stepSize: stepSize2, precision: 0 },
-                            grid: { color: 'rgba(255, 255, 255, 0.05)' }
-                        }
-                    }
-                }
-            });
-        }
     }
 }
 
