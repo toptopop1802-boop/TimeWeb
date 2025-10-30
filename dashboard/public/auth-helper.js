@@ -207,7 +207,50 @@ function displayUserInfo(authData) {
         const roleText = isAdmin(authData) ? 'Админ' : 'Пользователь';
         const displayName = authData.user.username;
         
+        // Градиенты для анимации
+        const gradientColors = isAdmin(authData) 
+            ? 'from: #ef4444, via: #dc2626, to: #991b1b' // Красный градиент для админа
+            : 'from: #10b981, via: #059669, to: #047857'; // Зелёный градиент для пользователя
+        
+        const animationName = `rotate-gradient-${isAdmin(authData) ? 'admin' : 'user'}`;
+        
         userInfo.innerHTML = `
+            <style>
+                @keyframes rotate-gradient-admin {
+                    0% { background: conic-gradient(from 0deg, #ef4444, #dc2626, #991b1b, #ef4444); }
+                    25% { background: conic-gradient(from 90deg, #ef4444, #dc2626, #991b1b, #ef4444); }
+                    50% { background: conic-gradient(from 180deg, #ef4444, #dc2626, #991b1b, #ef4444); }
+                    75% { background: conic-gradient(from 270deg, #ef4444, #dc2626, #991b1b, #ef4444); }
+                    100% { background: conic-gradient(from 360deg, #ef4444, #dc2626, #991b1b, #ef4444); }
+                }
+                @keyframes rotate-gradient-user {
+                    0% { background: conic-gradient(from 0deg, #10b981, #059669, #047857, #10b981); }
+                    25% { background: conic-gradient(from 90deg, #10b981, #059669, #047857, #10b981); }
+                    50% { background: conic-gradient(from 180deg, #10b981, #059669, #047857, #10b981); }
+                    75% { background: conic-gradient(from 270deg, #10b981, #059669, #047857, #10b981); }
+                    100% { background: conic-gradient(from 360deg, #10b981, #059669, #047857, #10b981); }
+                }
+                .avatar-container {
+                    position: relative;
+                    width: 48px;
+                    height: 48px;
+                    border-radius: 50%;
+                    padding: 3px;
+                    animation: ${animationName} 4s linear infinite;
+                }
+                .avatar-inner {
+                    width: 100%;
+                    height: 100%;
+                    border-radius: 50%;
+                    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: white;
+                    font-weight: 700;
+                    font-size: 16px;
+                }
+            </style>
             <div onclick="toggleUserMenu()" style="
                 display: flex;
                 align-items: center;
@@ -221,18 +264,9 @@ function displayUserInfo(authData) {
                     <div style="font-weight: 600; color: var(--text-primary); font-size: 14px;">${displayName}</div>
                     <div style="font-size: 11px; color: ${roleColor};">${roleText}</div>
                 </div>
-                <div style="
-                    width: 40px;
-                    height: 40px;
-                    border-radius: 50%;
-                    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    color: white;
-                    font-weight: 700;
-                    font-size: 16px;
-                ">${displayName.charAt(0).toUpperCase()}</div>
+                <div class="avatar-container">
+                    <div class="avatar-inner">${displayName.charAt(0).toUpperCase()}</div>
+                </div>
             </div>
             
             <!-- User Dropdown Menu -->
