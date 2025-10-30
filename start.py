@@ -190,12 +190,9 @@ class Launcher:
         bot_script = self.project_root / 'broadcast_bot.py'
         
         try:
+            # Запускаем без перехвата stdout/stderr, чтобы видеть все логи и команды
             process = subprocess.Popen(
                 [python_path, str(bot_script)],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-                bufsize=1,
                 cwd=str(self.project_root)
             )
             self.processes.append(('bot', process))
@@ -220,12 +217,9 @@ class Launcher:
                         env[key.strip()] = value.strip()
         
         try:
+            # Запускаем без перехвата stdout/stderr
             process = subprocess.Popen(
                 ['node', 'server.js'],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-                bufsize=1,
                 cwd=str(self.dashboard_path),
                 env=env
             )
@@ -236,39 +230,33 @@ class Launcher:
             return None
             
     def monitor_processes(self):
-        """Мониторить процессы и выводить логи"""
+        """Мониторить процессы"""
         print()
         self.print_success("Сервисы запущены!")
         print()
         self.print_info("📊 Dashboard: http://localhost:3000")
-        self.print_info("🤖 Discord Bot: Работает в фоне")
+        self.print_info("🤖 Discord Bot: Смотрите логи выше")
         print()
+        print(f"{Colors.CYAN}========================================{Colors.NC}")
         self.print_warning("Нажмите Ctrl+C для остановки всех сервисов")
+        print(f"{Colors.CYAN}========================================{Colors.NC}")
         print()
         
         try:
             while True:
+                # Проверяем, живы ли процессы
                 all_dead = True
-                
                 for name, process in self.processes:
-                    # Проверка, жив ли процесс
                     if process.poll() is None:
                         all_dead = False
-                        
-                        # Чтение и вывод логов
-                        try:
-                            line = process.stdout.readline()
-                            if line:
-                                prefix = f"{Colors.MAGENTA}[BOT]{Colors.NC}" if name == 'bot' else f"{Colors.BLUE}[DASH]{Colors.NC}"
-                                print(f"{prefix} {line.rstrip()}")
-                        except:
-                            pass
+                        break
                 
                 if all_dead:
+                    print()
                     self.print_error("Все сервисы остановлены")
                     break
                     
-                time.sleep(0.01)
+                time.sleep(1)
                 
         except KeyboardInterrupt:
             print()
