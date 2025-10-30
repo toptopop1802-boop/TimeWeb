@@ -1126,6 +1126,9 @@ function navigateToPage(page) {
         }
     } else if (page === 'admin') {
         loadAdminChangelog();
+    } else if (page === 'gradient-role') {
+        // Инициализация страницы заявки на градиентную роль
+        initGradientRolePage();
     }
 }
 
@@ -2314,6 +2317,13 @@ window.toggleTheme = toggleTheme;
 // ============================================
 // GRADIENT ROLE REQUEST FORM
 // ============================================
+
+// Инициализация страницы градиентной роли
+function initGradientRolePage() {
+    // Страница уже инициализирована при загрузке DOMContentLoaded
+    // Здесь можно добавить дополнительную логику при переходе на страницу
+    console.log('Gradient role page initialized');
+}
 
 // Обработчик формы заявки на градиентную роль
 document.addEventListener('DOMContentLoaded', () => {
