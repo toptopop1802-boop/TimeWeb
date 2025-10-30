@@ -1461,8 +1461,12 @@ function setupMapsPage() {
 }
 
 async function uploadMap(file) {
+    console.log('📤 Начало загрузки карты:', file.name, 'Размер:', file.size, 'байт');
+    
     const formData = new FormData();
     formData.append('map', file);
+    
+    console.log('📦 FormData создан, отправляем на:', `${API_URL}/api/maps/upload`);
 
     const progressDiv = document.getElementById('maps-upload-progress');
     const progressFill = document.getElementById('progress-fill');
@@ -1481,16 +1485,20 @@ async function uploadMap(file) {
                 const percent = Math.round((e.loaded / e.total) * 100);
                 progressFill.style.width = percent + '%';
                 progressText.textContent = `Загрузка: ${percent}%`;
+                console.log('📊 Прогресс загрузки:', percent + '%');
             }
         });
 
         xhr.addEventListener('load', () => {
+            console.log('📡 Ответ сервера получен. Статус:', xhr.status);
             if (xhr.status === 200) {
                 const response = JSON.parse(xhr.responseText);
+                console.log('✅ Карта загружена успешно!', response);
                 showToast('Карта успешно загружена!', 'success');
                 progressDiv.style.display = 'none';
                 dropZone.style.opacity = '1';
                 dropZone.style.pointerEvents = 'auto';
+                console.log('🔄 Перезагружаем список карт...');
                 loadMaps();
             } else {
                 let errorMessage = 'Ошибка загрузки';
@@ -1520,21 +1528,31 @@ async function uploadMap(file) {
 
 async function loadMaps() {
     try {
+        console.log('🔄 Загрузка карт из API:', `${API_URL}/api/maps`);
         const response = await fetch(`${API_URL}/api/maps`);
+        
+        console.log('📡 Ответ сервера:', response.status, response.statusText);
         
         if (!response.ok) {
             const error = await response.json().catch(() => ({ error: 'Ошибка загрузки карт' }));
+            console.error('❌ Ошибка от сервера:', error);
             throw new Error(error.error || `HTTP ${response.status}`);
         }
 
         const maps = await response.json();
+        console.log('📦 Получены данные:', maps);
+        console.log('📊 Тип данных:', typeof maps, Array.isArray(maps) ? 'Array' : 'Not Array');
+        console.log('📈 Количество карт:', Array.isArray(maps) ? maps.length : 'N/A');
 
         const container = document.getElementById('maps-list');
-        if (!container) return;
+        if (!container) {
+            console.error('❌ Контейнер maps-list не найден');
+            return;
+        }
 
         // Проверяем, что maps - это массив
         if (!Array.isArray(maps)) {
-            console.error('Expected array, got:', maps);
+            console.error('❌ Expected array, got:', maps);
             let errorMsg = 'Ошибка загрузки данных';
             if (maps && maps.error) {
                 if (maps.error.includes('Supabase not configured')) {
@@ -1548,9 +1566,12 @@ async function loadMaps() {
         }
 
         if (maps.length === 0) {
+            console.log('ℹ️ Карт не найдено, показываем пустое сообщение');
             container.innerHTML = '<p class="maps-empty">Загрузите первую карту для начала</p>';
             return;
         }
+        
+        console.log('✅ Рендерим', maps.length, 'карт(ы)');
 
         const baseUrl = window.location.origin;
         container.innerHTML = maps.map(map => {
