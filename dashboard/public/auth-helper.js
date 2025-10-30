@@ -43,18 +43,13 @@ function getAuthData() {
     }
 }
 
-// Проверить авторизацию (редирект на login если не авторизован, или создать гостевую сессию)
-async function requireAuth(autoGuest = true) {
+// Проверить авторизацию (редирект на login если не авторизован)
+async function requireAuth() {
     const authData = getAuthData();
     
     if (!authData) {
-        if (autoGuest) {
-            // Автоматически входим как гость
-            return await createGuestSession();
-        } else {
-            window.location.href = '/login.html';
-            return null;
-        }
+        window.location.href = '/login.html';
+        return null;
     }
     
     // Проверяем что токен валидный
@@ -156,9 +151,22 @@ function setupRoleBasedUI(authData) {
         // Перенаправить на карты если пытается открыть админ-страницу
         const hash = window.location.hash;
         if (hash === '#analytics' || hash === '#messages' || hash === '#auto-delete' || hash === '#admin') {
+            console.warn('⛔ Доступ запрещен. Требуются права администратора.');
             window.location.hash = '#maps';
         }
     }
+    
+    // Установить обработчик для проверки при смене хеша
+    window.addEventListener('hashchange', () => {
+        if (!isAdmin(authData)) {
+            const hash = window.location.hash;
+            if (hash === '#analytics' || hash === '#messages' || hash === '#auto-delete' || hash === '#admin') {
+                console.warn('⛔ Доступ запрещен. Требуются права администратора.');
+                alert('Доступ запрещен. Требуются права администратора.');
+                window.location.hash = '#maps';
+            }
+        }
+    });
     
     // Показать информацию о пользователе
     displayUserInfo(authData);
@@ -187,40 +195,229 @@ function displayUserInfo(authData) {
             cursor: pointer;
         `;
         
-        const isGuest = authData.user.username.startsWith('guest_');
-        const roleColor = isAdmin(authData) ? '#ef4444' : (isGuest ? '#a0a0a0' : '#10b981');
-        const roleText = isAdmin(authData) ? 'Админ' : (isGuest ? 'Гость' : 'Пользователь');
-        const displayName = isGuest ? 'Гость' : authData.user.username;
+        const roleColor = isAdmin(authData) ? '#ef4444' : '#10b981';
+        const roleText = isAdmin(authData) ? 'Админ' : 'Пользователь';
+        const displayName = authData.user.username;
         
         userInfo.innerHTML = `
-            <div style="text-align: right;">
-                <div style="font-weight: 600; color: var(--text-primary);">${displayName}</div>
-                <div style="font-size: 12px; color: ${roleColor};">${roleText}</div>
-            </div>
-            ${isGuest ? `
-                <button onclick="window.location.href='/login.html'" style="
-                    padding: 6px 12px;
-                    background: var(--accent-primary);
-                    color: white;
-                    border: none;
-                    border-radius: 8px;
-                    cursor: pointer;
-                    font-size: 12px;
-                    margin-right: 5px;
-                ">Войти</button>
-            ` : ''}
-            <button onclick="logout()" style="
-                padding: 6px 12px;
-                background: var(--danger);
-                color: white;
-                border: none;
-                border-radius: 8px;
+            <div onclick="toggleUserMenu()" style="
+                display: flex;
+                align-items: center;
+                gap: 10px;
                 cursor: pointer;
-                font-size: 12px;
-            ">Выход</button>
+                padding: 8px 12px;
+                border-radius: 12px;
+                transition: all 0.2s;
+            " onmouseover="this.style.background='var(--bg-card)'" onmouseout="this.style.background='transparent'">
+                <div style="text-align: right;">
+                    <div style="font-weight: 600; color: var(--text-primary); font-size: 14px;">${displayName}</div>
+                    <div style="font-size: 11px; color: ${roleColor};">${roleText}</div>
+                </div>
+                <div style="
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 50%;
+                    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: white;
+                    font-weight: 700;
+                    font-size: 16px;
+                ">${displayName.charAt(0).toUpperCase()}</div>
+            </div>
+            
+            <!-- User Dropdown Menu -->
+            <div id="user-dropdown" style="
+                display: none;
+                position: absolute;
+                top: 70px;
+                right: 20px;
+                background: var(--bg-card);
+                border: 1px solid var(--border-color);
+                border-radius: 12px;
+                padding: 12px;
+                min-width: 280px;
+                box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+                z-index: 1000;
+            ">
+                <div style="padding: 12px; border-bottom: 1px solid var(--border-color); margin-bottom: 10px;">
+                    <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">${displayName}</div>
+                    <div style="font-size: 12px; color: var(--text-secondary);">${authData.user.email || 'Локальный пользователь'}</div>
+                </div>
+                
+                <div style="padding: 8px 0;">
+                    <button onclick="showUserActions()" style="
+                        width: 100%;
+                        padding: 10px 12px;
+                        background: transparent;
+                        color: var(--text-primary);
+                        border: none;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        text-align: left;
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        transition: all 0.2s;
+                    " onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background='transparent'">
+                        <span style="font-size: 18px;">📊</span>
+                        <span>Моя активность</span>
+                    </button>
+                    
+                    <button onclick="logout()" style="
+                        width: 100%;
+                        padding: 10px 12px;
+                        background: transparent;
+                        color: var(--danger);
+                        border: none;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        text-align: left;
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        transition: all 0.2s;
+                        margin-top: 4px;
+                    " onmouseover="this.style.background='rgba(255,71,87,0.1)'" onmouseout="this.style.background='transparent'">
+                        <span style="font-size: 18px;">🚪</span>
+                        <span>Выйти</span>
+                    </button>
+                </div>
+            </div>
         `;
         
         header.appendChild(userInfo);
+    }
+}
+
+// Переключить меню пользователя
+function toggleUserMenu() {
+    const dropdown = document.getElementById('user-dropdown');
+    if (dropdown) {
+        dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+    }
+}
+
+// Показать историю действий пользователя
+async function showUserActions() {
+    const authData = getAuthData();
+    if (!authData) return;
+    
+    try {
+        const response = await fetch('/api/user/actions', {
+            headers: { 'Authorization': `Bearer ${authData.token}` }
+        });
+        
+        const actions = await response.json();
+        
+        // Создаем модальное окно с историей
+        let modal = document.getElementById('user-actions-modal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'user-actions-modal';
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.8);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 2000;
+            `;
+            
+            modal.innerHTML = `
+                <div style="
+                    background: var(--bg-card);
+                    border: 1px solid var(--border-color);
+                    border-radius: 16px;
+                    padding: 30px;
+                    max-width: 600px;
+                    width: 90%;
+                    max-height: 80vh;
+                    overflow-y: auto;
+                ">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="margin: 0; color: var(--text-primary);">📊 Моя активность</h3>
+                        <button onclick="closeUserActionsModal()" style="
+                            background: transparent;
+                            border: none;
+                            color: var(--text-secondary);
+                            font-size: 24px;
+                            cursor: pointer;
+                            width: 32px;
+                            height: 32px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            border-radius: 8px;
+                        ">×</button>
+                    </div>
+                    <div id="user-actions-list"></div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+        
+        // Отображаем действия
+        const actionsList = document.getElementById('user-actions-list');
+        if (actions.length === 0) {
+            actionsList.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 40px 0;">Пока нет действий</p>';
+        } else {
+            actionsList.innerHTML = actions.map(action => {
+                const actionIcons = {
+                    'map_upload': '⬆️',
+                    'map_download': '⬇️',
+                    'map_delete': '🗑️',
+                    'login': '🔓',
+                    'logout': '🔒'
+                };
+                
+                const actionNames = {
+                    'map_upload': 'Загрузка карты',
+                    'map_download': 'Скачивание карты',
+                    'map_delete': 'Удаление карты',
+                    'login': 'Вход в систему',
+                    'logout': 'Выход из системы'
+                };
+                
+                const date = new Date(action.created_at);
+                return `
+                    <div style="
+                        padding: 12px;
+                        background: var(--bg-secondary);
+                        border-radius: 8px;
+                        margin-bottom: 8px;
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                    ">
+                        <span style="font-size: 24px;">${actionIcons[action.action_type] || '📝'}</span>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; color: var(--text-primary);">${actionNames[action.action_type] || action.action_type}</div>
+                            <div style="font-size: 12px; color: var(--text-secondary);">${date.toLocaleString('ru-RU')}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        modal.style.display = 'flex';
+        toggleUserMenu(); // Закрываем dropdown
+    } catch (error) {
+        console.error('Failed to load user actions:', error);
+        alert('Не удалось загрузить историю действий');
+    }
+}
+
+function closeUserActionsModal() {
+    const modal = document.getElementById('user-actions-modal');
+    if (modal) {
+        modal.style.display = 'none';
     }
 }
 
@@ -232,4 +429,7 @@ window.isAdmin = isAdmin;
 window.logout = logout;
 window.fetchWithAuth = fetchWithAuth;
 window.setupRoleBasedUI = setupRoleBasedUI;
+window.toggleUserMenu = toggleUserMenu;
+window.showUserActions = showUserActions;
+window.closeUserActionsModal = closeUserActionsModal;
 

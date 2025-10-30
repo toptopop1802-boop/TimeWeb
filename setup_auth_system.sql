@@ -131,9 +131,48 @@ COMMENT ON COLUMN users.role IS 'Роль: user (обычный пользова
 COMMENT ON COLUMN maps_metadata.is_public IS 'Публичная карта видна всем пользователям';
 COMMENT ON COLUMN maps_metadata.short_code IS '7-значный код для короткой ссылки';
 
+-- ============================================
+-- АНАЛИТИКА РЕГИСТРАЦИЙ ПОЛЬЗОВАТЕЛЕЙ
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS user_registrations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    username TEXT NOT NULL,
+    registered_at TIMESTAMPTZ DEFAULT NOW(),
+    ip_address TEXT,
+    user_agent TEXT
+);
+
+CREATE INDEX idx_user_registrations_user_id ON user_registrations(user_id);
+CREATE INDEX idx_user_registrations_registered_at ON user_registrations(registered_at DESC);
+
+COMMENT ON TABLE user_registrations IS 'Аналитика регистраций пользователей';
+COMMENT ON COLUMN user_registrations.registered_at IS 'Дата и время регистрации';
+
+-- ============================================
+-- АНАЛИТИКА ДЕЙСТВИЙ ПОЛЬЗОВАТЕЛЕЙ
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS user_actions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    action_type TEXT NOT NULL, -- 'map_upload', 'map_download', 'map_delete', 'login', 'logout'
+    action_details JSONB,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_user_actions_user_id ON user_actions(user_id);
+CREATE INDEX idx_user_actions_created_at ON user_actions(created_at DESC);
+CREATE INDEX idx_user_actions_type ON user_actions(action_type);
+
+COMMENT ON TABLE user_actions IS 'Лог действий пользователей';
+COMMENT ON COLUMN user_actions.action_type IS 'Тип действия: map_upload, map_download, map_delete, login, logout';
+COMMENT ON COLUMN user_actions.action_details IS 'JSON с деталями действия';
+
 -- Готово!
 -- Теперь выполните:
 -- 1. В Supabase Dashboard -> SQL Editor -> вставьте и выполните этот скрипт
--- 2. Первый админ: username=admin, password=admin123
--- 3. ОБЯЗАТЕЛЬНО СМЕНИТЕ ПАРОЛЬ после первого входа!
+-- 2. Админ-логин: bublick / fufel52
+-- 3. Обычные пользователи регистрируются просто по имени
 

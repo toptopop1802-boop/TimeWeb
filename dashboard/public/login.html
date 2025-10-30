@@ -258,82 +258,98 @@
                 <p>Dashboard & Analytics</p>
             </div>
 
-            <div class="tabs">
-                <div class="tab active" data-tab="login">Вход</div>
-                <div class="tab" data-tab="register">Регистрация</div>
-            </div>
+            <!-- Убираем табы, оставляем только простую форму -->
 
             <div id="error-message" class="error-message"></div>
             <div id="success-message" class="success-message"></div>
 
-            <!-- Login Form -->
-            <div id="login-tab" class="tab-content active">
-                <form id="login-form">
-                    <div class="form-group">
-                        <label for="login-username">Логин</label>
-                        <input type="text" id="login-username" name="username" required autocomplete="username">
-                    </div>
-                    <div class="form-group">
-                        <label for="login-password">Пароль</label>
-                        <input type="password" id="login-password" name="password" required autocomplete="current-password">
-                    </div>
-                    <button type="submit" class="btn-login">Войти</button>
-                    <button type="button" class="btn-guest" onclick="loginAsGuest()">🚶 Войти как гость</button>
-                </form>
-            </div>
-
-            <!-- Register Form -->
-            <div id="register-tab" class="tab-content">
-                <form id="register-form">
-                    <div class="form-group">
-                        <label for="register-username">Логин</label>
-                        <input type="text" id="register-username" name="username" required autocomplete="username" minlength="3">
-                    </div>
-                    <div class="form-group">
-                        <label for="register-email">Email</label>
-                        <input type="email" id="register-email" name="email" required autocomplete="email">
-                    </div>
-                    <div class="form-group">
-                        <label for="register-password">Пароль</label>
-                        <input type="password" id="register-password" name="password" required autocomplete="new-password" minlength="6">
-                    </div>
-                    <div class="form-group">
-                        <label for="register-password-confirm">Подтвердите пароль</label>
-                        <input type="password" id="register-password-confirm" name="password_confirm" required autocomplete="new-password" minlength="6">
-                    </div>
-                    <button type="submit" class="btn-login">Зарегистрироваться</button>
-                </form>
-            </div>
+            <!-- Simple Username Form -->
+            <form id="username-form">
+                <div class="form-group">
+                    <label for="username">Введите ваше имя</label>
+                    <input type="text" id="username" name="username" required autocomplete="username" minlength="2" maxlength="32" placeholder="Например: Иван" autofocus>
+                    <small style="color: var(--text-secondary); font-size: 12px; margin-top: 5px; display: block;">Минимум 2 символа</small>
+                </div>
+                <button type="submit" class="btn-login">Продолжить</button>
+            </form>
 
             <div class="form-footer">
                 <p style="color: var(--text-secondary); font-size: 14px;">
-                    💡 Совет: Нажмите "Войти как гость" для быстрого доступа без регистрации
+                    Ваше имя сохранится для будущих посещений
                 </p>
+                <button id="admin-login-toggle" style="
+                    margin-top: 20px;
+                    padding: 8px 16px;
+                    background: transparent;
+                    color: var(--text-secondary);
+                    border: 1px solid var(--border-color);
+                    border-radius: 8px;
+                    cursor: pointer;
+                    font-size: 12px;
+                    transition: all 0.2s;
+                ">🔑 Вход для админа</button>
+            </div>
+
+            <!-- Admin Login Modal -->
+            <div id="admin-login-modal" style="
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.8);
+                z-index: 1000;
+                align-items: center;
+                justify-content: center;
+            ">
+                <div style="
+                    background: var(--bg-card);
+                    border: 1px solid var(--border-color);
+                    border-radius: 16px;
+                    padding: 30px;
+                    max-width: 350px;
+                    width: 90%;
+                ">
+                    <h3 style="margin: 0 0 20px 0; color: var(--text-primary);">🔐 Вход для администратора</h3>
+                    <form id="admin-login-form">
+                        <div class="form-group">
+                            <label for="admin-username">Логин</label>
+                            <input type="text" id="admin-username" name="username" required autocomplete="username">
+                        </div>
+                        <div class="form-group">
+                            <label for="admin-password">Пароль</label>
+                            <input type="password" id="admin-password" name="password" required autocomplete="current-password">
+                        </div>
+                        <div style="display: flex; gap: 10px; margin-top: 20px;">
+                            <button type="button" id="admin-cancel-btn" style="
+                                flex: 1;
+                                padding: 12px;
+                                background: transparent;
+                                color: var(--text-secondary);
+                                border: 1px solid var(--border-color);
+                                border-radius: 8px;
+                                cursor: pointer;
+                            ">Отмена</button>
+                            <button type="submit" style="
+                                flex: 1;
+                                padding: 12px;
+                                background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+                                color: white;
+                                border: none;
+                                border-radius: 8px;
+                                cursor: pointer;
+                                font-weight: 600;
+                            ">Войти</button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Tab switching
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                const tabName = tab.dataset.tab;
-                
-                // Update active tab
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                
-                // Update active content
-                document.querySelectorAll('.tab-content').forEach(content => {
-                    content.classList.remove('active');
-                });
-                document.getElementById(`${tabName}-tab`).classList.add('active');
-                
-                // Clear messages
-                hideError();
-                hideSuccess();
-            });
-        });
+        // Убрали табы, теперь простая форма
 
         function showError(message) {
             const errorDiv = document.getElementById('error-message');
@@ -357,8 +373,78 @@
             successDiv.classList.remove('show');
         }
 
-        // Login form
-        document.getElementById('login-form').addEventListener('submit', async (e) => {
+        // Simple username form
+        document.getElementById('username-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideError();
+            hideSuccess();
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Загрузка...';
+            
+            try {
+                const formData = new FormData(e.target);
+                const username = formData.get('username').trim();
+                
+                if (username.length < 2) {
+                    showError('Имя должно быть минимум 2 символа');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Продолжить';
+                    return;
+                }
+                
+                // Регистрируем/входим с простым именем
+                const response = await fetch('/api/auth/simple-register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success && result.token) {
+                    localStorage.setItem('auth_token', result.token);
+                    localStorage.setItem('user', JSON.stringify(result.user));
+                    
+                    showSuccess('Добро пожаловать! Перенаправление...');
+                    
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 800);
+                } else {
+                    showError(result.error || 'Ошибка регистрации');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Продолжить';
+                }
+            } catch (error) {
+                showError('Ошибка соединения с сервером');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Продолжить';
+            }
+        });
+
+        // Admin login modal
+        const adminToggleBtn = document.getElementById('admin-login-toggle');
+        const adminModal = document.getElementById('admin-login-modal');
+        const adminCancelBtn = document.getElementById('admin-cancel-btn');
+        const adminLoginForm = document.getElementById('admin-login-form');
+
+        adminToggleBtn.addEventListener('click', () => {
+            adminModal.style.display = 'flex';
+        });
+
+        adminCancelBtn.addEventListener('click', () => {
+            adminModal.style.display = 'none';
+        });
+
+        adminModal.addEventListener('click', (e) => {
+            if (e.target === adminModal) {
+                adminModal.style.display = 'none';
+            }
+        });
+
+        adminLoginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             hideError();
             hideSuccess();
@@ -371,7 +457,7 @@
                 const formData = new FormData(e.target);
                 const data = Object.fromEntries(formData);
                 
-                const response = await fetch('/api/auth/login', {
+                const response = await fetch('/api/auth/admin-login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
@@ -387,9 +473,9 @@
                     
                     setTimeout(() => {
                         window.location.href = '/';
-                    }, 1000);
+                    }, 800);
                 } else {
-                    showError(result.error || 'Ошибка входа');
+                    showError(result.error || 'Неверный логин или пароль');
                     submitBtn.disabled = false;
                     submitBtn.textContent = 'Войти';
                 }
@@ -399,86 +485,6 @@
                 submitBtn.textContent = 'Войти';
             }
         });
-
-        // Register form
-        document.getElementById('register-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            hideError();
-            hideSuccess();
-            
-            const submitBtn = e.target.querySelector('button[type="submit"]');
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Регистрация...';
-            
-            try {
-                const formData = new FormData(e.target);
-                const data = Object.fromEntries(formData);
-                
-                // Validate passwords match
-                if (data.password !== data.password_confirm) {
-                    showError('Пароли не совпадают');
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = 'Зарегистрироваться';
-                    return;
-                }
-                
-                delete data.password_confirm;
-                
-                const response = await fetch('/api/auth/register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                
-                const result = await response.json();
-                
-                if (result.success && result.token) {
-                    localStorage.setItem('auth_token', result.token);
-                    localStorage.setItem('user', JSON.stringify(result.user));
-                    
-                    showSuccess('Регистрация успешна! Перенаправление...');
-                    
-                    setTimeout(() => {
-                        window.location.href = '/';
-                    }, 1000);
-                } else {
-                    showError(result.error || 'Ошибка регистрации');
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = 'Зарегистрироваться';
-                }
-            } catch (error) {
-                showError('Ошибка соединения с сервером');
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Зарегистрироваться';
-            }
-        });
-
-        // Guest login function
-        async function loginAsGuest() {
-            try {
-                showSuccess('Вход как гость...');
-                
-                const response = await fetch('/api/auth/guest', {
-                    method: 'POST'
-                });
-                
-                const result = await response.json();
-                
-                if (result.success && result.token) {
-                    localStorage.setItem('auth_token', result.token);
-                    localStorage.setItem('user', JSON.stringify(result.user));
-                    
-                    setTimeout(() => {
-                        window.location.href = '/';
-                    }, 500);
-                } else {
-                    showError(result.error || 'Ошибка входа как гость');
-                }
-            } catch (error) {
-                showError('Ошибка соединения с сервером');
-            }
-        }
-        window.loginAsGuest = loginAsGuest;
 
         // Check if already logged in
         const token = localStorage.getItem('auth_token');

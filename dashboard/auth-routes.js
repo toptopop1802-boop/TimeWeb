@@ -4,7 +4,159 @@ const { generateToken, hashPassword, verifyPassword, requireAuth, requireAdmin }
 
 function setupAuthRoutes(app, supabase) {
     
-    // Регистрация нового пользователя
+    // Простая регистрация - только имя пользователя
+    app.post('/api/auth/simple-register', async (req, res) => {
+        try {
+            const { username } = req.body;
+
+            if (!username || username.trim().length < 2) {
+                return res.status(400).json({ error: 'Имя должно быть минимум 2 символа' });
+            }
+
+            const cleanUsername = username.trim();
+
+            // Проверяем существование пользователя с таким именем
+            const { data: existing } = await supabase
+                .from('users')
+                .select('id, username, role')
+                .eq('username', cleanUsername)
+                .single();
+
+            let user;
+            
+            if (existing) {
+                // Если пользователь существует - входим
+                user = existing;
+            } else {
+                // Создаем нового пользователя
+                const { data: newUser, error } = await supabase
+                    .from('users')
+                    .insert({
+                        username: cleanUsername,
+                        email: `${cleanUsername}@local.user`,
+                        password_hash: '', // Пустой хеш для простых пользователей
+                        role: 'user'
+                    })
+                    .select()
+                    .single();
+
+                if (error) throw error;
+                user = newUser;
+                
+                // Записываем аналитику регистрации
+                await supabase
+                    .from('user_registrations')
+                    .insert({
+                        user_id: user.id,
+                        username: user.username,
+                        ip_address: req.ip,
+                        user_agent: req.headers['user-agent']
+                    });
+            }
+
+            // Создаем сессию
+            const token = generateToken();
+            const expires_at = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 дней
+
+            await supabase
+                .from('sessions')
+                .insert({
+                    user_id: user.id,
+                    token,
+                    expires_at: expires_at.toISOString(),
+                    ip_address: req.ip,
+                    user_agent: req.headers['user-agent']
+                });
+
+            res.json({
+                success: true,
+                token,
+                user: {
+                    id: user.id,
+                    username: user.username,
+                    role: user.role
+                }
+            });
+        } catch (error) {
+            console.error('Simple register error:', error);
+            res.status(500).json({ error: error.message });
+        }
+    });
+    
+    // Админ-логин (bublick / fufel52)
+    app.post('/api/auth/admin-login', async (req, res) => {
+        try {
+            const { username, password } = req.body;
+
+            // Hardcoded admin credentials
+            if (username !== 'bublick' || password !== 'fufel52') {
+                return res.status(401).json({ error: 'Неверный логин или пароль' });
+            }
+
+            // Находим или создаем админа в БД
+            let { data: admin } = await supabase
+                .from('users')
+                .select('*')
+                .eq('username', 'bublick')
+                .eq('role', 'admin')
+                .single();
+
+            if (!admin) {
+                // Создаем админа если его нет
+                const password_hash = await hashPassword('fufel52');
+                
+                const { data: newAdmin, error } = await supabase
+                    .from('users')
+                    .insert({
+                        username: 'bublick',
+                        email: 'admin@bublickrust.ru',
+                        password_hash,
+                        role: 'admin'
+                    })
+                    .select()
+                    .single();
+
+                if (error) throw error;
+                admin = newAdmin;
+            }
+
+            // Обновляем last_login
+            await supabase
+                .from('users')
+                .update({ last_login: new Date().toISOString() })
+                .eq('id', admin.id);
+
+            // Создаем сессию
+            const token = generateToken();
+            const expires_at = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+            await supabase
+                .from('sessions')
+                .insert({
+                    user_id: admin.id,
+                    token,
+                    expires_at: expires_at.toISOString(),
+                    ip_address: req.ip,
+                    user_agent: req.headers['user-agent']
+                });
+
+            res.json({
+                success: true,
+                token,
+                user: {
+                    id: admin.id,
+                    username: admin.username,
+                    email: admin.email,
+                    role: admin.role
+                }
+            });
+        } catch (error) {
+            console.error('Admin login error:', error);
+            res.status(500).json({ error: error.message });
+        }
+    });
+    
+    // Регистрация нового пользователя (старый метод, оставляем для совместимости)
     app.post('/api/auth/register', async (req, res) => {
         try {
             const { username, email, password } = req.body;
@@ -283,6 +435,27 @@ function setupAuthRoutes(app, supabase) {
                     res.status(500).json({ error: error.message });
                 }
             });
+        }, supabase);
+    });
+    
+    // Получить действия текущего пользователя
+    app.get('/api/user/actions', async (req, res) => {
+        await requireAuth(req, res, async () => {
+            try {
+                const { data: actions, error } = await supabase
+                    .from('user_actions')
+                    .select('*')
+                    .eq('user_id', req.user.id)
+                    .order('created_at', { ascending: false })
+                    .limit(50);
+
+                if (error) throw error;
+
+                res.json(actions || []);
+            } catch (error) {
+                console.error('Get user actions error:', error);
+                res.status(500).json({ error: error.message });
+            }
         }, supabase);
     });
 }
