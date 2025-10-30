@@ -14,6 +14,9 @@ async function loadMembers() {
         });
 
         const users = await response.json();
+        
+        // Store users globally for export
+        window.allUsers = users;
 
         // Update stats
         document.getElementById('total-users').textContent = users.length;
@@ -43,6 +46,7 @@ async function loadMembers() {
                             <th style="padding:12px;border-bottom:1px solid var(--border-color);">Дата регистрации</th>
                             <th style="padding:12px;border-bottom:1px solid var(--border-color);">Последний вход</th>
                             <th style="padding:12px;border-bottom:1px solid var(--border-color);">Статус</th>
+                            <th style="padding:12px;border-bottom:1px solid var(--border-color);">Действия</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -63,12 +67,24 @@ async function loadMembers() {
                                         ${user.is_active ? 'Активен' : 'Неактивен'}
                                     </span>
                                 </td>
+                                <td style="padding:12px;">
+                                    <button onclick="deleteUser('${user.id}', '${user.username}')" 
+                                            style="padding:6px 12px;background:#dc3545;color:white;border:none;border-radius:6px;font-size:12px;cursor:pointer;transition:all 0.2s;"
+                                            onmouseover="this.style.background='#c82333'" 
+                                            onmouseout="this.style.background='#dc3545'"
+                                            ${user.role === 'admin' ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
+                                        🗑️ Удалить
+                                    </button>
+                                </td>
                             </tr>
                         `).join('')}
                     </tbody>
                 </table>
             </div>
         `;
+        
+        // Add export button
+        addExportButton();
     } catch (error) {
         console.error('Failed to load members:', error);
         document.getElementById('members-list').innerHTML = '<p style="text-align:center;color:var(--danger);padding:40px 0;">Ошибка загрузки</p>';
@@ -410,9 +426,101 @@ function renderImagesHistory() {
     }).join('');
 }
 
+// ============================================
+// USER MANAGEMENT FUNCTIONS
+// ============================================
+
+function addExportButton() {
+    const header = document.querySelector('#page-members .page-header');
+    if (!header) return;
+    
+    // Check if button already exists
+    if (document.getElementById('export-users-btn')) return;
+    
+    const exportBtn = document.createElement('button');
+    exportBtn.id = 'export-users-btn';
+    exportBtn.className = 'btn btn-primary';
+    exportBtn.innerHTML = '📥 Экспорт пользователей';
+    exportBtn.style.cssText = 'margin-left: 10px;';
+    exportBtn.onclick = exportUsers;
+    
+    header.appendChild(exportBtn);
+}
+
+function exportUsers() {
+    if (!window.allUsers || window.allUsers.length === 0) {
+        showToast('Нет пользователей для экспорта');
+        return;
+    }
+    
+    // Prepare CSV data
+    const headers = ['ID', 'Username', 'Email', 'Role', 'Created At', 'Last Login', 'Is Active'];
+    const rows = window.allUsers.map(user => [
+        user.id,
+        user.username,
+        user.email || '',
+        user.role,
+        new Date(user.created_at).toLocaleString('ru-RU'),
+        user.last_login ? new Date(user.last_login).toLocaleString('ru-RU') : '-',
+        user.is_active ? 'Да' : 'Нет'
+    ]);
+    
+    const csvContent = [headers, ...rows]
+        .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+        .join('\n');
+    
+    // Create and download file
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `users_export_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showToast(`✅ Экспортировано ${window.allUsers.length} пользователей`, 'success');
+}
+
+async function deleteUser(userId, username) {
+    if (!confirm(`Вы уверены, что хотите удалить пользователя "${username}"?\n\nЭто действие нельзя отменить!`)) {
+        return;
+    }
+    
+    const authData = getAuthData();
+    if (!authData) {
+        showToast('Требуется авторизация');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/admin/users/${userId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${authData.token}` }
+        });
+        
+        if (response.ok) {
+            showToast(`✅ Пользователь "${username}" удален`, 'success');
+            // Reload members list
+            loadMembers();
+        } else {
+            const error = await response.json();
+            throw new Error(error.error || 'Ошибка удаления пользователя');
+        }
+    } catch (error) {
+        console.error('Delete user error:', error);
+        showToast(`❌ ${error.message}`);
+    }
+}
+
 // Global exports
 window.copyImageUrl = copyImageUrl;
 window.copyToClipboard = copyToClipboard;
+window.exportUsers = exportUsers;
+window.deleteUser = deleteUser;
 
 // Init on page load
 document.addEventListener('DOMContentLoaded', () => {

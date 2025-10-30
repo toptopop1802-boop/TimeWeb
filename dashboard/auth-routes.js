@@ -448,6 +448,46 @@ function setupAuthRoutes(app, supabase) {
             });
         }, supabase);
     });
+
+    // Удалить пользователя (только для админа)
+    app.delete('/api/admin/users/:userId', async (req, res) => {
+        await requireAuth(req, res, async () => {
+            requireAdmin(req, res, async () => {
+                try {
+                    const { userId } = req.params;
+
+                    // Проверяем что пользователь существует и не является админом
+                    const { data: user, error: fetchError } = await supabase
+                        .from('users')
+                        .select('id, username, role')
+                        .eq('id', userId)
+                        .single();
+
+                    if (fetchError || !user) {
+                        return res.status(404).json({ error: 'Пользователь не найден' });
+                    }
+
+                    if (user.role === 'admin') {
+                        return res.status(403).json({ error: 'Нельзя удалить администратора' });
+                    }
+
+                    // Удаляем пользователя
+                    const { error: deleteError } = await supabase
+                        .from('users')
+                        .delete()
+                        .eq('id', userId);
+
+                    if (deleteError) throw deleteError;
+
+                    console.log(`✅ User deleted by admin: ${user.username} (${userId})`);
+                    res.json({ success: true, message: 'Пользователь удален' });
+                } catch (error) {
+                    console.error('Delete user error:', error);
+                    res.status(500).json({ error: error.message });
+                }
+            });
+        }, supabase);
+    });
     
     // Получить действия текущего пользователя
     app.get('/api/user/actions', async (req, res) => {

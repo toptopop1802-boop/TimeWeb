@@ -612,34 +612,52 @@ nav {
 /* Toast */
 .toast {
     position: fixed;
-    right: 18px;
-    bottom: 18px;
-    min-width: 180px;
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    color: #fff;
-    padding: 12px 16px 12px 18px;
-    border-radius: 10px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    right: 20px;
+    bottom: 20px;
+    min-width: 200px;
+    max-width: 400px;
+    background: linear-gradient(135deg, #2d2d2d 0%, #1f1f1f 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    font-weight: 600;
+    padding: 16px 20px;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05) inset;
     opacity: 0;
-    transform: translateY(10px);
-    transition: opacity .2s ease, transform .2s ease;
+    transform: translateX(100px) scale(0.9);
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 10001;
     pointer-events: none;
+    backdrop-filter: blur(10px);
 }
-.toast.show { opacity: 1; transform: translateY(0); }
-.toast.success { position: fixed; }
+
+.toast.show { 
+    opacity: 1; 
+    transform: translateX(0) scale(1);
+    animation: toast-pulse 0.3s ease-out;
+}
+
+@keyframes toast-pulse {
+    0%, 100% { transform: translateX(0) scale(1); }
+    50% { transform: translateX(0) scale(1.02); }
+}
+
+.toast.success { 
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 10px 40px rgba(16, 185, 129, 0.3), 0 0 0 1px rgba(255,255,255,0.1) inset;
+}
+
 .toast.success::before {
-    content: '';
+    content: '✓';
     position: absolute;
-    left: -1px;
-    top: -1px;
-    bottom: -1px;
-    width: 6px;
-    border-top-left-radius: 10px;
-    border-bottom-left-radius: 10px;
-    background: var(--success);
-    box-shadow: 0 0 0 1px rgba(0,0,0,0.2) inset;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 18px;
+    font-weight: bold;
+    color: #ffffff;
 }
 
 .pipette-help {
@@ -655,10 +673,34 @@ nav {
 
 .page {
     display: none;
+    animation: fadeOut 0.2s ease-out;
 }
 
 .page.active {
     display: block;
+    animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
 }
 
 .page-header {
