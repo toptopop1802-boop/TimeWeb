@@ -84,6 +84,12 @@ ON CONFLICT (username) DO NOTHING;
 -- 9. Row Level Security (RLS) - безопасность на уровне строк
 ALTER TABLE maps_metadata ENABLE ROW LEVEL SECURITY;
 
+-- Удаляем старые политики если существуют
+DROP POLICY IF EXISTS user_maps_select ON maps_metadata;
+DROP POLICY IF EXISTS user_maps_insert ON maps_metadata;
+DROP POLICY IF EXISTS user_maps_update ON maps_metadata;
+DROP POLICY IF EXISTS user_maps_delete ON maps_metadata;
+
 -- Политика: пользователи видят только свои карты
 CREATE POLICY user_maps_select ON maps_metadata
     FOR SELECT

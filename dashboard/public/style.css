@@ -92,6 +92,31 @@ body::after {
     z-index: 2; /* ensure content sits above grid overlay */
 }
 
+/* Top Header */
+.header {
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 96px; /* sidebar width */
+    height: 70px;
+    background: var(--bg-darker);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 20px;
+    z-index: 100;
+    transition: left 0.6s ease-in-out;
+}
+
+.sidebar.expanded ~ .header {
+    left: 320px; /* expanded sidebar width */
+}
+
+.sidebar.expanded ~ .content {
+    margin-left: 320px;
+}
+
 .sidebar {
     width: 96px;
     background: var(--bg-darker);
@@ -160,7 +185,10 @@ nav {
 .content {
     flex: 1;
     padding: 40px;
+    padding-top: 110px; /* 70px header + 40px spacing */
     overflow-y: auto;
+    margin-left: 96px; /* sidebar width */
+    transition: margin-left 0.6s ease-in-out;
 }
 
 /* Dev notice (Messages page) */
