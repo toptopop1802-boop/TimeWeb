@@ -143,9 +143,9 @@ function setupRoleBasedUI(authData) {
         }
         
         // Скрыть раздел "Автоудаление"
-        const autoDeleteNavBtn = document.querySelector('[data-page="auto-delete"]');
-        if (autoDeleteNavBtn) {
-            autoDeleteNavBtn.style.display = 'none';
+        const channelsNavBtn = document.querySelector('[data-page="channels"]');
+        if (channelsNavBtn) {
+            channelsNavBtn.style.display = 'none';
         }
 
         // Скрыть раздел "Участники" (только для админа)
@@ -158,7 +158,7 @@ function setupRoleBasedUI(authData) {
         
         // Перенаправить на карты если пытается открыть админ-страницу
         const hash = window.location.hash;
-        if (hash === '#analytics' || hash === '#messages' || hash === '#auto-delete' || hash === '#admin' || hash === '#members') {
+        if (hash === '#analytics' || hash === '#messages' || hash === '#channels' || hash === '#admin' || hash === '#members') {
             console.warn('⛔ Доступ запрещен. Требуются права администратора.');
             window.location.hash = '#maps';
         }
@@ -168,7 +168,7 @@ function setupRoleBasedUI(authData) {
     window.addEventListener('hashchange', () => {
         if (!isAdmin(authData)) {
             const hash = window.location.hash;
-            if (hash === '#analytics' || hash === '#messages' || hash === '#auto-delete' || hash === '#admin' || hash === '#members') {
+            if (hash === '#analytics' || hash === '#messages' || hash === '#channels' || hash === '#admin' || hash === '#members') {
                 console.warn('⛔ Доступ запрещен. Требуются права администратора.');
                 alert('Доступ запрещен. Требуются права администратора.');
                 window.location.hash = '#maps';

@@ -1117,11 +1117,16 @@ function navigateToPage(page) {
         setTimeout(resizePipetteCanvas, 0);
     } else if (page === 'maps') {
         loadMaps();
-            } else if (page === 'changelog') {
-                loadChangelog();
-            } else if (page === 'admin') {
-                loadAdminChangelog();
-            }
+    } else if (page === 'changelog') {
+        loadChangelog();
+    } else if (page === 'images') {
+        // Загружаем историю изображений
+        if (typeof renderImagesHistory === 'function') {
+            renderImagesHistory();
+        }
+    } else if (page === 'admin') {
+        loadAdminChangelog();
+    }
 }
 
 // ============================================
