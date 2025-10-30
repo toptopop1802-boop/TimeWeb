@@ -148,11 +148,13 @@ function setupRoleBasedUI(authData) {
             autoDeleteNavBtn.style.display = 'none';
         }
 
-        // Скрыть раздел "Участники"
+        // Скрыть раздел "Участники" (только для админа)
         const membersNavBtn = document.querySelector('[data-page="members"]');
         if (membersNavBtn) {
             membersNavBtn.style.display = 'none';
         }
+        
+        // "Хостинг фото" - доступен всем авторизованным пользователям (не скрываем)
         
         // Перенаправить на карты если пытается открыть админ-страницу
         const hash = window.location.hash;

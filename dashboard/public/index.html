@@ -51,6 +51,14 @@
                     <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     <span class="nav-text">Изменения</span>
                 </a>
+                <a href="#members" class="nav-link" data-page="members">
+                    <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+                    <span class="nav-text">Участники</span>
+                </a>
+                <a href="#images" class="nav-link" data-page="images">
+                    <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+                    <span class="nav-text">Хостинг фото</span>
+                </a>
                 <a href="#admin" class="nav-link" data-page="admin">
                     <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
                     <span class="nav-text">Админ</span>
@@ -441,6 +449,89 @@
             </div>
 
             <!-- Admin Page -->
+            <!-- Members Page -->
+            <div id="page-members" class="page" style="display:none;">
+                <header class="page-header">
+                    <h2>
+                        <svg class="h2-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:28px;height:28px;vertical-align:-6px;margin-right:8px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+                        Участники сайта
+                    </h2>
+                </header>
+
+                <div class="stats-grid" style="margin-bottom: 30px;">
+                    <div class="stat-card">
+                        <div class="stat-value" id="total-users">0</div>
+                        <div class="stat-label">Всего пользователей</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="total-admins">0</div>
+                        <div class="stat-label">Администраторов</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="total-registrations-today">0</div>
+                        <div class="stat-label">Регистраций сегодня</div>
+                    </div>
+                </div>
+
+                <div id="members-list" class="admin-content">
+                    <div class="admin-loading">Загрузка...</div>
+                </div>
+            </div>
+
+            <!-- Images Hosting Page -->
+            <div id="page-images" class="page" style="display:none;">
+                <header class="page-header">
+                    <h2>
+                        <svg class="h2-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:28px;height:28px;vertical-align:-6px;margin-right:8px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+                        Хостинг изображений
+                    </h2>
+                </header>
+
+                <div class="card" style="max-width: 800px; margin: 0 auto;">
+                    <h3>📸 Загрузить изображение</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 20px;">Загрузите изображение и получите прямую ссылку для использования где угодно</p>
+                    
+                    <div id="image-drop" class="drop-zone" style="margin-bottom: 20px;">
+                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width:48px;height:48px;margin-bottom:12px;stroke:var(--accent-primary);fill:none;">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <p style="margin:0;font-weight:600;">Перетащите изображение сюда</p>
+                        <p style="margin:8px 0 0 0;color:var(--text-secondary);font-size:14px;">или</p>
+                        <button class="btn btn-primary" style="margin-top:12px;" onclick="document.getElementById('image-input').click()">ВЫБРАТЬ ФАЙЛ</button>
+                        <input type="file" id="image-input" accept="image/png,image/jpeg,image/gif,image/webp" style="display:none;">
+                        <p style="margin-top:12px;color:var(--text-secondary);font-size:12px;">PNG, JPG, GIF, WebP (макс. 15MB)</p>
+                    </div>
+
+                    <div id="image-upload-progress" style="display:none;margin-bottom:20px;">
+                        <div style="background:var(--bg-secondary);height:8px;border-radius:4px;overflow:hidden;">
+                            <div id="image-progress-fill" style="background:linear-gradient(135deg,var(--accent-primary),var(--accent-secondary));height:100%;width:0%;transition:width 0.3s;"></div>
+                        </div>
+                        <p id="image-progress-text" style="margin-top:8px;text-align:center;color:var(--text-secondary);font-size:14px;">Загрузка: 0%</p>
+                    </div>
+
+                    <div id="image-result" style="display:none;">
+                        <div style="background:var(--bg-secondary);border-radius:12px;padding:20px;margin-bottom:20px;">
+                            <img id="image-preview" style="max-width:100%;border-radius:8px;margin-bottom:15px;" />
+                            <div style="margin-bottom:10px;">
+                                <label style="color:var(--text-secondary);font-size:12px;display:block;margin-bottom:5px;">Прямая ссылка:</label>
+                                <div style="display:flex;gap:10px;">
+                                    <input type="text" id="image-direct-url" readonly style="flex:1;padding:10px;background:var(--bg-card);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-family:monospace;font-size:13px;">
+                                    <button class="btn btn-primary" onclick="copyImageUrl()">📋 Копировать</button>
+                                </div>
+                            </div>
+                            <p style="color:var(--text-secondary);font-size:12px;margin:10px 0 0 0;">✅ Эту ссылку можно использовать где угодно - на других сайтах, в Discord, Telegram и т.д.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="images-history" style="max-width:800px;margin:30px auto 0 auto;">
+                    <h3 style="margin-bottom:20px;">📚 Ваши изображения</h3>
+                    <div id="images-list">
+                        <p style="color:var(--text-secondary);text-align:center;padding:40px 0;">Загрузите первое изображение</p>
+                    </div>
+                </div>
+            </div>
+
             <div id="page-admin" class="page" style="display:none;">
                 <header class="page-header">
                     <h2>
@@ -575,6 +666,7 @@
 
     <script src="app.js"></script>
     <script src="admin-changelog.js"></script>
+    <script src="members-images.js"></script>
     <div id="toast" class="toast"></div>
 </body>
 </html>
