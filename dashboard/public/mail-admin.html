@@ -398,15 +398,25 @@
         <div id="alert" class="alert"></div>
 
         <div class="create-mailbox-section">
+            <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin-bottom: 20px; border-radius: 8px;">
+                <h3 style="margin: 0 0 10px 0; color: #856404;">⚠️ Важно!</h3>
+                <p style="margin: 0; color: #856404;">
+                    После создания ящика здесь, необходимо также создать его в <strong>панели TimeWeb</strong> с тем же именем и паролем!<br>
+                    Панель TimeWeb: <a href="https://hosting.timeweb.ru" target="_blank" style="color: #667eea;">hosting.timeweb.ru</a> → Почта → Создать ящик
+                </p>
+            </div>
             <h2>➕ Создать новый почтовый ящик</h2>
             <form id="createMailboxForm">
                 <div class="form-group">
                     <label for="emailLocal">Email адрес</label>
                     <div class="email-input-wrapper">
-                        <input type="text" id="emailLocal" name="emailLocal" placeholder="username" required>
+                        <input type="text" id="emailLocal" name="emailLocal" placeholder="username" required readonly>
                         <span class="email-domain">@bublickrust.ru</span>
+                        <button type="button" class="btn btn-primary" onclick="generateEmailName()" style="margin-left: 10px; padding: 10px 15px;">
+                            🎲 Сгенерировать
+                        </button>
                     </div>
-                    <small style="color: #666; margin-top: 5px; display: block;">Пароль будет сгенерирован автоматически и отображен после создания</small>
+                    <small style="color: #666; margin-top: 5px; display: block;">Имя генерируется автоматически. Пароль также будет сгенерирован.</small>
                 </div>
                 <div class="form-group">
                     <label for="displayName">Отображаемое имя (необязательно)</label>
@@ -467,8 +477,27 @@
             }
 
             console.log('Loading mailboxes with token:', authData.token);
+            
+            // Generate initial email name
+            generateEmailName();
+            
             loadMailboxes();
         });
+
+        // Generate random email name
+        function generateEmailName() {
+            const adjectives = ['cool', 'fast', 'smart', 'pro', 'super', 'mega', 'ultra', 'magic', 'power', 'star'];
+            const nouns = ['user', 'admin', 'support', 'help', 'team', 'mail', 'info', 'contact', 'service', 'manager'];
+            const randomNum = Math.floor(Math.random() * 9999);
+            
+            const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
+            const noun = nouns[Math.floor(Math.random() * nouns.length)];
+            
+            const emailName = `${adj}${noun}${randomNum}`;
+            document.getElementById('emailLocal').value = emailName;
+            
+            return emailName;
+        }
 
         // Load mailboxes
         async function loadMailboxes() {
@@ -626,14 +655,42 @@
                     throw new Error(error.error || 'Failed to create mailbox');
                 }
 
-                showAlert(`✅ Почтовый ящик создан! Пароль: ${generatedPassword} (сохраните его!)`, 'success');
+                showAlert(`✅ Почтовый ящик создан в базе данных! Пароль: ${generatedPassword}`, 'success');
                 
-                // Show password in alert for 10 seconds
+                // Show detailed instructions
                 setTimeout(() => {
-                    alert(`Почтовый ящик: ${email}\nПароль: ${generatedPassword}\n\nСохраните эти данные!`);
+                    const instructions = `
+📧 Почтовый ящик создан в системе!
+
+Email: ${email}
+Пароль: ${generatedPassword}
+
+⚠️ ВАЖНО! Теперь создайте этот ящик в панели TimeWeb:
+
+1. Перейдите: https://hosting.timeweb.ru
+2. Раздел: Почта → Почтовые ящики
+3. Нажмите "Создать почтовый ящик"
+4. Введите:
+   - Имя: ${emailLocal}
+   - Домен: bublickrust.ru
+   - Пароль: ${generatedPassword}
+5. Сохраните
+
+После этого почта будет работать!
+
+💾 СОХРАНИТЕ эти данные!`;
+                    
+                    alert(instructions);
+                    
+                    // Копируем пароль в буфер обмена
+                    navigator.clipboard.writeText(generatedPassword).then(() => {
+                        console.log('Пароль скопирован в буфер обмена');
+                    });
                 }, 500);
                 
                 document.getElementById('createMailboxForm').reset();
+                // Генерируем новое имя для следующего ящика
+                generateEmailName();
                 loadMailboxes();
             } catch (error) {
                 showAlert(`❌ Ошибка: ${error.message}`, 'error');
