@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+botenv/
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# Environment variables
+.env
+.env.*
+!env.example
+
+# Logs
+*.log
+debug.log
+
+# Database
+*.db
+*.sqlite
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Dashboard
+dashboard/node_modules/
+dashboard/uploads/
+dashboard/package-lock.json
+dashboard/.env
+
+# Misc
+*.bak
+*.tmp
+
