@@ -63,7 +63,6 @@ async def handle_gradient_role_request(request: web.Request) -> web.Response:
         data = await request.json()
         role_name = data.get('roleName', '').strip()
         color1 = data.get('color1', '').strip().lstrip('#')
-        color2 = data.get('color2', '').strip().lstrip('#') if data.get('color2') else None
         members_raw = data.get('members', '').strip()
         user_id = data.get('userId')  # ID заявителя с сайта
         
@@ -158,18 +157,9 @@ async def handle_gradient_role_request(request: web.Request) -> web.Response:
         # Создаем embed с заявкой
         color_value = int(color1, 16) if color1 else 0x5865F2
         
-        if color2:
-            description = (
-                f"🌈 **Запрос на градиентную роль**\n\n"
-                f"**Цвета градиента:**\n"
-                f"🟥 `#{color1.upper()}` → 🟦 `#{color2.upper()}`"
-            )
-        else:
-            description = f"**Запрос на цветную роль**"
-        
         embed = discord.Embed(
             title=f"🎨 {role_name}",
-            description=description,
+            description=f"**Запрос на цветную роль**\n\n**Цвет:** `#{color1.upper()}`",
             color=discord.Color(color_value),
             timestamp=discord.utils.utcnow()
         )
@@ -209,21 +199,13 @@ async def handle_gradient_role_request(request: web.Request) -> web.Response:
         view.add_item(reject_button)
         
         # Отправляем кнопки и инструкцию
-        instruction_text = (
+        await channel.send(
             f"📌 **Для администрации:**\n"
             f"• Проверьте список участников выше\n"
-            f"• Нажмите **✅ Одобрить** чтобы создать роль и назначить её участникам\n"
-            f"• Нажмите **❌ Отказать** чтобы отклонить заявку и удалить канал"
+            f"• Нажмите **✅ Одобрить** чтобы создать роль `#{color1.upper()}` и назначить её участникам\n"
+            f"• Нажмите **❌ Отказать** чтобы отклонить заявку и удалить канал",
+            view=view
         )
-        
-        if color2:
-            instruction_text += (
-                f"\n\n🌈 **Градиентная роль** (`#{color1.upper()}` → `#{color2.upper()}`):\n"
-                f"Роль будет создана с первым цветом. После одобрения вы получите пошаговую инструкцию "
-                f"по настройке градиента в Discord (занимает 30 секунд)"
-            )
-        
-        await channel.send(instruction_text, view=view)
         
         # Сохраняем данные заявки для обработки кнопок
         # (в реальном проекте лучше использовать базу данных)
@@ -233,7 +215,6 @@ async def handle_gradient_role_request(request: web.Request) -> web.Response:
         bot.gradient_requests[str(channel.id)] = {
             'role_name': role_name,
             'color1': color1,
-            'color2': color2,
             'members': [m.id for m in found_members],
             'channel_id': channel.id,
             'message_id': msg.id
@@ -843,10 +824,9 @@ def main() -> None:
                     # Создаём роль
                     role_name = request_data['role_name']
                     color1 = int(request_data['color1'], 16)
-                    color2_hex = request_data.get('color2')
                     member_ids = request_data['members']
                     
-                    # Создаём роль с первым цветом
+                    # Создаём роль
                     role = await interaction.guild.create_role(
                         name=role_name,
                         color=discord.Color(color1),
@@ -864,32 +844,13 @@ def main() -> None:
                     # Формируем сообщение об успехе
                     result_text = (
                         f"✅ **Заявка одобрена {interaction.user.mention}!**\n\n"
-                        f"Создана роль: {role.mention}\n"
-                        f"Цвет 1: `#{request_data['color1'].upper()}`"
+                        f"🎨 Создана роль: {role.mention} (`#{request_data['color1'].upper()}`)"
                     )
                     
-                    # Если есть второй цвет для градиента
-                    if color2_hex:
-                        result_text += (
-                            f"\n\n🌈 **Градиент - инструкция:**\n"
-                            f"```\n"
-                            f"Цвет 1: #{request_data['color1'].upper()}\n"
-                            f"Цвет 2: #{color2_hex.upper()}\n"
-                            f"```\n"
-                            f"**Как настроить:**\n"
-                            f"1️⃣ Настройки сервера → **Роли** → {role.mention}\n"
-                            f"2️⃣ В секции **«Стиль роли»** выберите **«Градиент»** (вторая кнопка)\n"
-                            f"3️⃣ Установите цвета в два поля:\n"
-                            f"   • Первое поле: `#{request_data['color1'].upper()}`\n"
-                            f"   • Второе поле: `#{color2_hex.upper()}`\n"
-                            f"4️⃣ Нажмите **«Сохранить изменения»** внизу страницы\n\n"
-                            f"✨ Готово! Роль теперь с градиентом!"
-                        )
-                    
                     if assigned:
-                        result_text += f"\n\n👥 Роль назначена: {', '.join(assigned)}"
+                        result_text += f"\n👥 Роль назначена: {', '.join(assigned)}"
                     else:
-                        result_text += f"\n\n⚠️ Роль создана, но участники не найдены"
+                        result_text += f"\n⚠️ Роль создана, но участники не найдены"
                     
                     await interaction.followup.send(result_text)
                     

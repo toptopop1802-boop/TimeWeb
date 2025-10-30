@@ -2580,14 +2580,12 @@ function initGradientRolePage() {
         
         const roleName = document.getElementById('role-name').value.trim();
         const color1 = document.getElementById('role-color1').value.trim();
-        const color2 = document.getElementById('role-color2').value.trim();
         const members = document.getElementById('role-members').value.trim();
         const statusDiv = document.getElementById('gradient-role-status');
         
         console.log('📝 [Gradient Role] Данные формы:', {
             roleName,
             color1,
-            color2,
             members
         });
         
@@ -2631,7 +2629,6 @@ function initGradientRolePage() {
         const requestData = {
             roleName: roleName,
             color1: color1.replace('#', ''),
-            color2: color2 ? color2.replace('#', '') : null,
             members: members,
             userId: authData.user.discord_id || authData.user.id
         };
