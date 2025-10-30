@@ -1602,7 +1602,26 @@ window.copyMapLink = function(mapId) {
     input.select();
     input.setSelectionRange(0, 99999);
 
-    navigator.clipboard.writeText(input.value).then(() => {
+    // Fallback для HTTP (не HTTPS)
+    const copyText = () => {
+        try {
+            // Пробуем современный API
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                return navigator.clipboard.writeText(input.value);
+            }
+            
+            // Fallback для старых браузеров или HTTP
+            const success = document.execCommand('copy');
+            if (success) {
+                return Promise.resolve();
+            }
+            throw new Error('Copy failed');
+        } catch (err) {
+            return Promise.reject(err);
+        }
+    };
+
+    copyText().then(() => {
         const btn = input.nextElementSibling;
         if (btn) {
             const originalText = btn.textContent;
