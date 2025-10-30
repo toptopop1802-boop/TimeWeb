@@ -2,6 +2,20 @@
 -- Система авторизации для Dashboard
 -- ============================================
 
+-- ВАЖНО: Перед выполнением этого скрипта создайте Storage Buckets в Supabase Dashboard:
+--
+-- 1. Откройте Supabase Dashboard -> Storage
+-- 2. Создайте bucket "maps":
+--    - Name: maps
+--    - Public: ✅ (включите публичный доступ)
+--    - File size limit: 100MB
+--
+-- 3. Создайте bucket "images":
+--    - Name: images
+--    - Public: ✅ (включите публичный доступ)
+--    - File size limit: 15MB
+--    - Allowed MIME types: image/png, image/jpeg, image/gif, image/webp
+
 -- 1. Таблица пользователей
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -81,53 +95,17 @@ VALUES
     ('admin', 'admin@bublickrust.ru', '$2b$10$rBV2gHUqN9Nv.5fX7QJRyO7YzK0pK6Rb8.xGDJnq4rK.FHkY8Qy3W', 'admin', true)
 ON CONFLICT ON CONSTRAINT users_email_key DO NOTHING;
 
--- 9. Row Level Security (RLS) - безопасность на уровне строк
-ALTER TABLE maps_metadata ENABLE ROW LEVEL SECURITY;
+-- 9. Row Level Security (RLS) - ОТКЛЮЧАЕМ, т.к. используем JWT через backend
+-- Backend сам контролирует доступ через middleware
+ALTER TABLE maps_metadata DISABLE ROW LEVEL SECURITY;
 
--- Удаляем старые политики если существуют
+-- Удаляем все политики
 DROP POLICY IF EXISTS user_maps_select ON maps_metadata;
 DROP POLICY IF EXISTS user_maps_insert ON maps_metadata;
 DROP POLICY IF EXISTS user_maps_update ON maps_metadata;
 DROP POLICY IF EXISTS user_maps_delete ON maps_metadata;
 
--- Политика: пользователи видят только свои карты
-CREATE POLICY user_maps_select ON maps_metadata
-    FOR SELECT
-    USING (
-        user_id = auth.uid() OR -- свои карты
-        is_public = true OR -- публичные карты
-        EXISTS ( -- или если пользователь админ
-            SELECT 1 FROM users 
-            WHERE id = auth.uid() AND role = 'admin'
-        )
-    );
-
--- Политика: пользователи могут создавать свои карты
-CREATE POLICY user_maps_insert ON maps_metadata
-    FOR INSERT
-    WITH CHECK (user_id = auth.uid());
-
--- Политика: пользователи могут обновлять только свои карты
-CREATE POLICY user_maps_update ON maps_metadata
-    FOR UPDATE
-    USING (
-        user_id = auth.uid() OR
-        EXISTS (
-            SELECT 1 FROM users 
-            WHERE id = auth.uid() AND role = 'admin'
-        )
-    );
-
--- Политика: пользователи могут удалять только свои карты
-CREATE POLICY user_maps_delete ON maps_metadata
-    FOR DELETE
-    USING (
-        user_id = auth.uid() OR
-        EXISTS (
-            SELECT 1 FROM users 
-            WHERE id = auth.uid() AND role = 'admin'
-        )
-    );
+-- RLS отключен - доступ контролируется через backend API и JWT токены
 
 -- 10. Комментарии для документации
 COMMENT ON TABLE users IS 'Таблица пользователей системы';
