@@ -524,6 +524,88 @@
                     </div>
                 </div>
 
+                <!-- API Documentation -->
+                <div class="card" style="max-width: 800px; margin: 30px auto; background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(139, 92, 246, 0.05)); border: 1px solid rgba(59, 130, 246, 0.2);">
+                    <h3 style="display: flex; align-items: center; gap: 10px;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="16 18 22 12 16 6"></polyline>
+                            <polyline points="8 6 2 12 8 18"></polyline>
+                        </svg>
+                        API для разработчиков
+                    </h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 20px;">Используйте наш API для загрузки изображений из других сервисов</p>
+                    
+                    <div style="background: var(--bg-card); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                            <strong style="color: var(--success);">POST</strong>
+                            <code style="flex: 1; margin: 0 15px; padding: 8px 12px; background: var(--bg-secondary); border-radius: 6px; font-size: 13px;">/api/images/upload</code>
+                            <button onclick="copyApiEndpoint()" style="padding: 6px 12px; background: var(--accent-primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">📋 Копировать</button>
+                        </div>
+                        <input type="text" id="api-endpoint-url" readonly value="${window.location.origin}/api/images/upload" style="width: 100%; padding: 10px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; font-family: monospace; font-size: 12px; color: var(--text-primary); margin-top: 10px;">
+                    </div>
+
+                    <details style="margin-bottom: 15px;">
+                        <summary style="cursor: pointer; padding: 12px; background: var(--bg-card); border-radius: 6px; font-weight: 600; color: var(--text-primary); user-select: none;">
+                            📖 Пример использования (cURL)
+                        </summary>
+                        <div style="margin-top: 10px; padding: 15px; background: #1e1e1e; border-radius: 8px; overflow-x: auto;">
+                            <code style="color: #d4d4d4; font-family: 'Consolas', monospace; font-size: 12px; white-space: pre; display: block;">curl -X POST ${window.location.origin}/api/images/upload \\
+  -H "Authorization: Bearer YOUR_TOKEN" \\
+  -F "image=@/path/to/image.png"
+
+# Ответ:
+{
+  "success": true,
+  "id": "uuid",
+  "shortCode": "ABC1234",
+  "directUrl": "${window.location.origin}/i/ABC1234"
+}</code>
+                        </div>
+                    </details>
+
+                    <details style="margin-bottom: 15px;">
+                        <summary style="cursor: pointer; padding: 12px; background: var(--bg-card); border-radius: 6px; font-weight: 600; color: var(--text-primary); user-select: none;">
+                            📖 Пример (Python)
+                        </summary>
+                        <div style="margin-top: 10px; padding: 15px; background: #1e1e1e; border-radius: 8px; overflow-x: auto;">
+                            <code style="color: #d4d4d4; font-family: 'Consolas', monospace; font-size: 12px; white-space: pre; display: block;">import requests
+
+url = "${window.location.origin}/api/images/upload"
+headers = {"Authorization": "Bearer YOUR_TOKEN"}
+files = {"image": open("image.png", "rb")}
+
+response = requests.post(url, headers=headers, files=files)
+data = response.json()
+print(f"Прямая ссылка: {data['directUrl']}")</code>
+                        </div>
+                    </details>
+
+                    <details>
+                        <summary style="cursor: pointer; padding: 12px; background: var(--bg-card); border-radius: 6px; font-weight: 600; color: var(--text-primary); user-select: none;">
+                            📖 Пример (JavaScript)
+                        </summary>
+                        <div style="margin-top: 10px; padding: 15px; background: #1e1e1e; border-radius: 8px; overflow-x: auto;">
+                            <code style="color: #d4d4d4; font-family: 'Consolas', monospace; font-size: 12px; white-space: pre; display: block;">const formData = new FormData();
+formData.append('image', fileInput.files[0]);
+
+fetch('${window.location.origin}/api/images/upload', {
+  method: 'POST',
+  headers: { 'Authorization': 'Bearer YOUR_TOKEN' },
+  body: formData
+})
+.then(res => res.json())
+.then(data => console.log('Ссылка:', data.directUrl));</code>
+                        </div>
+                    </details>
+
+                    <div style="margin-top: 20px; padding: 12px; background: rgba(59, 130, 246, 0.1); border-left: 3px solid var(--accent-primary); border-radius: 6px;">
+                        <p style="margin: 0; font-size: 13px; color: var(--text-secondary);">
+                            <strong style="color: var(--text-primary);">💡 Как получить токен:</strong><br>
+                            Войдите на сайт, откройте консоль браузера (F12) и выполните: <code style="background: var(--bg-card); padding: 2px 6px; border-radius: 4px;">localStorage.getItem('auth_token')</code>
+                        </p>
+                    </div>
+                </div>
+
                 <div id="images-history" style="max-width:800px;margin:30px auto 0 auto;">
                     <h3 style="margin-bottom:20px;">📚 Ваши изображения</h3>
                     <div id="images-list">

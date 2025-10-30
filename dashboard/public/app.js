@@ -2135,3 +2135,28 @@ async function incrementChangelogViews(id) {
     }
 }
 
+// ============================================
+// API HELPERS
+// ============================================
+
+function copyApiEndpoint() {
+    const input = document.getElementById('api-endpoint-url');
+    if (!input) return;
+    
+    input.select();
+    input.setSelectionRange(0, 99999);
+    
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(input.value);
+        } else {
+            document.execCommand('copy');
+        }
+        showToast('✅ API endpoint скопирован!', 'success');
+    } catch (err) {
+        showToast('Не удалось скопировать');
+    }
+}
+
+window.copyApiEndpoint = copyApiEndpoint;
+
