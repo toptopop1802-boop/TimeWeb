@@ -97,7 +97,6 @@ ON CONFLICT ON CONSTRAINT users_email_key DO NOTHING;
 
 -- 9. Row Level Security (RLS) - ОТКЛЮЧАЕМ, т.к. используем JWT через backend
 -- Backend сам контролирует доступ через middleware
-ALTER TABLE maps_metadata DISABLE ROW LEVEL SECURITY;
 
 -- Удаляем все политики
 DROP POLICY IF EXISTS user_maps_select ON maps_metadata;
@@ -105,7 +104,15 @@ DROP POLICY IF EXISTS user_maps_insert ON maps_metadata;
 DROP POLICY IF EXISTS user_maps_update ON maps_metadata;
 DROP POLICY IF EXISTS user_maps_delete ON maps_metadata;
 
+-- Отключаем RLS для всех таблиц
+ALTER TABLE IF EXISTS maps_metadata DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS users DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS sessions DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS user_registrations DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS user_actions DISABLE ROW LEVEL SECURITY;
+
 -- RLS отключен - доступ контролируется через backend API и JWT токены
+COMMENT ON TABLE maps_metadata IS 'RLS DISABLED - Access controlled by backend JWT middleware';
 
 -- 10. Комментарии для документации
 COMMENT ON TABLE users IS 'Таблица пользователей системы';
