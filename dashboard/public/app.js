@@ -2310,3 +2310,101 @@ function loadTheme() {
 // Функции уже экспортированы выше
 window.toggleTheme = toggleTheme;
 
+
+// ============================================
+// GRADIENT ROLE REQUEST FORM
+// ============================================
+
+// Обработчик формы заявки на градиентную роль
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('gradient-role-form');
+    if (!form) return;
+    
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const roleName = document.getElementById('role-name').value.trim();
+        const color1 = document.getElementById('role-color1').value.trim();
+        const color2 = document.getElementById('role-color2').value.trim();
+        const members = document.getElementById('role-members').value.trim();
+        const statusDiv = document.getElementById('gradient-role-status');
+        
+        if (!roleName || !color1 || !members) {
+            if (statusDiv) {
+                statusDiv.style.display = 'block';
+                statusDiv.style.background = 'rgba(239,68,68,0.1)';
+                statusDiv.style.borderLeft = '4px solid #ef4444';
+                statusDiv.style.color = '#ef4444';
+                statusDiv.textContent = '❌ Заполните все обязательные поля';
+            }
+            return;
+        }
+        
+        // Получаем данные пользователя
+        const authData = getAuthData();
+        if (!authData || !authData.user) {
+            if (statusDiv) {
+                statusDiv.style.display = 'block';
+                statusDiv.style.background = 'rgba(239,68,68,0.1)';
+                statusDiv.style.borderLeft = '4px solid #ef4444';
+                statusDiv.style.color = '#ef4444';
+                statusDiv.textContent = '❌ Необходимо войти в систему';
+            }
+            return;
+        }
+        
+        // Показываем загрузку
+        if (statusDiv) {
+            statusDiv.style.display = 'block';
+            statusDiv.style.background = 'rgba(59,130,246,0.1)';
+            statusDiv.style.borderLeft = '4px solid #3b82f6';
+            statusDiv.style.color = '#3b82f6';
+            statusDiv.textContent = '⏳ Отправка заявки...';
+        }
+        
+        try {
+            // Отправляем запрос на локальный API бота
+            const response = await fetch('http://localhost:8787/api/gradient-role', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer bublickrust'
+                },
+                body: JSON.stringify({
+                    roleName: roleName,
+                    color1: color1.replace('#', ''),
+                    color2: color2 ? color2.replace('#', '') : null,
+                    members: members,
+                    userId: authData.user.discord_id || authData.user.id
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok && result.success) {
+                if (statusDiv) {
+                    statusDiv.style.display = 'block';
+                    statusDiv.style.background = 'rgba(16,185,129,0.1)';
+                    statusDiv.style.borderLeft = '4px solid #10b981';
+                    statusDiv.style.color = '#10b981';
+                    statusDiv.innerHTML = `✅ Заявка успешно отправлена!<br><small>Создан Discord канал: ${result.channelName || 'создан'}</small>`;
+                }
+                form.reset();
+                showToast('Заявка отправлена! Проверьте Discord', 'success');
+            } else {
+                throw new Error(result.error || 'Ошибка отправки');
+            }
+        } catch (error) {
+            console.error('Gradient role request error:', error);
+            if (statusDiv) {
+                statusDiv.style.display = 'block';
+                statusDiv.style.background = 'rgba(239,68,68,0.1)';
+                statusDiv.style.borderLeft = '4px solid #ef4444';
+                statusDiv.style.color = '#ef4444';
+                statusDiv.textContent = `❌ Ошибка: ${error.message}`;
+            }
+            showToast('Ошибка отправки заявки', 'error');
+        }
+    });
+});
+

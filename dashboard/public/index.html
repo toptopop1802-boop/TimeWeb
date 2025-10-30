@@ -59,6 +59,10 @@
                     <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
                     <span class="nav-text">Хостинг фото</span>
                 </a>
+                <a href="#gradient-role" class="nav-link" data-page="gradient-role">
+                    <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+                    <span class="nav-text">🌈 Заявка на роль</span>
+                </a>
                 <a href="#api" class="nav-link" data-page="api">
                     <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polyline points="16 18 22 12 16 6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"></polyline><polyline points="8 6 2 12 8 18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"></polyline></svg>
                     <span class="nav-text">API</span>
@@ -573,6 +577,99 @@
                     <div id="images-list">
                         <p style="color:var(--text-secondary);text-align:center;padding:40px 0;">Загрузите первое изображение</p>
                     </div>
+                </div>
+            </div>
+
+            <!-- Gradient Role Request Page -->
+            <div id="page-gradient-role" class="page" style="display:none;">
+                <header class="page-header">
+                    <h2>
+                        <svg class="h2-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:28px;height:28px;vertical-align:-6px;margin-right:8px;"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+                        🌈 Заявка на градиентную роль
+                    </h2>
+                </header>
+
+                <div style="max-width: 800px; margin: 0 auto;">
+                    <!-- Информация -->
+                    <div style="background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(168,85,247,0.1)); border-left: 4px solid #8b5cf6; border-radius: 12px; padding: 20px; margin-bottom: 30px;">
+                        <h3 style="margin: 0 0 12px 0; color: #8b5cf6; display: flex; align-items: center; gap: 10px;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                            Информация
+                        </h3>
+                        <p style="margin: 0; color: var(--text-secondary); line-height: 1.6;">
+                            Здесь вы можете подать заявку на создание цветной или градиентной роли для вашей команды. 
+                            Укажите название роли, выберите цвета (для градиента можно указать 2 цвета) и перечислите участников.
+                            После отправки заявки будет создан приватный Discord канал, где администрация рассмотрит вашу заявку.
+                        </p>
+                    </div>
+
+                    <!-- Форма заявки -->
+                    <div style="background: var(--bg-card); border-radius: 12px; padding: 30px; border: 1px solid var(--border-color);">
+                        <form id="gradient-role-form" style="display: flex; flex-direction: column; gap: 24px;">
+                            <!-- Название роли -->
+                            <div>
+                                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary);">
+                                    📝 Название роли <span style="color: var(--danger);">*</span>
+                                </label>
+                                <input type="text" id="role-name" required maxlength="100" placeholder="Например: Победители турнира" style="width: 100%; padding: 12px 16px; background: var(--bg-secondary); border: 2px solid var(--border-color); border-radius: 8px; font-size: 14px; color: var(--text-primary); transition: border-color 0.2s;">
+                            </div>
+
+                            <!-- Цвет 1 -->
+                            <div>
+                                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary);">
+                                    🎨 Цвет роли (HEX) <span style="color: var(--danger);">*</span>
+                                </label>
+                                <div style="display: flex; gap: 12px; align-items: center;">
+                                    <input type="text" id="role-color1" required pattern="^#?[0-9A-Fa-f]{6}$" placeholder="#FF5733" style="flex: 1; padding: 12px 16px; background: var(--bg-secondary); border: 2px solid var(--border-color); border-radius: 8px; font-size: 14px; color: var(--text-primary); font-family: monospace;">
+                                    <a href="#pipette" style="padding: 12px 20px; background: var(--accent-primary); color: white; border-radius: 8px; text-decoration: none; font-weight: 600; white-space: nowrap; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+                                        🎨 Пипетка
+                                    </a>
+                                </div>
+                                <small style="display: block; margin-top: 6px; color: var(--text-secondary);">
+                                    Используйте <a href="#pipette" style="color: var(--accent-primary);">пипетку</a> чтобы получить HEX код цвета
+                                </small>
+                            </div>
+
+                            <!-- Цвет 2 (опционально) -->
+                            <div>
+                                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary);">
+                                    🌈 Второй цвет для градиента (опционально)
+                                </label>
+                                <div style="display: flex; gap: 12px; align-items: center;">
+                                    <input type="text" id="role-color2" pattern="^#?[0-9A-Fa-f]{6}$" placeholder="#3498DB" style="flex: 1; padding: 12px 16px; background: var(--bg-secondary); border: 2px solid var(--border-color); border-radius: 8px; font-size: 14px; color: var(--text-primary); font-family: monospace;">
+                                    <a href="#pipette" style="padding: 12px 20px; background: var(--accent-primary); color: white; border-radius: 8px; text-decoration: none; font-weight: 600; white-space: nowrap; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+                                        🎨 Пипетка
+                                    </a>
+                                </div>
+                                <small style="display: block; margin-top: 6px; color: var(--text-secondary);">
+                                    Оставьте пустым для обычной цветной роли
+                                </small>
+                            </div>
+
+                            <!-- Участники -->
+                            <div>
+                                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary);">
+                                    👥 Участники команды <span style="color: var(--danger);">*</span>
+                                </label>
+                                <textarea id="role-members" required rows="4" placeholder="@user1 @user2 @user3 или укажите ID через пробел" style="width: 100%; padding: 12px 16px; background: var(--bg-secondary); border: 2px solid var(--border-color); border-radius: 8px; font-size: 14px; color: var(--text-primary); resize: vertical; font-family: inherit;"></textarea>
+                                <small style="display: block; margin-top: 6px; color: var(--text-secondary);">
+                                    Укажите участников через @упоминание, ID или ники через запятую/пробел
+                                </small>
+                            </div>
+
+                            <!-- Кнопка отправки -->
+                            <button type="submit" style="padding: 16px; background: linear-gradient(135deg, #8b5cf6, #ec4899); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 4px 12px rgba(139,92,246,0.3);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(139,92,246,0.4)'" onmouseout="this.style.transform=''; this.style.boxShadow='0 4px 12px rgba(139,92,246,0.3)'">
+                                📤 Отправить заявку
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Статус отправки -->
+                    <div id="gradient-role-status" style="margin-top: 20px; padding: 16px; border-radius: 10px; display: none;"></div>
                 </div>
             </div>
 

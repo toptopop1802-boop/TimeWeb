@@ -6,10 +6,12 @@ import re
 import socket
 import struct
 from typing import Any, Callable, Iterable, Optional
+import json
 
 import discord
 from discord import app_commands
 from discord.ext import commands, tasks
+from aiohttp import web
 
 # Импортируем базу данных (если файл .env настроен)
 try:
@@ -38,6 +40,131 @@ def chunk_members(members: Iterable[discord.Member], size: int) -> Iterable[list
             batch = []
     if batch:
         yield batch
+
+
+# Глобальная переменная для хранения ссылки на бота
+_bot_instance: Optional[commands.Bot] = None
+
+
+async def handle_gradient_role_request(request: web.Request) -> web.Response:
+    """Обработчик HTTP запросов на создание заявки на градиентную роль"""
+    global _bot_instance
+    
+    # Проверка секретного ключа
+    auth_header = request.headers.get('Authorization', '')
+    if not auth_header.startswith('Bearer '):
+        return web.json_response({'error': 'Missing authorization'}, status=401)
+    
+    token = auth_header[7:]  # Убираем 'Bearer '
+    if token != request.app['api_secret']:
+        return web.json_response({'error': 'Invalid token'}, status=403)
+    
+    try:
+        data = await request.json()
+        role_name = data.get('roleName', '').strip()
+        color1 = data.get('color1', '').strip().lstrip('#')
+        color2 = data.get('color2', '').strip().lstrip('#') if data.get('color2') else None
+        members_raw = data.get('members', '').strip()
+        user_id = data.get('userId')  # ID заявителя с сайта
+        
+        if not role_name or not color1 or not members_raw:
+            return web.json_response({'error': 'Missing required fields'}, status=400)
+        
+        # Получаем бота и гильдию
+        bot = _bot_instance
+        if not bot:
+            return web.json_response({'error': 'Bot not ready'}, status=503)
+        
+        guild_id = int(os.getenv("DISCORD_GUILD_ID", "1338592151293919354"))
+        guild = bot.get_guild(guild_id)
+        if not guild:
+            return web.json_response({'error': 'Guild not found'}, status=404)
+        
+        # Находим категорию для создания канала
+        category_id = int(os.getenv("GRADIENT_ROLE_CATEGORY_ID", "663045468871196709"))
+        category = guild.get_channel(category_id)
+        
+        # Создаем приватный канал
+        overwrites = {
+            guild.default_role: discord.PermissionOverwrite(read_messages=False),
+            guild.me: discord.PermissionOverwrite(read_messages=True, send_messages=True)
+        }
+        
+        # Добавляем заявителя
+        if user_id:
+            applicant = guild.get_member(int(user_id))
+            if applicant:
+                overwrites[applicant] = discord.PermissionOverwrite(read_messages=True, send_messages=True)
+        
+        # Добавляем администраторов
+        for member in guild.members:
+            if member.guild_permissions.administrator:
+                overwrites[member] = discord.PermissionOverwrite(read_messages=True, send_messages=True)
+        
+        channel_name = f"gradient-{role_name.lower().replace(' ', '-')}"[:100]
+        channel = await guild.create_text_channel(
+            name=channel_name,
+            category=category if isinstance(category, discord.CategoryChannel) else None,
+            overwrites=overwrites,
+            reason=f"Заявка на градиентную роль от пользователя {user_id}"
+        )
+        
+        # Создаем embed с заявкой
+        color_value = int(color1, 16) if color1 else 0x5865F2
+        embed = discord.Embed(
+            title="🌈 Заявка на градиентную роль",
+            description=f"Запрос на создание {'градиентной' if color2 else 'цветной'} роли",
+            color=discord.Color(color_value),
+            timestamp=discord.utils.utcnow()
+        )
+        embed.add_field(name="📝 Название роли", value=role_name, inline=False)
+        embed.add_field(name="🎨 Цвет 1", value=f"#{color1.upper()}", inline=True)
+        if color2:
+            embed.add_field(name="🎨 Цвет 2 (градиент)", value=f"#{color2.upper()}", inline=True)
+        embed.add_field(name="👥 Участники (указанные)", value=members_raw, inline=False)
+        embed.add_field(name="📊 Статус", value="⏳ **Ожидание рассмотрения**", inline=False)
+        
+        # Отправляем embed в канал
+        msg = await channel.send(embed=embed)
+        
+        # Отправляем инструкцию
+        await channel.send(
+            f"📌 **Инструкция для администрации:**\n"
+            f"1. Отметьте всех участников команды через @упоминание в этом канале\n"
+            f"2. После подтверждения всех участников используйте команду:\n"
+            f"```/assignrole members:@user1 @user2 role_name:\"{role_name}\" color_hex:#{color1}```\n"
+            f"{'⚠️ **Градиент**: Для градиента создайте 2 роли с разными цветами и назначьте их участникам вручную' if color2 else ''}"
+        )
+        
+        logging.info(f"✅ Created gradient role request channel: {channel.id} for role '{role_name}'")
+        
+        return web.json_response({
+            'success': True,
+            'channelId': str(channel.id),
+            'channelName': channel.name
+        })
+        
+    except Exception as exc:
+        logging.error(f"Error handling gradient role request: {exc}")
+        return web.json_response({'error': str(exc)}, status=500)
+
+
+async def start_http_server(bot: commands.Bot, port: int, secret: str):
+    """Запуск HTTP сервера для приема заявок с дашборда"""
+    global _bot_instance
+    _bot_instance = bot
+    
+    app = web.Application()
+    app['api_secret'] = secret
+    app.router.add_post('/api/gradient-role', handle_gradient_role_request)
+    
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, 'localhost', port)
+    await site.start()
+    
+    logging.info(f"🌐 HTTP API server started on http://localhost:{port}")
+    return runner
 
 
 def main() -> None:
@@ -72,6 +199,9 @@ def main() -> None:
     CONTENT_GUARD_EXEMPT_USER_ID = 663_045_468_871_196_709
     ROLE_POSITION_REFERENCE_ID = 1_380_215_358_685_839_461
     TICKET_SYSTEM_CHANNEL_ID = 1_430_092_137_583_870_092
+    GRADIENT_ROLE_CATEGORY_ID = 663_045_468_871_196_709  # ID категории для заявок на роли (ЗАМЕНИТЬ НА ПРАВИЛЬНЫЙ)
+    API_PORT = int(os.getenv("API_PORT", "8787"))
+    API_SECRET = os.getenv("API_SECRET", "bublickrust")
     RUST_SERVER_HOST = os.getenv("RUST_SERVER_HOST", "185.189.255.110")
     RUST_SERVER_PORT = int(os.getenv("RUST_SERVER_PORT", "35200"))
     RUST_QUERY_PORT = (
@@ -982,6 +1112,8 @@ def main() -> None:
             bot.rust_status_task = asyncio.create_task(rust_presence_worker())
         if DATABASE_ENABLED and bot.members_scan_task is None:
             bot.members_scan_task = asyncio.create_task(members_scan_worker())
+        # Запускаем HTTP API сервер для приема заявок с дашборда
+        asyncio.create_task(start_http_server(bot, API_PORT, API_SECRET))
 
     async def members_scan_worker() -> None:
         """Периодически сканирует участников гильдии и логирует их количество."""
