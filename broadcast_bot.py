@@ -45,7 +45,8 @@ def main() -> None:
     if not token:
         raise RuntimeError("Environment variable DISCORD_BOT_TOKEN must be set.")
 
-    guild_id_raw = os.getenv("DISCORD_GUILD_ID")
+    # ID сервера Discord (прописан прямо в коде)
+    guild_id_raw = os.getenv("DISCORD_GUILD_ID", "1338592151293919354")
     guild_id = int(guild_id_raw) if guild_id_raw else None
 
     prefix = os.getenv("DISCORD_PREFIX", "!")
