@@ -3724,25 +3724,63 @@ def main() -> None:
             content = message.content.strip().lower()
             
             # Проверяем паттерны
-            formatted_message = None
+            embed_title = None
+            embed_color = None
+            embed_description = None
             
             # Паттерн +1, +2, +3 и т.д.
             plus_match = re.match(r'\+(\d+)', content)
             if plus_match:
-                count = plus_match.group(1)
-                formatted_message = f"🎮 **Ищет ({count})**"
+                count = int(plus_match.group(1))
+                if count == 1:
+                    embed_title = "💎 Ищет (1)"
+                    embed_description = "Ищет **одного** человека в команду"
+                elif count == 2:
+                    embed_title = "💎 Ищет (2)"
+                    embed_description = "Ищет **двух** человек в команду"
+                elif count == 3:
+                    embed_title = "💎 Ищет (3)"
+                    embed_description = "Ищет **трёх** человек в команду"
+                elif count == 4:
+                    embed_title = "💎 Ищет (4)"
+                    embed_description = "Ищет **четырёх** человек в команду"
+                elif count == 5:
+                    embed_title = "💎 Ищет (5)"
+                    embed_description = "Ищет **пятерых** человек в команду"
+                else:
+                    embed_title = f"💎 Ищет ({count})"
+                    embed_description = f"Ищет **{count}** человек в команду"
+                embed_color = 0x5865F2  # Синий цвет как на скриншоте
             
             # Паттерн "зайду", "иду", "буду"
             elif content in ["зайду", "иду", "буду", "пойду", "готов"]:
-                formatted_message = "✅ **Зайду на вайп**"
+                embed_title = "✅ Зайду на вайп"
+                embed_description = "Готов играть на вайпе"
+                embed_color = 0x57F287  # Зелёный
             
             # Паттерн "не зайду", "не буду", "пропущу"
             elif content in ["не зайду", "не буду", "не иду", "пропущу", "пас"]:
-                formatted_message = "❌ **Не зайду**"
+                embed_title = "❌ Не зайду"
+                embed_description = "Пропущу этот вайп"
+                embed_color = 0xED4245  # Красный
             
             # Если не распознали паттерн - пропускаем
-            if not formatted_message:
+            if not embed_title:
                 return
+            
+            # Создаём embed
+            embed = discord.Embed(
+                title=embed_title,
+                description=embed_description,
+                color=embed_color,
+                timestamp=discord.utils.utcnow()
+            )
+            
+            # Футер с информацией о создателе
+            embed.set_footer(
+                text=f"Создано {message.author.display_name}",
+                icon_url=message.author.display_avatar.url
+            )
             
             # Получаем или создаём вебхук для канала
             webhooks = await message.channel.webhooks()
@@ -3754,9 +3792,9 @@ def main() -> None:
                     reason="Вебхук для записи на вайп"
                 )
             
-            # Отправляем сообщение от имени пользователя через вебхук
+            # Отправляем embed от имени пользователя через вебхук
             await webhook.send(
-                content=formatted_message,
+                embed=embed,
                 username=message.author.display_name,
                 avatar_url=message.author.display_avatar.url,
                 allowed_mentions=discord.AllowedMentions.none()
