@@ -220,6 +220,22 @@ async def handle_gradient_role_request(request: web.Request) -> web.Response:
             'message_id': msg.id
         }
         
+        # Сохраняем persistent view в БД
+        if bot.db:
+            await bot.db.save_persistent_view(
+                guild_id=guild.id,
+                channel_id=channel.id,
+                message_id=msg.id,
+                view_type="gradient_role",
+                view_data={
+                    'role_name': role_name,
+                    'color1': color1,
+                    'members': [m.id for m in found_members],
+                    'channel_id': channel.id,
+                    'message_id': msg.id
+                }
+            )
+        
         logging.info(f"✅ Created gradient role request channel: {channel.id} for role '{role_name}'")
         
         return web.json_response({
@@ -669,6 +685,73 @@ def main() -> None:
         """Восстанавливает Views для существующих каналов после перезапуска бота"""
         logging.info("Restoring persistent views for existing channels...")
         
+        # Если включена БД, восстанавливаем из неё
+        if bot.db:
+            for guild in bot.guilds:
+                if guild_id and guild.id != guild_id:
+                    continue
+                
+                try:
+                    # Получаем все активные persistent views из БД
+                    persistent_views = await bot.db.get_active_persistent_views(guild.id)
+                    
+                    for view_data in persistent_views:
+                        channel_id = view_data.get("channel_id")
+                        message_id = view_data.get("message_id")
+                        view_type = view_data.get("view_type")
+                        data = view_data.get("view_data", {})
+                        
+                        channel = guild.get_channel(channel_id)
+                        if not isinstance(channel, discord.TextChannel):
+                            # Канал удалён, деактивируем view
+                            await bot.db.deactivate_persistent_view(message_id)
+                            continue
+                        
+                        try:
+                            message = await channel.fetch_message(message_id)
+                            
+                            # Восстанавливаем view в зависимости от типа
+                            if view_type == "gradient_role":
+                                # Градиентная роль с дашборда
+                                if not hasattr(bot, 'gradient_requests'):
+                                    bot.gradient_requests = {}
+                                bot.gradient_requests[str(channel_id)] = data
+                                logging.info(f"Restored gradient role view in channel {channel_id}")
+                            
+                            elif view_type == "tournament_role":
+                                # Турнирная роль (заявка через бота)
+                                view = TournamentRoleApprovalView(
+                                    applicant_id=data.get("applicant_id"),
+                                    role_name=data.get("role_name"),
+                                    role_color=data.get("role_color"),
+                                    channel_id=channel_id,
+                                    tournament_info=data.get("tournament_info", "")
+                                )
+                                await message.edit(view=view)
+                                logging.info(f"Restored tournament role view in channel {channel_id}")
+                            
+                            elif view_type in ["help", "moderator", "administrator", "unban"]:
+                                # Тикеты
+                                view = ApplicationStatusView(
+                                    applicant_id=data.get("applicant_id"),
+                                    application_type=data.get("application_type", view_type)
+                                )
+                                await message.edit(view=view)
+                                logging.info(f"Restored {view_type} ticket view in channel {channel_id}")
+                            
+                        except discord.NotFound:
+                            # Сообщение удалено
+                            await bot.db.deactivate_persistent_view(message_id)
+                        except discord.HTTPException as exc:
+                            logging.error(f"Failed to restore view for message {message_id}: {exc}")
+                
+                except Exception as exc:
+                    logging.error(f"Failed to restore persistent views for guild {guild.id}: {exc}")
+            
+            logging.info("Persistent views restored from database")
+            return
+        
+        # Старый метод - парсинг каналов и сообщений
         for guild in bot.guilds:
             if guild_id and guild.id != guild_id:
                 continue
@@ -857,6 +940,10 @@ def main() -> None:
                     # Удаляем заявку из памяти
                     del bot.gradient_requests[channel_id_str]
                     
+                    # Деактивируем persistent view в БД
+                    if _bot_instance and _bot_instance.db:
+                        await _bot_instance.db.deactivate_persistent_view(interaction.message.id)
+                    
                     # Через 30 секунд удаляем канал
                     await asyncio.sleep(30)
                     await channel.delete(reason="Заявка одобрена и обработана")
@@ -876,6 +963,10 @@ def main() -> None:
                 
                 # Удаляем заявку из памяти
                 del bot.gradient_requests[channel_id_str]
+                
+                # Деактивируем persistent view в БД
+                if _bot_instance and _bot_instance.db:
+                    await _bot_instance.db.deactivate_persistent_view(interaction.message.id)
                 
                 # Через 10 секунд удаляем канал
                 await asyncio.sleep(10)
@@ -1901,7 +1992,7 @@ def main() -> None:
                     # Создаем превью цвета
                     embed.set_footer(text=f"Цвет роли: #{color_clean}")
                     
-                    await channel.send(
+                    msg = await channel.send(
                         embed=embed,
                         view=TournamentRoleApprovalView(
                             applicant_id=interaction.user.id,
@@ -1911,6 +2002,21 @@ def main() -> None:
                             tournament_info=self.tournament_info.value
                         )
                     )
+                    
+                    # Сохраняем persistent view в БД
+                    if bot.db:
+                        await bot.db.save_persistent_view(
+                            guild_id=guild.id,
+                            channel_id=channel.id,
+                            message_id=msg.id,
+                            view_type="tournament_role",
+                            view_data={
+                                "applicant_id": interaction.user.id,
+                                "role_name": self.role_name.value,
+                                "role_color": color_clean,
+                                "tournament_info": self.tournament_info.value
+                            }
+                        )
                     # Пытаемся найти и отметить участников из указанных ников
                     member_mentions = []
                     members_text = self.team_members.value
@@ -2138,6 +2244,10 @@ def main() -> None:
                 
                 await interaction.message.edit(embed=embed, view=None)
                 
+                # Деактивируем persistent view в БД
+                if bot.db:
+                    await bot.db.deactivate_persistent_view(interaction.message.id)
+                
                 # Изменяем название канала
                 try:
                     await interaction.channel.edit(name=f"✅-{interaction.channel.name}")
@@ -2226,6 +2336,10 @@ def main() -> None:
             embed.set_field_at(0, name="Статус", value=f"❌ **Отказ** {interaction.user.mention}", inline=False)
             
             await interaction.response.edit_message(embed=embed, view=None)
+            
+            # Деактивируем persistent view в БД
+            if bot.db:
+                await bot.db.deactivate_persistent_view(interaction.message.id)
             
             # Изменяем название канала
             try:
@@ -2361,6 +2475,10 @@ def main() -> None:
             
             await interaction.response.edit_message(embed=embed, view=None)
             
+            # Деактивируем persistent view в БД
+            if bot.db:
+                await bot.db.deactivate_persistent_view(interaction.message.id)
+            
             # Изменяем название канала
             try:
                 # Убираем предыдущие эмодзи статуса
@@ -2444,6 +2562,10 @@ def main() -> None:
             
             await interaction.response.edit_message(embed=embed, view=None)
             
+            # Деактивируем persistent view в БД
+            if bot.db:
+                await bot.db.deactivate_persistent_view(interaction.message.id)
+            
             # Изменяем название канала
             try:
                 # Убираем предыдущие эмодзи статуса
@@ -2515,7 +2637,18 @@ def main() -> None:
                     embed.add_field(name="Статус", value="⏳ **Ожидание**", inline=True)
                     embed.add_field(name="Проблема", value=self.problem.value, inline=False)
                     
-                    await channel.send(embed=embed, view=ApplicationStatusView(interaction.user.id, "помощь"))
+                    msg = await channel.send(embed=embed, view=ApplicationStatusView(interaction.user.id, "помощь"))
+                    
+                    # Сохраняем persistent view в БД
+                    if bot.db:
+                        await bot.db.save_persistent_view(
+                            guild_id=guild.id,
+                            channel_id=channel.id,
+                            message_id=msg.id,
+                            view_type="help",
+                            view_data={"applicant_id": interaction.user.id, "application_type": "помощь"}
+                        )
+                    
                     await channel.send(f"{interaction.user.mention}, ваша заявка создана. Ожидайте рассмотрения.")
                     
             except discord.Forbidden:
@@ -2630,7 +2763,18 @@ def main() -> None:
                     embed.add_field(name="Опыт", value=self.experience.value, inline=False)
                     embed.add_field(name="Цель", value=self.goals.value, inline=False)
                     
-                    await channel.send(embed=embed, view=ApplicationStatusView(interaction.user.id, "модератора"))
+                    msg = await channel.send(embed=embed, view=ApplicationStatusView(interaction.user.id, "модератора"))
+                    
+                    # Сохраняем persistent view в БД
+                    if bot.db:
+                        await bot.db.save_persistent_view(
+                            guild_id=guild.id,
+                            channel_id=channel.id,
+                            message_id=msg.id,
+                            view_type="moderator",
+                            view_data={"applicant_id": interaction.user.id, "application_type": "модератора"}
+                        )
+                    
                     await channel.send(f"{interaction.user.mention}, ваша заявка создана. Ожидайте рассмотрения.")
                     
             except discord.Forbidden:
@@ -2749,7 +2893,18 @@ def main() -> None:
                     embed.add_field(name="Опыт", value=self.experience.value, inline=False)
                     embed.add_field(name="Цели", value=self.goals.value, inline=False)
                     
-                    await channel.send(embed=embed, view=ApplicationStatusView(interaction.user.id, "администратора"))
+                    msg = await channel.send(embed=embed, view=ApplicationStatusView(interaction.user.id, "администратора"))
+                    
+                    # Сохраняем persistent view в БД
+                    if bot.db:
+                        await bot.db.save_persistent_view(
+                            guild_id=guild.id,
+                            channel_id=channel.id,
+                            message_id=msg.id,
+                            view_type="administrator",
+                            view_data={"applicant_id": interaction.user.id, "application_type": "администратора"}
+                        )
+                    
                     await channel.send(f"{interaction.user.mention}, ваша заявка создана. Ожидайте рассмотрения.")
                     
             except discord.Forbidden:
@@ -2835,7 +2990,18 @@ def main() -> None:
                     embed.add_field(name="Дата блокировки", value=self.ban_date.value, inline=True)
                     embed.add_field(name="Причина", value=self.reason.value, inline=False)
                     
-                    await channel.send(embed=embed, view=ApplicationStatusView(interaction.user.id, "разбан"))
+                    msg = await channel.send(embed=embed, view=ApplicationStatusView(interaction.user.id, "разбан"))
+                    
+                    # Сохраняем persistent view в БД
+                    if bot.db:
+                        await bot.db.save_persistent_view(
+                            guild_id=guild.id,
+                            channel_id=channel.id,
+                            message_id=msg.id,
+                            view_type="unban",
+                            view_data={"applicant_id": interaction.user.id, "application_type": "разбан"}
+                        )
+                    
                     await channel.send(f"{interaction.user.mention}, ваша заявка создана. Ожидайте рассмотрения.")
                     
             except discord.Forbidden:

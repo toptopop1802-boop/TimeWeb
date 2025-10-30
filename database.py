@@ -366,6 +366,77 @@ class Database:
             return False
     
     # ============================================
+    # PERSISTENT VIEWS
+    # ============================================
+    
+    async def save_persistent_view(
+        self,
+        guild_id: int,
+        channel_id: int,
+        message_id: int,
+        view_type: str,
+        view_data: Dict[str, Any]
+    ) -> bool:
+        """Сохраняет persistent view для восстановления после перезапуска"""
+        try:
+            data = {
+                "guild_id": guild_id,
+                "channel_id": channel_id,
+                "message_id": message_id,
+                "view_type": view_type,
+                "view_data": view_data,
+                "is_active": True
+            }
+            
+            # Upsert на случай, если view уже существует
+            self.client.table("persistent_views").upsert(data, on_conflict="message_id").execute()
+            logging.info(f"Saved persistent view: type={view_type}, message_id={message_id}")
+            return True
+        except Exception as exc:
+            logging.error(f"Failed to save persistent view: {exc}")
+            return False
+    
+    async def get_active_persistent_views(self, guild_id: int) -> List[Dict[str, Any]]:
+        """Получает все активные persistent views для гильдии"""
+        try:
+            response = self.client.table("persistent_views").select("*").eq("guild_id", guild_id).eq("is_active", True).execute()
+            return response.data or []
+        except Exception as exc:
+            logging.error(f"Failed to get active persistent views: {exc}")
+            return []
+    
+    async def get_persistent_view(self, message_id: int) -> Optional[Dict[str, Any]]:
+        """Получает persistent view по ID сообщения"""
+        try:
+            response = self.client.table("persistent_views").select("*").eq("message_id", message_id).execute()
+            if response.data:
+                return response.data[0]
+            return None
+        except Exception as exc:
+            logging.error(f"Failed to get persistent view: {exc}")
+            return None
+    
+    async def deactivate_persistent_view(self, message_id: int) -> bool:
+        """Деактивирует persistent view (после одобрения/отклонения)"""
+        try:
+            self.client.table("persistent_views").update({"is_active": False}).eq("message_id", message_id).execute()
+            logging.info(f"Deactivated persistent view: message_id={message_id}")
+            return True
+        except Exception as exc:
+            logging.error(f"Failed to deactivate persistent view: {exc}")
+            return False
+    
+    async def delete_persistent_view(self, message_id: int) -> bool:
+        """Удаляет persistent view"""
+        try:
+            self.client.table("persistent_views").delete().eq("message_id", message_id).execute()
+            logging.info(f"Deleted persistent view: message_id={message_id}")
+            return True
+        except Exception as exc:
+            logging.error(f"Failed to delete persistent view: {exc}")
+            return False
+    
+    # ============================================
     # CLEANUP
     # ============================================
     
