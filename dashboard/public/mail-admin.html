@@ -406,10 +406,7 @@
                         <input type="text" id="emailLocal" name="emailLocal" placeholder="username" required>
                         <span class="email-domain">@bublickrust.ru</span>
                     </div>
-                </div>
-                <div class="form-group">
-                    <label for="password">Пароль</label>
-                    <input type="password" id="password" name="password" placeholder="Введите надежный пароль" required>
+                    <small style="color: #666; margin-top: 5px; display: block;">Пароль будет сгенерирован автоматически и отображен после создания</small>
                 </div>
                 <div class="form-group">
                     <label for="displayName">Отображаемое имя (необязательно)</label>
@@ -575,22 +572,33 @@
             `;
         }
 
+        // Generate random password
+        function generatePassword(length = 16) {
+            const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+            let password = '';
+            for (let i = 0; i < length; i++) {
+                password += charset.charAt(Math.floor(Math.random() * charset.length));
+            }
+            return password;
+        }
+
         // Create mailbox
         document.getElementById('createMailboxForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const emailLocal = document.getElementById('emailLocal').value.trim();
-            const password = document.getElementById('password').value;
             const displayName = document.getElementById('displayName').value.trim();
-
             const email = `${emailLocal}@bublickrust.ru`;
+            
+            // Generate random password
+            const generatedPassword = generatePassword();
 
             try {
                 const response = await fetch('/api/mail/mailboxes', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
-                    body: JSON.stringify({ email, password, displayName })
+                    body: JSON.stringify({ email, password: generatedPassword, displayName })
                 });
 
                 if (!response.ok) {
@@ -598,7 +606,13 @@
                     throw new Error(error.error || 'Failed to create mailbox');
                 }
 
-                showAlert('✅ Почтовый ящик успешно создан!', 'success');
+                showAlert(`✅ Почтовый ящик создан! Пароль: ${generatedPassword} (сохраните его!)`, 'success');
+                
+                // Show password in alert for 10 seconds
+                setTimeout(() => {
+                    alert(`Почтовый ящик: ${email}\nПароль: ${generatedPassword}\n\nСохраните эти данные!`);
+                }, 500);
+                
                 document.getElementById('createMailboxForm').reset();
                 loadMailboxes();
             } catch (error) {
