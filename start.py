@@ -208,6 +208,17 @@ class Launcher:
         """Запустить Dashboard"""
         self.print_info("🚀 Запуск Dashboard...")
         
+        # Загружаем переменные окружения из .env файла
+        env = os.environ.copy()
+        env_file = self.dashboard_path / '.env'
+        if env_file.exists():
+            with open(env_file, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith('#') and '=' in line:
+                        key, value = line.split('=', 1)
+                        env[key.strip()] = value.strip()
+        
         try:
             process = subprocess.Popen(
                 ['node', 'server.js'],
@@ -215,7 +226,8 @@ class Launcher:
                 stderr=subprocess.STDOUT,
                 text=True,
                 bufsize=1,
-                cwd=str(self.dashboard_path)
+                cwd=str(self.dashboard_path),
+                env=env
             )
             self.processes.append(('dashboard', process))
             return process
