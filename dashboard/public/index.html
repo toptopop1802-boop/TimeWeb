@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discord Bot Dashboard - Аналитика</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='0%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%233b9bf9;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%236ac1ff;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='14' fill='%23141414'/%3E%3Crect x='16' y='40' width='8' height='16' rx='2' fill='url(%23grad)'/%3E%3Crect x='28' y='20' width='8' height='36' rx='2' fill='url(%23grad)'/%3E%3Crect x='40' y='32' width='8' height='24' rx='2' fill='url(%23grad)'/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div id="loader" class="loader">
+        <div class="loader-spinner"></div>  
+        <p>Загрузка данных...</p>
+    </div>
+
+    <div id="app" class="app" style="display: none;">
+        <aside id="sidebar" class="sidebar">
+            <div class="logo">
+                <svg class="logo-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M3 17h3V7H3v10zm5 0h3V3H8v14zm5 0h3V10h-3v7zm5 0h3V5h-3v12z"/>
+                </svg>
+                <div class="logo-text">
+                    <h1>DS Bot</h1>
+                    <p>Dashboard</p>
+                </div>
+            </div>
+            <nav>
+                <a href="#analytics" class="nav-link active" data-page="analytics">
+                    <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 20h16M6 16V8m6 8V4m6 16v-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <span class="nav-text">Аналитика</span>
+                </a>
+                <a href="#messages" class="nav-link" data-page="messages">
+                    <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v8z" stroke-width="2" stroke-linejoin="round"/></svg>
+                    <span class="nav-text">Сообщения</span>
+                </a>
+                <a href="#channels" class="nav-link" data-page="channels">
+                    <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 6h18M6 6v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V6M10 10v6m4-6v6" stroke-width="2" stroke-linecap="round"/></svg>
+                    <span class="nav-text">Автоудаление</span>
+                </a>
+                <a href="#pipette" class="nav-link" data-page="pipette">
+                    <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M14 7l3-3 3 3-3 3M4 17l6-6m0 0l4-4 3 3-4 4m-3-3l-6 6v3h3l6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <span class="nav-text">Пипетка</span>
+                </a>
+                <a href="#maps" class="nav-link" data-page="maps">
+                    <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.447 2.224A1 1 0 0 0 21 18.382V7.618a1 1 0 0 0-.553-.894L15 4m0 13V4m0 0L9 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <span class="nav-text">Хостинг карт</span>
+                </a>
+                <a href="#changelog" class="nav-link" data-page="changelog">
+                    <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <span class="nav-text">Изменения</span>
+                </a>
+                <a href="#admin" class="nav-link" data-page="admin">
+                    <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+                    <span class="nav-text">Админ</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <p class="footer-label">Последнее обновление</p>
+                <p id="last-update" class="time">--:--:--</p>
+            </div>
+        </aside>
+
+        <main class="content">
+            <!-- Analytics Page -->
+            <div id="page-analytics" class="page active">
+                <header class="page-header">
+                    <h2>📊 Аналитика сервера</h2>
+                    <div class="header-controls">
+                        <button id="demo-btn" class="btn btn-demo">✨ Демо</button>
+                        <select id="period-select" class="period-select">
+                            <option value="1" selected>Сегодня</option>
+                            <option value="7">7 дней</option>
+                            <option value="30">30 дней</option>
+                            <option value="90">90 дней</option>
+                        </select>
+                        <button id="refresh-btn" class="btn btn-primary">🔄 Обновить</button>
+                    </div>
+                </header>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                <path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <p class="stat-label">Вайпы</p>
+                            <p class="stat-value" id="stat-wipes">-</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM7 9h10v2H7V9zm6 5H7v-2h6v2zm4-6H7V6h10v2z"/>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <p class="stat-label">Тикеты</p>
+                            <p class="stat-value" id="stat-tickets">-</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <p class="stat-label">Роли</p>
+                            <p class="stat-value" id="stat-roles">-</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <p class="stat-label">Удалено каналов</p>
+                            <p class="stat-value" id="stat-deleted">-</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <h3>График активности</h3>
+                    <div class="chart-tabs">
+                        <button class="chart-tab active" data-chart="all">Все события</button>
+                        <button class="chart-tab" data-chart="wipes">Вайпы</button>
+                        <button class="chart-tab" data-chart="tickets">Тикеты</button>
+                        <button class="chart-tab" data-chart="roles">Роли</button>
+                        <button class="chart-tab" data-chart="deleted">Удаленные каналы</button>
+                        <button class="chart-tab" data-chart="members">Участники</button>
+                    </div>
+                    <canvas id="activity-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Messages Page -->
+            <div id="page-messages" class="page">
+                <header class="page-header">
+                    <h2>💬 Отправить сообщение от имени бота</h2>
+                </header>
+
+                <div class="dev-notice">
+                    <div class="building-animation">
+                        <svg class="building-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Молоток -->
+                            <g class="hammer">
+                                <rect x="90" y="40" width="20" height="4" fill="#8b7355" class="hammer-handle"/>
+                                <rect x="88" y="36" width="12" height="8" fill="#5a5a5a" class="hammer-head"/>
+                            </g>
+                            
+                            <!-- Искры -->
+                            <g class="sparks">
+                                <circle cx="60" cy="165" r="2" fill="#ffd700" class="spark spark1"/>
+                                <circle cx="75" cy="162" r="2" fill="#ff6b35" class="spark spark2"/>
+                                <circle cx="85" cy="168" r="1.5" fill="#ffd700" class="spark spark3"/>
+                                <circle cx="70" cy="170" r="1.5" fill="#ff6b35" class="spark spark4"/>
+                            </g>
+                            
+                            <!-- Фундамент -->
+                            <rect x="40" y="160" width="120" height="20" fill="#3b9bf9" opacity="0" class="build-part foundation"/>
+                            
+                            <!-- Искры для стен -->
+                            <g class="sparks-walls">
+                                <circle cx="80" cy="140" r="2" fill="#ffd700" class="spark spark-w1"/>
+                                <circle cx="95" cy="135" r="2" fill="#ff6b35" class="spark spark-w2"/>
+                                <circle cx="110" cy="142" r="1.5" fill="#ffd700" class="spark spark-w3"/>
+                            </g>
+                            <!-- Стены -->
+                            <rect x="50" y="120" width="100" height="40" fill="#3b9bf9" opacity="0" class="build-part walls"/>
+                            
+                            <!-- Окна -->
+                            <rect x="60" y="130" width="20" height="20" fill="#6ac1ff" opacity="0" class="build-part window1"/>
+                            <rect x="120" y="130" width="20" height="20" fill="#6ac1ff" opacity="0" class="build-part window2"/>
+                            
+                            <!-- Дверь -->
+                            <rect x="85" y="140" width="30" height="20" fill="#6ac1ff" opacity="0" class="build-part door"/>
+                            
+                            <!-- Искры для крыши -->
+                            <g class="sparks-roof">
+                                <circle cx="85" cy="115" r="2" fill="#ffd700" class="spark spark-r1"/>
+                                <circle cx="115" cy="118" r="2" fill="#ff6b35" class="spark spark-r2"/>
+                                <circle cx="100" cy="105" r="1.5" fill="#ffd700" class="spark spark-r3"/>
+                            </g>
+                            <!-- Крыша -->
+                            <polygon points="50,120 100,80 150,120" fill="#3b9bf9" opacity="0" class="build-part roof"/>
+                            
+                            <!-- Дым -->
+                            <circle cx="100" cy="70" r="8" fill="#6ac1ff" opacity="0" class="build-part smoke1"/>
+                            <circle cx="100" cy="60" r="6" fill="#6ac1ff" opacity="0" class="build-part smoke2"/>
+                            <circle cx="100" cy="50" r="4" fill="#6ac1ff" opacity="0" class="build-part smoke3"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3>Раздел в разработке</h3>
+                        <p>Отправка и чтение сообщений появится в ближайшем обновлении.</p>
+                    </div>
+                </div>
+
+                <div class="message-form" style="display:none;">
+                    <div class="form-group">
+                        <label for="guild-select">Сервер:</label>
+                        <select id="guild-select" class="form-control">
+                            <option value="">Выберите сервер...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="channel-select">Канал:</label>
+                        <select id="channel-select" class="form-control" disabled>
+                            <option value="">Сначала выберите сервер...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="message-content">Сообщение:</label>
+                        <textarea id="message-content" class="form-control" rows="5" placeholder="Введите текст сообщения..."></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button id="send-message-btn" class="btn btn-primary" disabled>
+                            📤 Отправить
+                        </button>
+                        <button id="read-messages-btn" class="btn read-messages-btn" disabled>
+                            📖 Читать сообщения
+                        </button>
+                    </div>
+                </div>
+
+                <div id="message-status" class="message-status"></div>
+
+                <div id="messages-container" class="messages-container" style="display: none;">
+                    <h3>Сообщения в канале</h3>
+                    <div id="messages-list"></div>
+                </div>
+            </div>
+
+            <!-- Auto-delete Channels Page -->
+            <div id="page-channels" class="page">
+                <header class="page-header">
+                    <h2>🗑️ Каналы на автоудаление</h2>
+                </header>
+
+                <div id="channels-list" class="channels-list">
+                    <!-- Динамически заполняется -->
+                </div>
+            </div>
+
+            <!-- Maps Hosting Page -->
+            <div id="page-maps" class="page">
+                <header class="page-header">
+                    <h2>
+                        <svg class="h2-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:28px;height:28px;vertical-align:-6px;margin-right:8px;"><path d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.447 2.224A1 1 0 0 0 21 18.382V7.618a1 1 0 0 0-.553-.894L15 4m0 13V4m0 0L9 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+                        Хостинг карт
+                    </h2>
+                </header>
+
+                <div class="maps-upload-section">
+                    <label class="maps-upload" for="maps-file">
+                        <input id="maps-file" type="file" accept=".map" hidden>
+                        <div class="maps-drop" id="maps-drop">
+                            <svg class="maps-upload-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                            </svg>
+                            <p class="maps-drop-text">Перетащите файл .map сюда или нажмите для выбора</p>
+                            <button class="btn btn-primary" type="button">ВЫБРАТЬ ФАЙЛ</button>
+                        </div>
+                    </label>
+                    <div id="maps-upload-progress" class="maps-upload-progress" style="display: none;">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progress-fill"></div>
+                        </div>
+                        <p class="progress-text" id="progress-text">Загрузка...</p>
+                    </div>
+                </div>
+
+                <div class="maps-list-section">
+                    <h3>Загруженные карты</h3>
+                    <div id="maps-list" class="maps-list">
+                        <p class="maps-empty">Загрузите первую карту для начала</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Changelog Page -->
+            <div id="page-changelog" class="page">
+                <header class="page-header">
+                    <h2>
+                        <svg class="h2-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:28px;height:28px;vertical-align:-6px;margin-right:8px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+                        Изменения
+                    </h2>
+                </header>
+
+                <div class="changelog-filters">
+                    <div class="filter-group">
+                        <label class="filter-label">Старые</label>
+                        <div class="changelog-grid" id="changelog-grid">
+                            <!-- Динамически заполняется -->
+                        </div>
+                        <label class="filter-label">Новые</label>
+                    </div>
+                    
+                    <div class="changelog-legend">
+                        <div class="changelog-legend-items">
+                            <div class="changelog-legend-item">
+                                <div class="changelog-legend-square added"></div>
+                                <span>Добавлено</span>
+                            </div>
+                            <div class="changelog-legend-item">
+                                <div class="changelog-legend-square fixed"></div>
+                                <span>Исправлено</span>
+                            </div>
+                            <div class="changelog-legend-item">
+                                <div class="changelog-legend-square changed"></div>
+                                <span>Изменено</span>
+                            </div>
+                        </div>
+                        <div class="changelog-pagination">
+                            <span class="changelog-pagination-label">Меньше</span>
+                            <div class="changelog-pagination-dots">
+                                <span class="changelog-pagination-dot active"></span>
+                                <span class="changelog-pagination-dot active"></span>
+                                <span class="changelog-pagination-dot"></span>
+                                <span class="changelog-pagination-dot"></span>
+                                <span class="changelog-pagination-dot"></span>
+                            </div>
+                            <span class="changelog-pagination-label">Больше</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="changelog-timeline-wrapper">
+                    <div class="changelog-timeline" id="changelog-timeline">
+                        <!-- Динамически заполняется -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Changelog Detail Page -->
+            <div id="page-changelog-detail" class="page" style="display:none;">
+                <header class="page-header">
+                    <button class="btn-back" id="changelog-back-btn">
+                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width:20px;height:20px;">
+                            <path d="M19 12H5M12 19l-7-7 7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                        </svg>
+                        Назад
+                    </button>
+                    <h2>Детали изменения</h2>
+                </header>
+
+                <div class="changelog-detail-page">
+                    <div class="changelog-detail-header">
+                        <div class="changelog-date-info">
+                            <div>
+                                <div class="changelog-date" id="changelog-detail-date">--</div>
+                                <div class="changelog-time-ago" id="changelog-detail-time-ago">--</div>
+                            </div>
+                        </div>
+                        <div class="changelog-views-info">
+                            <svg class="changelog-header-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke-width="2" fill="none"/>
+                                <circle cx="12" cy="12" r="3" stroke-width="2" fill="none"/>
+                            </svg>
+                            <span id="changelog-detail-views">0 просмотров</span>
+                        </div>
+                    </div>
+                    <div class="changelog-detail-body">
+                        <div class="changelog-sections">
+                            <div class="changelog-section" id="changelog-detail-added" style="display: none;">
+                                <h4 class="changelog-section-title">Добавлено</h4>
+                                <ul class="changelog-list" id="changelog-detail-added-list"></ul>
+                            </div>
+                            <div class="changelog-section" id="changelog-detail-fixed" style="display: none;">
+                                <h4 class="changelog-section-title">Исправлено</h4>
+                                <ul class="changelog-list" id="changelog-detail-fixed-list"></ul>
+                            </div>
+                            <div class="changelog-section" id="changelog-detail-changed" style="display: none;">
+                                <h4 class="changelog-section-title">Изменено</h4>
+                                <ul class="changelog-list" id="changelog-detail-changed-list"></ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pipette Page -->
+            <div id="page-pipette" class="page">
+                <header class="page-header">
+                    <h2>
+                        <svg class="h2-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:28px;height:28px;vertical-align:-6px;margin-right:8px;"><path d="M14 7l3-3 3 3-3 3M4 17l6-6m0 0l4-4 3 3-4 4m-3-3l-6 6v3h3l6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+                        Пипетка онлайн
+                    </h2>
+                </header>
+
+                <div class="pipette-layout">
+                    <div class="pipette-left">
+                        <label class="pipette-upload" for="pipette-file">
+                            <input id="pipette-file" type="file" accept="image/*" hidden>
+                            <div class="pipette-drop" id="pipette-drop">
+                                <p>Выберите файл или перетащите изображение сюда</p>
+                                <button class="btn btn-primary" type="button">ВЫБРАТЬ ФАЙЛ</button>
+                            </div>
+                        </label>
+                        <div class="pipette-canvas-wrap" id="pipette-canvas-wrap" style="display:none;">
+                            <canvas id="pipette-canvas"></canvas>
+                            <canvas id="pipette-magnifier"></canvas>
+                            <div class="pipette-preview" id="pipette-preview"></div>
+                        </div>
+                    </div>
+                    <div class="pipette-right">
+                        <h3>Результат:</h3>
+                        <div class="pipette-result-color" id="pipette-result-color"></div>
+                        <div class="pipette-results">
+                            <div class="pipette-row"><span>HEX</span><div class="pipette-value"><input id="pipette-hex" readonly value="#3b9bf9"><button class="copy-btn" data-copy="pipette-hex">⧉</button></div></div>
+                            <div class="pipette-row"><span>RGB</span><div class="pipette-value"><input id="pipette-rgb" readonly value="-"><button class="copy-btn" data-copy="pipette-rgb">⧉</button></div></div>
+                            <div class="pipette-row"><span>CMYK</span><div class="pipette-value"><input id="pipette-cmyk" readonly value="-"><button class="copy-btn" data-copy="pipette-cmyk">⧉</button></div></div>
+                            <div class="pipette-row"><span>HSV</span><div class="pipette-value"><input id="pipette-hsv" readonly value="-"><button class="copy-btn" data-copy="pipette-hsv">⧉</button></div></div>
+                            <div class="pipette-row"><span>HSL</span><div class="pipette-value"><input id="pipette-hsl" readonly value="-"><button class="copy-btn" data-copy="pipette-hsl">⧉</button></div></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="pipette-help">
+                <h3>Как пользоваться</h3>
+                <ul>
+                    <li>Загрузите изображение кнопкой или перетащите файл. Можно вставить по <code>Ctrl</code>+<code>V</code>.</li>
+                    <li>Ведите курсором по изображению — справа отображаются HEX, RGB, CMYK, HSV, HSL.</li>
+                    <li>ЛКМ — зафиксировать текущий цвет (повторное нажатие снимает фиксацию). Также работает клавиша <code>Space</code>.</li>
+                    <li>Клавиша <code>C</code> — копировать текущий HEX.</li>
+                    <li>Окно‑лупа показывает область 10× вокруг курсора для точного выбора пикселя.</li>
+                </ul>
+                </div>
+            </div>
+
+            <!-- Admin Page -->
+            <div id="page-admin" class="page" style="display:none;">
+                <header class="page-header">
+                    <h2>
+                        <svg class="h2-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:28px;height:28px;vertical-align:-6px;margin-right:8px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+                        Управление изменениями
+                    </h2>
+                    <button class="btn btn-primary" id="admin-add-btn">+ Создать изменение</button>
+                </header>
+
+                <div class="admin-content">
+                    <div class="admin-list" id="admin-changelog-list">
+                        <div class="admin-loading">Загрузка...</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Confirm Delete Modal -->
+    <div id="delete-confirm-modal" class="modal">
+        <div class="modal-content confirm-modal-content">
+            <div class="modal-header">
+                <h3>🗑️ Удаление карты</h3>
+                <button class="modal-close" id="delete-modal-close">&times;</button>
+            </div>
+            <div class="confirm-modal-body">
+                <svg class="confirm-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="10" fill="rgba(255, 71, 87, 0.1)" stroke="#ff4757" stroke-width="2"/>
+                    <path d="M12 8v4M12 16h.01" stroke="#ff4757" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <p class="confirm-message">Вы уверены, что хотите удалить эту карту?</p>
+                <p class="confirm-submessage">Это действие нельзя отменить.</p>
+            </div>
+            <div class="confirm-modal-actions">
+                <button class="btn btn-cancel" id="delete-cancel-btn">Отмена</button>
+                <button class="btn btn-danger" id="delete-confirm-btn">Удалить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Demo Modal -->
+    <div id="demo-modal" class="modal">
+        <div class="modal-content demo-modal-content">
+            <div class="modal-header">
+                <h3>✨ Демо-режим Dashboard</h3>
+                <button class="modal-close" id="demo-modal-close">&times;</button>
+            </div>
+
+            <div class="demo-chart-wrapper">
+                <div class="demo-topbar">
+                    <div class="demo-title">
+                        <span class="demo-dot"></span>
+                        <span>График активности</span>
+                    </div>
+                    <div class="demo-range-tabs" id="demo-range-tabs">
+                        <button class="demo-range active" data-days="1">1D</button>
+                        <button class="demo-range" data-days="7">7D</button>
+                        <button class="demo-range" data-days="30">30D</button>
+                        <button class="demo-range" data-days="90">90D</button>
+                    </div>
+                </div>
+
+                <div class="demo-type-tabs" id="demo-type-tabs">
+                    <button class="demo-type active" data-type="all">Все события</button>
+                    <button class="demo-type" data-type="wipes">Вайпы</button>
+                    <button class="demo-type" data-type="tickets">Тикеты</button>
+                    <button class="demo-type" data-type="roles">Роли</button>
+                    <button class="demo-type" data-type="deleted">Удаленные каналы</button>
+                </div>
+
+                <div class="demo-chart-canvas">
+                    <canvas id="demo-chart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Changelog Modal -->
+    <div id="admin-changelog-modal" class="modal">
+        <div class="modal-content admin-modal-content">
+            <div class="modal-header">
+                <h3 id="admin-modal-title">Создать изменение</h3>
+                <button class="modal-close" id="admin-modal-close">&times;</button>
+            </div>
+            <div class="admin-modal-body">
+                <form id="admin-changelog-form">
+                    <input type="hidden" id="admin-changelog-id">
+                    
+                    <div class="form-group">
+                        <label for="admin-build">Номер сборки *</label>
+                        <input type="text" id="admin-build" class="form-control" placeholder="3.11243.5025" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="admin-subtitle">Подзаголовок</label>
+                        <input type="text" id="admin-subtitle" class="form-control" placeholder="Исправление ошибок в Хэллоуинском ивенте">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="admin-date">Дата</label>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <input type="datetime-local" id="admin-date" class="form-control" style="flex: 1;">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="setTodayDate()">Сегодня</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Добавлено</label>
+                        <div id="admin-added-list" class="admin-items-list"></div>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="addAdminItem('added')">+ Добавить</button>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Исправлено</label>
+                        <div id="admin-fixed-list" class="admin-items-list"></div>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="addAdminItem('fixed')">+ Добавить</button>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Изменено</label>
+                        <div id="admin-changed-list" class="admin-items-list"></div>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="addAdminItem('changed')">+ Добавить</button>
+                    </div>
+                </form>
+            </div>
+            <div class="admin-modal-actions">
+                <button class="btn btn-cancel" id="admin-modal-cancel">Отмена</button>
+                <button class="btn btn-primary" id="admin-modal-save">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script src="admin-changelog.js"></script>
+    <div id="toast" class="toast"></div>
+</body>
+</html>
+
