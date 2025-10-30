@@ -161,12 +161,12 @@ async function uploadImage(file) {
                 const response = JSON.parse(xhr.responseText);
                 showToast('✅ Изображение загружено!', 'success');
                 
-                // Show result
-                const preview = document.getElementById('image-preview');
-                const urlInput = document.getElementById('image-direct-url');
+                // Generate all link formats
+                const directUrl = response.directUrl;
+                const pageUrl = directUrl; // Same as direct for our case
+                const fileName = file.name || 'image';
                 
-                preview.src = response.directUrl;
-                urlInput.value = response.directUrl;
+                displayImageResult(directUrl, pageUrl, fileName);
                 
                 progressDiv.style.display = 'none';
                 resultDiv.style.display = 'block';
@@ -176,6 +176,7 @@ async function uploadImage(file) {
                     id: response.id,
                     shortCode: response.shortCode,
                     directUrl: response.directUrl,
+                    fileName: fileName,
                     uploadedAt: new Date().toISOString()
                 });
                 renderImagesHistory();
@@ -198,7 +199,103 @@ async function uploadImage(file) {
     }
 }
 
+function displayImageResult(directUrl, pageUrl, fileName) {
+    const resultDiv = document.getElementById('image-result');
+    
+    // SVG Icons
+    const copyIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+    
+    const links = [
+        { title: 'Прямая ссылка', value: directUrl, icon: '🔗' },
+        { title: 'Markdown', value: `[${fileName}](${pageUrl})`, icon: '📝' },
+        { title: 'Markdown с превью', value: `[![${fileName}](${directUrl})](${pageUrl})`, icon: '🖼️' },
+        { title: 'BBCode для форумов', value: `[url=${pageUrl}][img]${directUrl}[/img][/url]`, icon: '💬' },
+        { title: 'HTML', value: `<a href='${pageUrl}' target='_blank'><img src='${directUrl}' alt='${fileName}'></a>`, icon: '🌐' }
+    ];
+    
+    resultDiv.innerHTML = `
+        <div style="text-align: center; margin-bottom: 20px;">
+            <img id="image-preview" src="${directUrl}" style="max-width: 100%; max-height: 300px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+        </div>
+        
+        ${links.map((link, idx) => `
+            <div style="margin-bottom: 16px;">
+                <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-weight: 600; color: var(--text-primary); font-size: 13px;">
+                    <span>${link.icon}</span>
+                    <span>${link.title}</span>
+                </label>
+                <div style="display: flex; gap: 8px;">
+                    <input 
+                        type="text" 
+                        value="${link.value.replace(/"/g, '&quot;')}" 
+                        readonly 
+                        id="link-${idx}"
+                        onclick="this.select()"
+                        style="flex: 1; padding: 10px 12px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-family: 'Consolas', 'Monaco', monospace; font-size: 12px; transition: all 0.2s;"
+                        onfocus="this.style.borderColor='var(--accent-primary)'; this.style.boxShadow='0 0 0 3px rgba(59, 130, 246, 0.1)';"
+                        onblur="this.style.borderColor='var(--border-color)'; this.style.boxShadow='none';"
+                    >
+                    <button 
+                        onclick="copyToClipboard('${link.value.replace(/'/g, "\\'")}', this)" 
+                        style="padding: 10px 16px; background: var(--accent-primary); color: white; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 600; transition: all 0.2s;"
+                        onmouseover="this.style.background='var(--accent-hover)'; this.style.transform='translateY(-1px)';"
+                        onmouseout="this.style.background='var(--accent-primary)'; this.style.transform='translateY(0)';"
+                    >
+                        ${copyIcon}
+                        <span>Копировать</span>
+                    </button>
+                </div>
+            </div>
+        `).join('')}
+        
+        <div style="margin-top: 24px; padding: 16px; background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(59, 130, 246, 0.1)); border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.2);">
+            <p style="margin: 0; color: var(--text-secondary); font-size: 13px; display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 18px;">✅</span>
+                <span>Эти ссылки можно использовать где угодно - на других сайтах, в Discord, Telegram и т.д.</span>
+            </p>
+        </div>
+    `;
+}
+
+function copyToClipboard(text, button) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(() => {
+                showCopySuccess(button);
+            });
+        } else {
+            document.execCommand('copy');
+            showCopySuccess(button);
+        }
+    } catch (err) {
+        showToast('Не удалось скопировать');
+    } finally {
+        document.body.removeChild(textarea);
+    }
+}
+
+function showCopySuccess(button) {
+    const originalHTML = button.innerHTML;
+    button.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> <span>Скопировано!</span>`;
+    button.style.background = '#10b981';
+    
+    setTimeout(() => {
+        button.innerHTML = originalHTML;
+        button.style.background = 'var(--accent-primary)';
+    }, 2000);
+    
+    showToast('✅ Скопировано в буфер обмена!', 'success');
+}
+
 function copyImageUrl() {
+    // Legacy function, kept for compatibility
     const input = document.getElementById('image-direct-url');
     if (!input) return;
 
@@ -226,36 +323,66 @@ function renderImagesHistory() {
         return;
     }
 
-    listDiv.innerHTML = uploadedImages.map(img => `
-        <div style="background:var(--bg-secondary);border-radius:12px;padding:15px;margin-bottom:15px;display:flex;gap:15px;align-items:center;">
-            <img src="${img.directUrl}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;">
-            <div style="flex:1;">
-                <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px;">
-                    <input type="text" value="${img.directUrl}" readonly style="flex:1;padding:8px;background:var(--bg-card);border:1px solid var(--border-color);border-radius:6px;color:var(--text-primary);font-family:monospace;font-size:12px;">
-                    <button class="btn btn-sm" onclick="copyToClipboard('${img.directUrl}')" style="padding:8px 16px;">📋</button>
-                </div>
-                <p style="color:var(--text-secondary);font-size:12px;margin:0;">Загружено: ${new Date(img.uploadedAt).toLocaleString('ru-RU')}</p>
-            </div>
-        </div>
-    `).join('');
-}
+    const copyIcon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
 
-function copyToClipboard(text) {
-    try {
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(text);
-        } else {
-            const input = document.createElement('input');
-            input.value = text;
-            document.body.appendChild(input);
-            input.select();
-            document.execCommand('copy');
-            document.body.removeChild(input);
-        }
-        showToast('✅ Скопировано!', 'success');
-    } catch (err) {
-        showToast('Не удалось скопировать');
-    }
+    listDiv.innerHTML = uploadedImages.map((img, idx) => {
+        const fileName = img.fileName || 'image';
+        const directUrl = img.directUrl;
+        
+        return `
+        <div style="background:var(--bg-secondary);border-radius:12px;padding:20px;margin-bottom:20px;">
+            <div style="display:flex;gap:15px;margin-bottom:15px;">
+                <img src="${directUrl}" 
+                     style="width:100px;height:100px;object-fit:cover;border-radius:8px;cursor:pointer;transition:transform 0.2s;" 
+                     onclick="window.open('${directUrl}', '_blank')"
+                     onmouseover="this.style.transform='scale(1.05)'"
+                     onmouseout="this.style.transform='scale(1)'">
+                <div style="flex:1;">
+                    <h4 style="margin:0 0 8px 0;color:var(--text-primary);font-size:14px;">${fileName}</h4>
+                    <p style="color:var(--text-secondary);font-size:12px;margin:0 0 12px 0;">
+                        📅 ${new Date(img.uploadedAt).toLocaleString('ru-RU')}
+                    </p>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                        <button onclick="copyToClipboard('${directUrl.replace(/'/g, "\\'")}', this)" 
+                                style="padding:6px 12px;background:var(--accent-primary);color:white;border:none;border-radius:6px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:4px;"
+                                onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                            ${copyIcon} Прямая ссылка
+                        </button>
+                        <button onclick="copyToClipboard('[${fileName}](${directUrl})', this)" 
+                                style="padding:6px 12px;background:#6366f1;color:white;border:none;border-radius:6px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:4px;"
+                                onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                            ${copyIcon} Markdown
+                        </button>
+                        <button onclick="copyToClipboard('[url=${directUrl}][img]${directUrl}[/img][/url]', this)" 
+                                style="padding:6px 12px;background:#8b5cf6;color:white;border:none;border-radius:6px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:4px;"
+                                onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                            ${copyIcon} BBCode
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <details style="margin-top:12px;">
+                <summary style="cursor:pointer;color:var(--accent-primary);font-size:12px;padding:8px;background:var(--bg-card);border-radius:6px;user-select:none;">
+                    📋 Показать все форматы
+                </summary>
+                <div style="margin-top:12px;padding:12px;background:var(--bg-card);border-radius:8px;font-family:monospace;font-size:11px;color:var(--text-secondary);">
+                    <div style="margin-bottom:8px;">
+                        <strong style="color:var(--text-primary);">Прямая ссылка:</strong><br>
+                        <code style="word-break:break-all;">${directUrl}</code>
+                    </div>
+                    <div style="margin-bottom:8px;">
+                        <strong style="color:var(--text-primary);">Markdown:</strong><br>
+                        <code>[${fileName}](${directUrl})</code>
+                    </div>
+                    <div style="margin-bottom:8px;">
+                        <strong style="color:var(--text-primary);">HTML:</strong><br>
+                        <code style="word-break:break-all;">&lt;img src="${directUrl}" alt="${fileName}"&gt;</code>
+                    </div>
+                </div>
+            </details>
+        </div>
+        `;
+    }).join('');
 }
 
 // Global exports
