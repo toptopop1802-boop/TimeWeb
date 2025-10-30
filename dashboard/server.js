@@ -726,9 +726,13 @@ function createApp() {
 // Start server in non-serverless environments
 if (!IS_SERVERLESS && require.main === module) {
     const app = createApp();
-    app.listen(PORT, () => {
-        console.log(`🚀 Dashboard server running on http://localhost:${PORT}`);
+    const HOST = process.env.HOST || '0.0.0.0';
+    app.listen(PORT, HOST, () => {
+        console.log(`🚀 Dashboard server running on http://${HOST}:${PORT}`);
         console.log(`📊 Visit http://localhost:${PORT} to view analytics`);
+        if (HOST === '0.0.0.0') {
+            console.log(`🌐 External access: http://ваш_домен:${PORT}`);
+        }
     });
 }
 
