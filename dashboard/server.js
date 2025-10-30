@@ -416,25 +416,42 @@ function createApp() {
                 return res.status(503).json({ error: 'Supabase not configured' });
             }
 
-            // List files to find the one with matching ID
-            const { data: files, error: listError } = await supabase.storage
-                .from('maps')
-                .list('');
+            console.log('📥 Download request for ID:', req.params.id);
 
-            if (listError) throw listError;
+            // Try both paths
+            let files = null;
+            let error = null;
+            
+            // First try maps/ folder
+            const result1 = await supabase.storage.from('maps').list('maps');
+            if (!result1.error && result1.data) {
+                files = result1.data;
+            } else {
+                // Fallback to root
+                const result2 = await supabase.storage.from('maps').list('');
+                files = result2.data;
+                error = result2.error;
+            }
+
+            if (error) throw error;
+
+            console.log('📁 Looking in files:', files?.map(f => f.name));
 
             // Find file by ID (ID is filename without extension)
             const file = files?.find(f => {
                 const fileExt = path.extname(f.name);
                 const fileId = path.basename(f.name, fileExt);
+                console.log(`  Comparing: ${fileId} === ${req.params.id}`);
                 return fileId === req.params.id;
             });
 
             if (!file) {
+                console.error('❌ File not found for ID:', req.params.id);
                 return res.status(404).json({ error: 'Карта не найдена' });
             }
 
-            const storagePath = file.name;
+            console.log('✅ Found file:', file.name);
+            const storagePath = file.name.startsWith('maps/') ? file.name : `maps/${file.name}`;
 
             // Get file from Supabase Storage
             const { data: fileData, error: downloadError } = await supabase.storage
@@ -470,25 +487,38 @@ function createApp() {
                 return res.status(503).json({ error: 'Supabase not configured' });
             }
 
-            // List files to find the one with matching ID
-            const { data: files, error: listError } = await supabase.storage
-                .from('maps')
-                .list('');
+            console.log('🗑️ Delete request for ID:', req.params.id);
 
-            if (listError) throw listError;
+            // Try both paths
+            let files = null;
+            
+            // First try maps/ folder
+            const result1 = await supabase.storage.from('maps').list('maps');
+            if (!result1.error && result1.data) {
+                files = result1.data;
+            } else {
+                // Fallback to root
+                const result2 = await supabase.storage.from('maps').list('');
+                files = result2.data;
+            }
+
+            console.log('📁 Looking in files for delete:', files?.map(f => f.name));
 
             // Find file by ID
             const file = files?.find(f => {
                 const fileExt = path.extname(f.name);
                 const fileId = path.basename(f.name, fileExt);
+                console.log(`  Delete comparing: ${fileId} === ${req.params.id}`);
                 return fileId === req.params.id;
             });
 
             if (!file) {
+                console.error('❌ File not found for delete:', req.params.id);
                 return res.status(404).json({ error: 'Карта не найдена' });
             }
 
-            const storagePath = file.name;
+            console.log('✅ Deleting file:', file.name);
+            const storagePath = file.name.startsWith('maps/') ? file.name : `maps/${file.name}`;
 
             // Delete file from storage
             const { error: storageError } = await supabase.storage
@@ -749,13 +779,22 @@ function createApp() {
             }
 
             const shortCode = req.params.shortCode;
+            console.log('🔗 Short URL request:', shortCode);
             
-            // List all maps to find matching short code
-            const { data: files, error: listError } = await supabase.storage
-                .from('maps')
-                .list('');
+            // Try both paths
+            let files = null;
+            
+            // First try maps/ folder
+            const result1 = await supabase.storage.from('maps').list('maps');
+            if (!result1.error && result1.data) {
+                files = result1.data;
+            } else {
+                // Fallback to root
+                const result2 = await supabase.storage.from('maps').list('');
+                files = result2.data;
+            }
 
-            if (listError) throw listError;
+            console.log('📁 Files for short URL:', files?.map(f => f.name));
 
             // Generate short codes and find match
             const file = files?.find(f => {
@@ -784,7 +823,8 @@ function createApp() {
                 `);
             }
 
-            const storagePath = file.name;
+            const storagePath = file.name.startsWith('maps/') ? file.name : `maps/${file.name}`;
+            console.log('✅ Short URL matched file:', file.name, '-> path:', storagePath);
 
             // Download file from storage
             const { data: fileData, error: downloadError } = await supabase.storage
