@@ -86,11 +86,18 @@ async def handle_gradient_role_request(request: web.Request) -> web.Response:
             guild.me: discord.PermissionOverwrite(read_messages=True, send_messages=True)
         }
         
-        # Добавляем заявителя
+        # Добавляем заявителя (если это Discord ID)
         if user_id:
-            applicant = guild.get_member(int(user_id))
-            if applicant:
-                overwrites[applicant] = discord.PermissionOverwrite(read_messages=True, send_messages=True)
+            try:
+                # Пытаемся конвертировать в int (если это Discord ID)
+                discord_id = int(user_id)
+                applicant = guild.get_member(discord_id)
+                if applicant:
+                    overwrites[applicant] = discord.PermissionOverwrite(read_messages=True, send_messages=True)
+                    logging.info(f"Added applicant {applicant.name} to channel")
+            except (ValueError, TypeError):
+                # Если не Discord ID (например UUID с сайта) - пропускаем
+                logging.warning(f"user_id '{user_id}' is not a Discord ID, skipping applicant")
         
         # Добавляем администраторов
         for member in guild.members:
@@ -139,9 +146,24 @@ async def handle_gradient_role_request(request: web.Request) -> web.Response:
             'channelName': channel.name
         })
         
+    except discord.Forbidden as exc:
+        logging.error(f"❌ Permission denied when creating channel: {exc}")
+        return web.json_response({
+            'success': False,
+            'error': 'Бот не имеет прав для создания канала'
+        }, status=403)
+    except discord.HTTPException as exc:
+        logging.error(f"❌ Discord API error: {exc}")
+        return web.json_response({
+            'success': False,
+            'error': f'Ошибка Discord API: {exc}'
+        }, status=500)
     except Exception as exc:
-        logging.error(f"Error handling gradient role request: {exc}")
-        return web.json_response({'error': str(exc)}, status=500)
+        logging.error(f"❌ Error handling gradient role request: {exc}", exc_info=True)
+        return web.json_response({
+            'success': False,
+            'error': str(exc)
+        }, status=500)
 
 
 async def start_http_server(bot: commands.Bot, port: int, secret: str):
