@@ -442,11 +442,24 @@
         </div>
     </div>
 
+    <script src="auth-helper.js"></script>
     <script>
         let mailboxes = [];
+        let authData = null;
 
         // Load mailboxes on page load
-        window.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('DOMContentLoaded', async () => {
+            // Check authentication
+            authData = await requireAuth();
+            if (!authData) return;
+
+            // Check if user is admin
+            if (!isAdmin(authData)) {
+                alert('Доступ запрещен. Требуются права администратора.');
+                window.location.href = '/';
+                return;
+            }
+
             loadMailboxes();
         });
 
@@ -454,7 +467,9 @@
         async function loadMailboxes() {
             try {
                 const response = await fetch('/api/mail/mailboxes', {
-                    credentials: 'include'
+                    headers: {
+                        'Authorization': `Bearer ${authData.token}`
+                    }
                 });
 
                 if (!response.ok) {
@@ -494,7 +509,9 @@
             const mailboxesWithStats = await Promise.all(mailboxes.map(async (mailbox) => {
                 try {
                     const statsResponse = await fetch(`/api/mail/mailboxes/${mailbox.id}/stats`, {
-                        credentials: 'include'
+                        headers: {
+                            'Authorization': `Bearer ${authData.token}`
+                        }
                     });
                     if (statsResponse.ok) {
                         const stats = await statsResponse.json();
@@ -586,8 +603,10 @@
             try {
                 const response = await fetch('/api/mail/mailboxes', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authData.token}`
+                    },
                     body: JSON.stringify({ email, password: generatedPassword, displayName })
                 });
 
@@ -617,7 +636,9 @@
                 
                 const response = await fetch(`/api/mail/mailboxes/${mailboxId}/sync`, {
                     method: 'POST',
-                    credentials: 'include'
+                    headers: {
+                        'Authorization': `Bearer ${authData.token}`
+                    }
                 });
 
                 if (!response.ok) {
@@ -642,7 +663,9 @@
             try {
                 const response = await fetch(`/api/mail/mailboxes/${mailboxId}`, {
                     method: 'DELETE',
-                    credentials: 'include'
+                    headers: {
+                        'Authorization': `Bearer ${authData.token}`
+                    }
                 });
 
                 if (!response.ok) {
@@ -677,8 +700,10 @@
             try {
                 const response = await fetch(`/api/mail/mailboxes/${mailboxId}/password`, {
                     method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authData.token}`
+                    },
                     body: JSON.stringify({ newPassword })
                 });
 
