@@ -1,4 +1,5 @@
 // Auth API routes
+const crypto = require('crypto');
 const { generateToken, hashPassword, verifyPassword, requireAuth, requireAdmin } = require('./auth-middleware');
 
 function setupAuthRoutes(app, supabase) {
@@ -134,6 +135,60 @@ function setupAuthRoutes(app, supabase) {
             });
         } catch (error) {
             console.error('Login error:', error);
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // Гостевой вход (без регистрации)
+    app.post('/api/auth/guest', async (req, res) => {
+        try {
+            // Создаем временного гостевого пользователя
+            const guestUsername = `guest_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+            const guestEmail = `${guestUsername}@guest.local`;
+            const guestPassword = crypto.randomBytes(32).toString('hex');
+            
+            const password_hash = await hashPassword(guestPassword);
+
+            // Создаем гостевого пользователя в БД
+            const { data: user, error } = await supabase
+                .from('users')
+                .insert({
+                    username: guestUsername,
+                    email: guestEmail,
+                    password_hash,
+                    role: 'user'
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            // Создаем сессию
+            const token = generateToken();
+            const expires_at = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 часа для гостей
+
+            await supabase
+                .from('sessions')
+                .insert({
+                    user_id: user.id,
+                    token,
+                    expires_at: expires_at.toISOString(),
+                    ip_address: req.ip,
+                    user_agent: req.headers['user-agent']
+                });
+
+            res.json({
+                success: true,
+                token,
+                user: {
+                    id: user.id,
+                    username: user.username,
+                    email: user.email,
+                    role: user.role
+                }
+            });
+        } catch (error) {
+            console.error('Guest login error:', error);
             res.status(500).json({ error: error.message });
         }
     });

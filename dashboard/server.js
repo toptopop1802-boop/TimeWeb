@@ -75,6 +75,12 @@ function createApp() {
     // API ENDPOINTS
     // ============================================
 
+    // Setup auth routes
+    if (supabase) {
+        setupAuthRoutes(app, supabase);
+        console.log('✅ Auth routes initialized');
+    }
+
     // Получить статистику за период
     app.get('/api/stats', async (req, res) => {
         try {

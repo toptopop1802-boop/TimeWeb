@@ -6,23 +6,57 @@
     <title>Вход - DS Bot Dashboard</title>
     <link rel="stylesheet" href="style.css">
     <style>
+        /* Используем те же стили что и основной dashboard */
+        body {
+            position: relative;
+        }
+
+        /* Сетка как в dashboard */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 1;
+            background:
+                linear-gradient(0deg, rgba(255,255,255,0.06) 1px, transparent 1px) repeat-y,
+                linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px) repeat-x,
+                radial-gradient(1200px 800px at 10% -10%, rgba(59,155,249,0.06), transparent 60%),
+                radial-gradient(1200px 800px at 120% 110%, rgba(106,193,255,0.045), transparent 60%);
+            background-size: 24px 24px, 24px 24px, auto, auto;
+        }
+
+        /* Виньетка */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            box-shadow: inset 0 0 120px rgba(0,0,0,0.35);
+        }
+
         .login-page {
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             padding: 20px;
+            position: relative;
+            z-index: 2;
         }
 
         .login-container {
-            background: var(--bg-primary);
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
             border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
             padding: 40px;
             width: 100%;
             max-width: 400px;
             animation: slideIn 0.5s ease;
+            position: relative;
+            z-index: 10;
         }
 
         @keyframes slideIn {
@@ -84,7 +118,7 @@
         .btn-login {
             width: 100%;
             padding: 14px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
             color: white;
             border: none;
             border-radius: 10px;
@@ -96,7 +130,27 @@
 
         .btn-login:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 10px 20px rgba(59, 155, 249, 0.4);
+        }
+        
+        .btn-guest {
+            width: 100%;
+            padding: 14px;
+            background: transparent;
+            color: var(--text-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 10px;
+        }
+
+        .btn-guest:hover {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+            transform: translateY(-2px);
         }
 
         .btn-login:active {
@@ -183,7 +237,7 @@
         }
 
         .tab.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
             color: white;
         }
 
@@ -224,6 +278,7 @@
                         <input type="password" id="login-password" name="password" required autocomplete="current-password">
                     </div>
                     <button type="submit" class="btn-login">Войти</button>
+                    <button type="button" class="btn-guest" onclick="loginAsGuest()">🚶 Войти как гость</button>
                 </form>
             </div>
 
@@ -251,7 +306,9 @@
             </div>
 
             <div class="form-footer">
-                <p>Первый админ: <code>admin / admin123</code></p>
+                <p style="color: var(--text-secondary); font-size: 14px;">
+                    💡 Совет: Нажмите "Войти как гость" для быстрого доступа без регистрации
+                </p>
             </div>
         </div>
     </div>
@@ -395,6 +452,33 @@
                 submitBtn.textContent = 'Зарегистрироваться';
             }
         });
+
+        // Guest login function
+        async function loginAsGuest() {
+            try {
+                showSuccess('Вход как гость...');
+                
+                const response = await fetch('/api/auth/guest', {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success && result.token) {
+                    localStorage.setItem('auth_token', result.token);
+                    localStorage.setItem('user', JSON.stringify(result.user));
+                    
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 500);
+                } else {
+                    showError(result.error || 'Ошибка входа как гость');
+                }
+            } catch (error) {
+                showError('Ошибка соединения с сервером');
+            }
+        }
+        window.loginAsGuest = loginAsGuest;
 
         // Check if already logged in
         const token = localStorage.getItem('auth_token');

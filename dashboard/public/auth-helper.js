@@ -1,5 +1,31 @@
 // Auth Helper - проверка авторизации и управление сессией
 
+// Создать гостевую сессию
+async function createGuestSession() {
+    try {
+        const response = await fetch('/api/auth/guest', {
+            method: 'POST'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success && result.token) {
+            localStorage.setItem('auth_token', result.token);
+            localStorage.setItem('user', JSON.stringify(result.user));
+            
+            return { token: result.token, user: result.user };
+        }
+        
+        // Если не удалось создать гостя, редиректим на login
+        window.location.href = '/login.html';
+        return null;
+    } catch (error) {
+        console.error('Failed to create guest session:', error);
+        window.location.href = '/login.html';
+        return null;
+    }
+}
+
 // Получить данные авторизации
 function getAuthData() {
     const token = localStorage.getItem('auth_token');
@@ -17,13 +43,18 @@ function getAuthData() {
     }
 }
 
-// Проверить авторизацию (редирект на login если не авторизован)
-async function requireAuth() {
+// Проверить авторизацию (редирект на login если не авторизован, или создать гостевую сессию)
+async function requireAuth(autoGuest = true) {
     const authData = getAuthData();
     
     if (!authData) {
-        window.location.href = '/login.html';
-        return null;
+        if (autoGuest) {
+            // Автоматически входим как гость
+            return await createGuestSession();
+        } else {
+            window.location.href = '/login.html';
+            return null;
+        }
     }
     
     // Проверяем что токен валидный
@@ -156,14 +187,28 @@ function displayUserInfo(authData) {
             cursor: pointer;
         `;
         
-        const roleColor = isAdmin(authData) ? '#ef4444' : '#10b981';
-        const roleText = isAdmin(authData) ? 'Админ' : 'Пользователь';
+        const isGuest = authData.user.username.startsWith('guest_');
+        const roleColor = isAdmin(authData) ? '#ef4444' : (isGuest ? '#a0a0a0' : '#10b981');
+        const roleText = isAdmin(authData) ? 'Админ' : (isGuest ? 'Гость' : 'Пользователь');
+        const displayName = isGuest ? 'Гость' : authData.user.username;
         
         userInfo.innerHTML = `
             <div style="text-align: right;">
-                <div style="font-weight: 600; color: var(--text-primary);">${authData.user.username}</div>
+                <div style="font-weight: 600; color: var(--text-primary);">${displayName}</div>
                 <div style="font-size: 12px; color: ${roleColor};">${roleText}</div>
             </div>
+            ${isGuest ? `
+                <button onclick="window.location.href='/login.html'" style="
+                    padding: 6px 12px;
+                    background: var(--accent-primary);
+                    color: white;
+                    border: none;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    font-size: 12px;
+                    margin-right: 5px;
+                ">Войти</button>
+            ` : ''}
             <button onclick="logout()" style="
                 padding: 6px 12px;
                 background: var(--danger);
@@ -180,6 +225,7 @@ function displayUserInfo(authData) {
 }
 
 // Экспорт функций для глобального использования
+window.createGuestSession = createGuestSession;
 window.getAuthData = getAuthData;
 window.requireAuth = requireAuth;
 window.isAdmin = isAdmin;
