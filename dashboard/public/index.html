@@ -63,10 +63,6 @@
                     <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
                     <span class="nav-text">🌈 Заявка на роль</span>
                 </a>
-                <a href="#activity" class="nav-link" data-page="activity">
-                    <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
-                    <span class="nav-text">🎯 Активность</span>
-                </a>
                 <a href="#api" class="nav-link" data-page="api">
                     <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polyline points="16 18 22 12 16 6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"></polyline><polyline points="8 6 2 12 8 18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"></polyline></svg>
                     <span class="nav-text">API</span>
@@ -98,6 +94,12 @@
                 </svg>
                 <span id="theme-text" style="font-size: 13px; font-weight: 600;">Темная</span>
             </button>
+            <a href="activity.html" style="padding: 8px 16px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; color: white; text-decoration: none; font-weight: 600; font-size: 13px; margin-right: 15px; transition: all 0.2s; box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(99, 102, 241, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(99, 102, 241, 0.3)'">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                </svg>
+                <span>Моя активность</span>
+            </a>
         </div>
 
         <main class="content">
@@ -703,59 +705,6 @@
 
                     <!-- Статус отправки -->
                     <div id="gradient-role-status" style="margin-top: 20px; padding: 16px; border-radius: 10px; display: none;"></div>
-                </div>
-            </div>
-
-            <!-- Activity Page -->
-            <div id="page-activity" class="page" style="display:none;">
-                <header class="page-header">
-                    <h2>
-                        <svg class="h2-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:28px;height:28px;vertical-align:-6px;margin-right:8px;">
-                            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                        </svg>
-                        🎯 Моя активность
-                    </h2>
-                </header>
-
-                <!-- Stats Grid -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px;">
-                    <div class="card" style="text-align: center;">
-                        <div style="font-size: 48px; margin-bottom: 10px;">📤</div>
-                        <div style="font-size: 36px; font-weight: 700; margin-bottom: 6px;" id="activity-upload-count">0</div>
-                        <div style="color: var(--text-secondary); font-size: 14px;">Загрузок карт</div>
-                    </div>
-                    <div class="card" style="text-align: center;">
-                        <div style="font-size: 48px; margin-bottom: 10px;">📥</div>
-                        <div style="font-size: 36px; font-weight: 700; margin-bottom: 6px;" id="activity-download-count">0</div>
-                        <div style="color: var(--text-secondary); font-size: 14px;">Скачиваний</div>
-                    </div>
-                    <div class="card" style="text-align: center;">
-                        <div style="font-size: 48px; margin-bottom: 10px;">🗑️</div>
-                        <div style="font-size: 36px; font-weight: 700; margin-bottom: 6px;" id="activity-delete-count">0</div>
-                        <div style="color: var(--text-secondary); font-size: 14px;">Удалений</div>
-                    </div>
-                    <div class="card" style="text-align: center;">
-                        <div style="font-size: 48px; margin-bottom: 10px;">🔐</div>
-                        <div style="font-size: 36px; font-weight: 700; margin-bottom: 6px;" id="activity-login-count">0</div>
-                        <div style="color: var(--text-secondary); font-size: 14px;">Входов</div>
-                    </div>
-                </div>
-
-                <!-- Activity Timeline -->
-                <div class="card">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
-                        <h3>📊 История действий</h3>
-                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                            <button class="activity-filter-btn active" data-filter="all" style="padding: 8px 16px; background: var(--accent-primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s;">Все</button>
-                            <button class="activity-filter-btn" data-filter="map_upload" style="padding: 8px 16px; background: transparent; color: var(--text-secondary); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s;">Загрузки</button>
-                            <button class="activity-filter-btn" data-filter="map_download" style="padding: 8px 16px; background: transparent; color: var(--text-secondary); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s;">Скачивания</button>
-                            <button class="activity-filter-btn" data-filter="map_delete" style="padding: 8px 16px; background: transparent; color: var(--text-secondary); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s;">Удаления</button>
-                            <button class="activity-filter-btn" data-filter="login" style="padding: 8px 16px; background: transparent; color: var(--text-secondary); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s;">Входы</button>
-                        </div>
-                    </div>
-                    <div id="activity-timeline">
-                        <p style="color: var(--text-secondary); text-align: center; padding: 40px 0;">Загрузка активности...</p>
-                    </div>
                 </div>
             </div>
 
