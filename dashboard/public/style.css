@@ -112,13 +112,22 @@ body::after {
 }
 
 .sidebar {
-    width: 72px; /* Уменьшенная ширина - только иконки */
+    width: 72px !important; /* Уменьшенная ширина - только иконки */
+    min-width: 72px !important;
+    max-width: 72px !important;
     background: var(--bg-darker);
     border-right: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
     padding: 20px 10px;
     overflow: hidden;
+    transition: none !important; /* Отключаем анимации расширения */
+}
+
+.sidebar.expanded {
+    width: 72px !important; /* Всегда остается 72px даже с классом expanded */
+    min-width: 72px !important;
+    max-width: 72px !important;
 }
 
 .logo { display: flex; align-items: center; justify-content: center; gap: 12px; }

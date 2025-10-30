@@ -1219,7 +1219,15 @@ function setupPipette() {
             const id = btn.dataset.copy;
             const input = document.getElementById(id);
             if (input) {
-                navigator.clipboard.writeText(input.value).then(() => showToast('Скопировано'));
+                const text = input.value;
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(() => showToast('Скопировано')).catch(() => {
+                        // Fallback для старых браузеров
+                        fallbackCopy(text);
+                    });
+                } else {
+                    fallbackCopy(text);
+                }
             }
         });
     });
@@ -2151,8 +2159,25 @@ async function incrementChangelogViews(id) {
 }
 
 // ============================================
-// API HELPERS
+// COPY HELPERS (defined early for onclick handlers)
 // ============================================
+
+function fallbackCopy(text) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    textarea.style.left = '-9999px';
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+        document.execCommand('copy');
+        showToast('✅ Скопировано!', 'success');
+    } catch (err) {
+        showToast('Не удалось скопировать', 'error');
+    }
+    document.body.removeChild(textarea);
+}
 
 function copyApiEndpoint() {
     const input = document.getElementById('api-endpoint-url');
@@ -2161,15 +2186,19 @@ function copyApiEndpoint() {
     input.select();
     input.setSelectionRange(0, 99999);
     
+    const text = input.value;
     try {
         if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(input.value);
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('✅ API endpoint скопирован!', 'success');
+            }).catch(() => {
+                fallbackCopy(text);
+            });
         } else {
-            document.execCommand('copy');
+            fallbackCopy(text);
         }
-        showToast('✅ API endpoint скопирован!', 'success');
     } catch (err) {
-        showToast('Не удалось скопировать');
+        fallbackCopy(text);
     }
 }
 
@@ -2214,22 +2243,9 @@ function copyCode(elementId) {
     }
 }
 
-function fallbackCopy(text) {
-    const textarea = document.createElement('textarea');
-    textarea.value = text;
-    textarea.style.position = 'fixed';
-    textarea.style.opacity = '0';
-    textarea.style.left = '-9999px';
-    document.body.appendChild(textarea);
-    textarea.select();
-    try {
-        document.execCommand('copy');
-        showToast('✅ Код скопирован!', 'success');
-    } catch (err) {
-        showToast('Не удалось скопировать', 'error');
-    }
-    document.body.removeChild(textarea);
-}
+// Экспортируем функции глобально сразу
+window.copyApiEndpoint = copyApiEndpoint;
+window.copyCode = copyCode;
 
 // Переключение темы
 function toggleTheme() {
@@ -2281,7 +2297,6 @@ function loadTheme() {
     updateThemeButton(savedTheme);
 }
 
-window.copyApiEndpoint = copyApiEndpoint;
-window.copyCode = copyCode;
+// Функции уже экспортированы выше
 window.toggleTheme = toggleTheme;
 
