@@ -345,30 +345,44 @@ function createApp() {
                 return res.status(503).json({ error: 'Supabase not configured' });
             }
 
-            // List all files from Storage bucket
+            // List all files from Storage bucket (root of bucket)
             const { data: files, error } = await supabase.storage
                 .from('maps')
-                .list('maps/', {
+                .list('maps', {
                     limit: 100,
                     offset: 0,
                     sortBy: { column: 'created_at', order: 'desc' }
                 });
 
             if (error) {
-                console.error('Supabase storage error:', error);
-                // Если bucket не существует или нет доступа
-                if (error.message && error.message.includes('not found')) {
-                    return res.json([]); // Возвращаем пустой массив
+                console.error('Supabase storage list error:', error);
+                // Если папка не существует, попробуем корень
+                const { data: rootFiles, error: rootError } = await supabase.storage
+                    .from('maps')
+                    .list('', {
+                        limit: 100,
+                        offset: 0,
+                        sortBy: { column: 'created_at', order: 'desc' }
+                    });
+                
+                if (rootError) {
+                    console.error('Root list error:', rootError);
+                    return res.json([]);
                 }
-                throw error;
+                
+                files = rootFiles;
             }
 
+            console.log('📁 Files in storage:', files);
+            console.log('📊 Total files found:', files?.length || 0);
+
             // Фильтруем только файлы (не папки) и с расширением .map
-            const mapFiles = (files || []).filter(file => 
-                !file.id && // не папка
-                file.name && 
-                path.extname(file.name).toLowerCase() === '.map'
-            );
+            const mapFiles = (files || []).filter(file => {
+                const isFolder = file.id === null;
+                const hasMapExtension = file.name && path.extname(file.name).toLowerCase() === '.map';
+                console.log(`  - ${file.name}: isFolder=${isFolder}, hasMapExt=${hasMapExtension}`);
+                return !isFolder && hasMapExtension;
+            });
 
             // Transform files to map format
             const maps = mapFiles.map(file => {
