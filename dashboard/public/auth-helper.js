@@ -147,10 +147,16 @@ function setupRoleBasedUI(authData) {
         if (autoDeleteNavBtn) {
             autoDeleteNavBtn.style.display = 'none';
         }
+
+        // Скрыть раздел "Участники"
+        const membersNavBtn = document.querySelector('[data-page="members"]');
+        if (membersNavBtn) {
+            membersNavBtn.style.display = 'none';
+        }
         
         // Перенаправить на карты если пытается открыть админ-страницу
         const hash = window.location.hash;
-        if (hash === '#analytics' || hash === '#messages' || hash === '#auto-delete' || hash === '#admin') {
+        if (hash === '#analytics' || hash === '#messages' || hash === '#auto-delete' || hash === '#admin' || hash === '#members') {
             console.warn('⛔ Доступ запрещен. Требуются права администратора.');
             window.location.hash = '#maps';
         }
@@ -160,7 +166,7 @@ function setupRoleBasedUI(authData) {
     window.addEventListener('hashchange', () => {
         if (!isAdmin(authData)) {
             const hash = window.location.hash;
-            if (hash === '#analytics' || hash === '#messages' || hash === '#auto-delete' || hash === '#admin') {
+            if (hash === '#analytics' || hash === '#messages' || hash === '#auto-delete' || hash === '#admin' || hash === '#members') {
                 console.warn('⛔ Доступ запрещен. Требуются права администратора.');
                 alert('Доступ запрещен. Требуются права администратора.');
                 window.location.hash = '#maps';

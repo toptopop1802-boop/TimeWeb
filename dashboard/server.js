@@ -35,6 +35,97 @@ function createApp() {
         }
     });
 
+    // =====================
+    // Public Image Hosting
+    // =====================
+    const imageUpload = multer({
+        storage: multer.memoryStorage(),
+        limits: { fileSize: 15 * 1024 * 1024 },
+        fileFilter: (req, file, cb) => {
+            const ext = path.extname(file.originalname).toLowerCase();
+            const ok = ['.png', '.jpg', '.jpeg', '.gif', '.webp'].includes(ext);
+            cb(ok ? null : new Error('Допустимы только изображения PNG/JPG/GIF/WebP'), ok);
+        }
+    });
+
+    // Authenticated upload, public read
+    app.post('/api/images/upload', imageUpload.single('image'), async (req, res) => {
+        try {
+            if (!supabase) return res.status(503).json({ error: 'Supabase not configured' });
+
+            // Require auth
+            let currentUser = null;
+            await requireAuth(req, res, async () => { currentUser = req.user; }, supabase);
+            if (!currentUser) return;
+
+            if (!req.file) return res.status(400).json({ error: 'Файл не получен' });
+
+            const ext = path.extname(req.file.originalname).toLowerCase();
+            const id = uuidv4();
+            const storagePath = `images/${id}${ext}`;
+
+            const { error: upErr } = await supabase.storage
+                .from('images')
+                .upload(storagePath, req.file.buffer, {
+                    contentType: req.file.mimetype,
+                    upsert: false
+                });
+            if (upErr) throw upErr;
+
+            // Short code derived from id
+            const cleaned = id.replace(/-/g, '');
+            const hash = cleaned.split('').reduce((acc, c) => ((acc << 5) - acc) + c.charCodeAt(0), 0);
+            const shortCode = Math.abs(hash).toString(36).substring(0, 7).toUpperCase().padEnd(7, '0');
+
+            // Public direct URL via our domain
+            const base = process.env.PUBLIC_BASE_URL || (req.headers['x-forwarded-proto'] ? `${req.headers['x-forwarded-proto']}://${req.headers.host}` : `${req.protocol}://${req.get('host')}`);
+            const directUrl = `${base}/i/${shortCode}`;
+
+            res.json({ success: true, id, shortCode, directUrl });
+        } catch (error) {
+            console.error('Image upload error:', error);
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // Public image by short code
+    app.get('/i/:shortCode([A-Z0-9]{7})', async (req, res) => {
+        try {
+            if (!supabase) return res.status(503).send('Supabase not configured');
+            const shortCode = req.params.shortCode;
+
+            // List bucket and match by derived code
+            let files = null;
+            const r1 = await supabase.storage.from('images').list('images');
+            files = (!r1.error && r1.data) ? r1.data : (await supabase.storage.from('images').list('')).data;
+
+            const file = files?.find(f => {
+                const ext = path.extname(f.name);
+                const fileId = path.basename(f.name, ext);
+                const cleaned = fileId.replace(/-/g, '');
+                const hash = cleaned.split('').reduce((acc, c) => ((acc << 5) - acc) + c.charCodeAt(0), 0);
+                const code = Math.abs(hash).toString(36).substring(0, 7).toUpperCase().padEnd(7, '0');
+                return code === shortCode;
+            });
+
+            if (!file) return res.status(404).send('Not found');
+
+            const storagePath = file.name.startsWith('images/') ? file.name : `images/${file.name}`;
+            const { data, error } = await supabase.storage.from('images').download(storagePath);
+            if (error || !data) return res.status(404).send('Not found');
+
+            const arrayBuffer = await data.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+            const ext = path.extname(file.name).toLowerCase();
+            const type = ext === '.png' ? 'image/png' : ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : ext === '.gif' ? 'image/gif' : ext === '.webp' ? 'image/webp' : 'application/octet-stream';
+            res.setHeader('Content-Type', type);
+            res.setHeader('Content-Length', buffer.length);
+            res.send(buffer);
+        } catch (error) {
+            console.error('Public image error:', error);
+            res.status(500).send('Internal error');
+        }
+    });
     // Middleware
     app.use(cors());
     app.use(express.json());
@@ -351,11 +442,21 @@ function createApp() {
         }
     });
 
-    // Get all maps (from Storage, no database)
+    // Get maps: only own maps for regular users, all for admin
     app.get('/api/maps', async (req, res) => {
         try {
             if (!supabase) {
                 return res.status(503).json({ error: 'Supabase not configured' });
+            }
+
+            // Try to identify current user (optional for backward-compat). If auth header present, enforce auth.
+            let currentUser = null;
+            const authHeader = req.headers.authorization;
+            if (authHeader) {
+                await requireAuth(req, res, async () => {
+                    currentUser = req.user;
+                }, supabase);
+                if (!currentUser) return; // requireAuth already responded
             }
 
             // List all files from Storage bucket (root of bucket)
@@ -398,7 +499,7 @@ function createApp() {
             });
 
             // Transform files to map format
-            const maps = mapFiles.map(file => {
+            let maps = mapFiles.map(file => {
                 const fileExt = path.extname(file.name);
                 const fileName = path.basename(file.name, fileExt);
                 // Убираем префикс 'maps/' если он есть
@@ -414,6 +515,23 @@ function createApp() {
                 };
             });
 
+            // If user is not admin, try to filter maps by owner using metadata table (best effort)
+            if (currentUser && currentUser.role !== 'admin') {
+                try {
+                    const { data: metaRows } = await supabase
+                        .from('maps_metadata')
+                        .select('id, user_id');
+                    if (Array.isArray(metaRows) && metaRows.length) {
+                        const ownedIds = new Set(
+                            metaRows.filter(r => r.user_id === currentUser.id).map(r => r.id)
+                        );
+                        maps = maps.filter(m => ownedIds.has(m.id));
+                    }
+                } catch (e) {
+                    console.warn('maps_metadata filter skipped:', e.message);
+                }
+            }
+
             console.log(`Found ${maps.length} maps in storage`);
             res.json(maps);
         } catch (error) {
@@ -422,12 +540,19 @@ function createApp() {
         }
     });
 
-    // Download map file
+    // Download map file (only owner or admin)
     app.get('/api/maps/download/:id', async (req, res) => {
         try {
             if (!supabase) {
                 return res.status(503).json({ error: 'Supabase not configured' });
             }
+
+            // Enforce auth for download
+            let currentUser = null;
+            await requireAuth(req, res, async () => {
+                currentUser = req.user;
+            }, supabase);
+            if (!currentUser) return;
 
             console.log('📥 Download request for ID:', req.params.id);
 
@@ -466,6 +591,20 @@ function createApp() {
             console.log('✅ Found file:', file.name);
             const storagePath = file.name.startsWith('maps/') ? file.name : `maps/${file.name}`;
 
+            // Ownership check via metadata table if possible
+            try {
+                const { data: metaRow } = await supabase
+                    .from('maps_metadata')
+                    .select('id, user_id')
+                    .eq('id', req.params.id)
+                    .single();
+                if (metaRow && currentUser.role !== 'admin' && metaRow.user_id !== currentUser.id) {
+                    return res.status(403).json({ error: 'Нет доступа к этой карте' });
+                }
+            } catch (e) {
+                console.warn('Ownership check skipped:', e.message);
+            }
+
             // Get file from Supabase Storage
             const { data: fileData, error: downloadError } = await supabase.storage
                 .from('maps')
@@ -493,12 +632,19 @@ function createApp() {
         }
     });
 
-    // Delete map
+    // Delete map (only owner or admin)
     app.delete('/api/maps/:id', async (req, res) => {
         try {
             if (!supabase) {
                 return res.status(503).json({ error: 'Supabase not configured' });
             }
+
+            // Enforce auth for delete
+            let currentUser = null;
+            await requireAuth(req, res, async () => {
+                currentUser = req.user;
+            }, supabase);
+            if (!currentUser) return;
 
             console.log('🗑️ Delete request for ID:', req.params.id);
 
@@ -528,6 +674,20 @@ function createApp() {
             if (!file) {
                 console.error('❌ File not found for delete:', req.params.id);
                 return res.status(404).json({ error: 'Карта не найдена' });
+            }
+
+            // Ownership check via metadata table
+            try {
+                const { data: metaRow } = await supabase
+                    .from('maps_metadata')
+                    .select('id, user_id')
+                    .eq('id', req.params.id)
+                    .single();
+                if (metaRow && currentUser.role !== 'admin' && metaRow.user_id !== currentUser.id) {
+                    return res.status(403).json({ error: 'Нет доступа к этой карте' });
+                }
+            } catch (e) {
+                console.warn('Ownership check skipped:', e.message);
             }
 
             console.log('✅ Deleting file:', file.name);
