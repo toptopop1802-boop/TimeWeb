@@ -120,8 +120,26 @@ body::after {
     display: flex;
     flex-direction: column;
     padding: 20px 10px;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto; /* Добавляем вертикальный скролл */
     transition: none !important; /* Отключаем анимации расширения */
+}
+
+.sidebar::-webkit-scrollbar {
+    width: 4px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 2px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
 }
 
 .sidebar.expanded {

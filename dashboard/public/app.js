@@ -1131,6 +1131,9 @@ function navigateToPage(page) {
     } else if (page === 'gradient-role') {
         // Инициализация страницы заявки на градиентную роль
         initGradientRolePage();
+    } else if (page === 'activity') {
+        // Загружаем активность пользователя
+        loadUserActivity();
     }
 }
 
@@ -2707,5 +2710,191 @@ function initGradientRolePage() {
     
     gradientRoleFormInitialized = true;
     console.log('✅ [Gradient Role] Обработчик формы установлен');
+}
+
+// ============================================
+// USER ACTIVITY
+// ============================================
+
+let currentActivityFilter = 'all';
+let allActivityActions = [];
+
+const activityConfig = {
+    'map_upload': { icon: '📤', color: '#6366f1', label: 'Загрузка карты' },
+    'map_download': { icon: '📥', color: '#10b981', label: 'Скачивание карты' },
+    'map_delete': { icon: '🗑️', color: '#f59e0b', label: 'Удаление карты' },
+    'login': { icon: '🔐', color: '#8b5cf6', label: 'Вход в систему' },
+    'logout': { icon: '🚪', color: '#94a3b8', label: 'Выход из системы' }
+};
+
+async function loadUserActivity() {
+    try {
+        const authData = getAuthData();
+        if (!authData || !authData.token) {
+            document.getElementById('activity-timeline').innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 40px 0;">Необходимо авторизоваться</p>';
+            return;
+        }
+
+        const response = await fetch('/api/user/activity', {
+            headers: {
+                'Authorization': `Bearer ${authData.token}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to load activity');
+        }
+
+        const data = await response.json();
+        allActivityActions = data.actions || [];
+
+        // Update stats
+        updateActivityStats(allActivityActions);
+
+        // Render timeline
+        renderActivityTimeline();
+
+        // Setup filter buttons
+        setupActivityFilters();
+    } catch (error) {
+        console.error('Error loading activity:', error);
+        document.getElementById('activity-timeline').innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 40px 0;">Пока нет действий</p>';
+    }
+}
+
+function updateActivityStats(actions) {
+    const stats = {
+        map_upload: 0,
+        map_download: 0,
+        map_delete: 0,
+        login: 0
+    };
+
+    actions.forEach(action => {
+        if (stats.hasOwnProperty(action.action_type)) {
+            stats[action.action_type]++;
+        }
+    });
+
+    document.getElementById('activity-upload-count').textContent = stats.map_upload;
+    document.getElementById('activity-download-count').textContent = stats.map_download;
+    document.getElementById('activity-delete-count').textContent = stats.map_delete;
+    document.getElementById('activity-login-count').textContent = stats.login;
+}
+
+function setupActivityFilters() {
+    document.querySelectorAll('.activity-filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.activity-filter-btn').forEach(b => {
+                b.classList.remove('active');
+                b.style.background = 'transparent';
+                b.style.color = 'var(--text-secondary)';
+            });
+            this.classList.add('active');
+            this.style.background = 'var(--accent-primary)';
+            this.style.color = 'white';
+            currentActivityFilter = this.dataset.filter;
+            renderActivityTimeline();
+        });
+    });
+}
+
+function renderActivityTimeline() {
+    const timeline = document.getElementById('activity-timeline');
+    
+    // Filter actions
+    const filteredActions = currentActivityFilter === 'all' 
+        ? allActivityActions 
+        : allActivityActions.filter(a => a.action_type === currentActivityFilter);
+
+    if (filteredActions.length === 0) {
+        timeline.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 40px 0;">Пока нет действий</p>';
+        return;
+    }
+
+    timeline.innerHTML = filteredActions.map(action => {
+        const config = activityConfig[action.action_type] || { icon: '📋', color: '#94a3b8', label: 'Действие' };
+        const time = formatActivityTime(action.created_at);
+        
+        return `
+            <div style="border-left: 3px solid ${config.color}; padding: 16px; margin-bottom: 16px; background: var(--bg-card); border-radius: 8px; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--accent-primary)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'" onmouseout="this.style.borderColor='${config.color}'; this.style.boxShadow='none'">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 24px;">${config.icon}</span>
+                        <strong style="font-size: 16px;">${config.label}</strong>
+                    </div>
+                    <span style="color: var(--text-secondary); font-size: 13px;">${time}</span>
+                </div>
+                <div style="color: var(--text-secondary); font-size: 14px; margin-left: 34px;">
+                    ${formatActivityDetails(action)}
+                </div>
+                ${action.action_details && (action.action_details.file_size || action.action_details.ip_address) ? `
+                    <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-color); margin-left: 34px; font-size: 13px; color: var(--text-secondary);">
+                        ${formatActivityMetadata(action.action_details)}
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }).join('');
+}
+
+function formatActivityDetails(action) {
+    const details = action.action_details || {};
+    
+    switch (action.action_type) {
+        case 'map_upload':
+            return `Загружена карта: <strong>${details.original_name || 'Без названия'}</strong>`;
+        case 'map_download':
+            return `Скачана карта: <strong>${details.original_name || 'Без названия'}</strong>`;
+        case 'map_delete':
+            return `Удалена карта: <strong>${details.original_name || 'Без названия'}</strong>`;
+        case 'login':
+            return `Вход в систему${details.login_type === 'admin' ? ' <strong>(Администратор)</strong>' : ''}`;
+        case 'logout':
+            return `Выход из системы`;
+        default:
+            return 'Действие выполнено';
+    }
+}
+
+function formatActivityMetadata(details) {
+    const parts = [];
+    
+    if (details.file_size) {
+        parts.push(`📦 ${formatFileSize(details.file_size)}`);
+    }
+    
+    if (details.ip_address) {
+        parts.push(`🌐 ${details.ip_address}`);
+    }
+    
+    return parts.join(' • ') || '';
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+}
+
+function formatActivityTime(timestamp) {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diff = Math.floor((now - date) / 1000);
+
+    if (diff < 60) return 'Только что';
+    if (diff < 3600) return `${Math.floor(diff / 60)} мин назад`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} ч назад`;
+    if (diff < 2592000) return `${Math.floor(diff / 86400)} дн назад`;
+    
+    return date.toLocaleDateString('ru-RU', {
+        day: 'numeric',
+        month: 'short',
+        year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
+        hour: '2-digit',
+        minute: '2-digit'
+    });
 }
 
