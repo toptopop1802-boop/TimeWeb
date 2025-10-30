@@ -79,6 +79,18 @@ function setupAuthRoutes(app, supabase) {
                     user_agent: req.headers['user-agent']
                 });
 
+            // Log login action
+            await supabase
+                .from('user_actions')
+                .insert({
+                    user_id: user.id,
+                    action_type: 'login',
+                    action_details: {
+                        ip_address: req.ip,
+                        user_agent: req.headers['user-agent']
+                    }
+                });
+
             res.json({
                 success: true,
                 token,
@@ -149,6 +161,19 @@ function setupAuthRoutes(app, supabase) {
                     expires_at: expires_at.toISOString(),
                     ip_address: req.ip,
                     user_agent: req.headers['user-agent']
+                });
+
+            // Log login action
+            await supabase
+                .from('user_actions')
+                .insert({
+                    user_id: admin.id,
+                    action_type: 'login',
+                    action_details: {
+                        ip_address: req.ip,
+                        user_agent: req.headers['user-agent'],
+                        login_type: 'admin'
+                    }
                 });
 
             res.json({
@@ -284,6 +309,18 @@ function setupAuthRoutes(app, supabase) {
                     expires_at: expires_at.toISOString(),
                     ip_address: req.ip,
                     user_agent: req.headers['user-agent']
+                });
+
+            // Log login action
+            await supabase
+                .from('user_actions')
+                .insert({
+                    user_id: user.id,
+                    action_type: 'login',
+                    action_details: {
+                        ip_address: req.ip,
+                        user_agent: req.headers['user-agent']
+                    }
                 });
 
             res.json({

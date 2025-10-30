@@ -459,6 +459,13 @@ function createApp() {
                 console.error('❌ Metadata insert error:', metaErr);
             }
 
+            // Log action
+            await logUserAction(currentUser.id, 'map_upload', {
+                map_id: mapId,
+                original_name: originalName,
+                file_size: req.file.size
+            });
+
             // Return map data
             const mapData = {
                 id: mapId,
@@ -683,6 +690,13 @@ function createApp() {
             const arrayBuffer = await fileData.arrayBuffer();
             const buffer = Buffer.from(arrayBuffer);
 
+            // Log download action
+            await logUserAction(currentUser.id, 'map_download', {
+                map_id: req.params.id,
+                original_name: originalName,
+                file_size: buffer.length
+            });
+
             res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(originalName)}"`);
             res.setHeader('Content-Type', 'application/octet-stream');
             res.setHeader('Content-Length', buffer.length);
@@ -760,6 +774,12 @@ function createApp() {
                 .remove([storagePath]);
 
             if (storageError) throw storageError;
+
+            // Log delete action
+            await logUserAction(currentUser.id, 'map_delete', {
+                map_id: req.params.id,
+                original_name: file.name
+            });
 
             res.json({ success: true });
         } catch (error) {
@@ -993,6 +1013,61 @@ function createApp() {
             res.status(500).json({ error: error.message });
         }
     });
+
+    // ============================================
+    // USER ACTIVITY API
+    // ============================================
+
+    // Get user activity
+    app.get('/api/user/activity', async (req, res) => {
+        try {
+            if (!supabase) {
+                return res.status(503).json({ error: 'Supabase not configured' });
+            }
+
+            // Require auth
+            let currentUser = null;
+            await requireAuth(req, res, async () => {
+                currentUser = req.user;
+            }, supabase);
+            if (!currentUser) return;
+
+            // Get user actions from database
+            const { data, error } = await supabase
+                .from('user_actions')
+                .select('*')
+                .eq('user_id', currentUser.id)
+                .order('created_at', { ascending: false })
+                .limit(100);
+
+            if (error) throw error;
+
+            res.json({
+                success: true,
+                actions: data || []
+            });
+        } catch (error) {
+            console.error('Error fetching user activity:', error);
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // Log user action (internal helper)
+    async function logUserAction(userId, actionType, actionDetails = {}) {
+        if (!supabase) return;
+        try {
+            await supabase
+                .from('user_actions')
+                .insert({
+                    user_id: userId,
+                    action_type: actionType,
+                    action_details: actionDetails
+                });
+            console.log(`✅ Logged action: ${actionType} for user ${userId}`);
+        } catch (error) {
+            console.error('❌ Failed to log action:', error);
+        }
+    }
 
     // Health check
     app.get('/api/health', (req, res) => {
