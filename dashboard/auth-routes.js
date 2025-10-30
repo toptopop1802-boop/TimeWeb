@@ -18,18 +18,23 @@ function setupAuthRoutes(app, supabase) {
             // Проверяем существование пользователя с таким именем
             const { data: existing, error: checkError } = await supabase
                 .from('users')
-                .select('id, username, role')
+                .select('id, username, role, password_hash')
                 .eq('username', cleanUsername)
-                .single();
+                .maybeSingle(); // maybeSingle не выдаёт ошибку если не найдено
 
             let user;
             
             if (existing) {
-                // Если пользователь существует - входим
+                // Если пользователь существует И у него есть пароль (не пустой) - требуем админ вход
+                if (existing.password_hash && existing.password_hash.length > 0) {
+                    return res.status(400).json({ 
+                        error: 'Это имя уже занято. Используйте другое имя или войдите через "Вход для админа".',
+                        requiresPassword: true
+                    });
+                }
+                // Если пароль пустой - это гостевой пользователь, можно войти
                 user = existing;
-            } else if (checkError && checkError.code !== 'PGRST116') {
-                // PGRST116 = not found, это нормально для нового пользователя
-                throw checkError;
+                console.log('✅ Existing guest user logged in:', cleanUsername);
             } else {
                 // Создаем нового пользователя
                 const uniqueEmail = `${cleanUsername}-${Date.now()}@local.user`;
@@ -46,6 +51,8 @@ function setupAuthRoutes(app, supabase) {
 
                 if (error) throw error;
                 user = newUser;
+                
+                console.log('✅ New user created:', cleanUsername);
                 
                 // Записываем аналитику регистрации
                 await supabase

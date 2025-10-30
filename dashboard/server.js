@@ -441,19 +441,22 @@ function createApp() {
                 const { error: metaError } = await supabase
                     .from('maps_metadata')
                     .insert({
-                        id: mapId,
+                        map_id: mapId,
                         user_id: currentUser.id,
-                        file_name: originalName,
+                        original_name: originalName,
                         file_size: req.file.size,
                         storage_path: storagePath,
                         short_code: generateShortCodeForMap(mapId)
                     });
                 
                 if (metaError) {
-                    console.warn('Failed to save metadata:', metaError);
+                    console.error('❌ Failed to save metadata:', metaError);
+                    console.error('Data attempted:', { mapId, userId: currentUser.id, originalName, storagePath });
+                } else {
+                    console.log('✅ Metadata saved successfully for map:', mapId);
                 }
             } catch (metaErr) {
-                console.warn('Metadata insert skipped:', metaErr);
+                console.error('❌ Metadata insert error:', metaErr);
             }
 
             // Return map data
@@ -543,19 +546,26 @@ function createApp() {
             // Get metadata from database
             let metaMap = {};
             try {
-                const { data: metaRows } = await supabase
+                const { data: metaRows, error: metaError } = await supabase
                     .from('maps_metadata')
-                    .select('id, user_id, users(username)');
+                    .select('map_id, user_id, users(username)');
+                
+                if (metaError) {
+                    console.error('❌ Error fetching metadata:', metaError);
+                } else {
+                    console.log('✅ Fetched metadata for', metaRows?.length || 0, 'maps');
+                }
+                
                 if (Array.isArray(metaRows)) {
                     metaRows.forEach(meta => {
-                        metaMap[meta.id] = {
+                        metaMap[meta.map_id] = {
                             user_id: meta.user_id,
                             owner_name: meta.users?.username || 'Unknown'
                         };
                     });
                 }
             } catch (e) {
-                console.warn('Metadata fetch skipped:', e.message);
+                console.error('❌ Metadata fetch error:', e.message);
             }
 
             // Transform files to map format
