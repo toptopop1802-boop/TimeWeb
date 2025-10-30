@@ -3811,24 +3811,27 @@ def main() -> None:
             except discord.HTTPException as exc:
                 logging.warning(f"Failed to delete wipe signup message: {exc}")
             
-            # Логируем в БД для статистики
+            # Сохраняем в БД для статистики
             if bot.db and message.guild:
-                event_type = "wipe_signup_looking"  # Ищет игроков
-                event_data = {"count": 0, "user_id": message.author.id}
+                signup_type = None
+                player_count = None
                 
                 if plus_match:
-                    event_type = "wipe_signup_looking"
-                    event_data["count"] = count
+                    signup_type = "looking"
+                    player_count = count
                 elif content in ["зайду", "иду", "буду", "пойду", "готов"]:
-                    event_type = "wipe_signup_ready"
+                    signup_type = "ready"
                 elif content in ["не зайду", "не буду", "не иду", "пропущу", "пас"]:
-                    event_type = "wipe_signup_not_coming"
+                    signup_type = "not_coming"
                 
-                await bot.db.log_event(
-                    guild_id=message.guild.id,
-                    event_type=event_type,
-                    event_data=event_data
-                )
+                if signup_type:
+                    await bot.db.save_wipe_signup(
+                        guild_id=message.guild.id,
+                        user_id=message.author.id,
+                        signup_type=signup_type,
+                        player_count=player_count,
+                        message_content=content
+                    )
         
         except Exception as exc:
             logging.error(f"Error handling wipe signup message: {exc}", exc_info=True)

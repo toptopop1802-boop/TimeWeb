@@ -221,7 +221,10 @@ function createApp() {
                         ticket_created: 0,
                         tournament_role_created: 0,
                         channel_deleted: 0,
-                        member_count: 0
+                        member_count: 0,
+                        wipe_signup_looking: 0,
+                        wipe_signup_ready: 0,
+                        wipe_signup_not_coming: 0
                     });
                 }
                 const dayStats = timelineMap.get(date);
@@ -235,6 +238,52 @@ function createApp() {
                     stats[event.event_type] = (stats[event.event_type] || 0) + 1;
                 }
             });
+
+            // Получаем статистику записи на вайп из отдельной таблицы
+            const { data: wipeSignupData, error: wipeSignupError } = await supabase
+                .from('wipe_signup_stats')
+                .select('*')
+                .gte('created_at', cutoffDate.toISOString())
+                .order('created_at', { ascending: true });
+
+            if (!wipeSignupError && wipeSignupData) {
+                stats.wipe_signup_looking = 0;
+                stats.wipe_signup_ready = 0;
+                stats.wipe_signup_not_coming = 0;
+
+                wipeSignupData.forEach(signup => {
+                    const date = new Date(signup.created_at).toISOString().split('T')[0];
+                    
+                    // Убедимся что дата есть в timeline
+                    if (!timelineMap.has(date)) {
+                        timelineMap.set(date, {
+                            date,
+                            wipe_created: 0,
+                            ticket_created: 0,
+                            tournament_role_created: 0,
+                            channel_deleted: 0,
+                            member_count: 0,
+                            wipe_signup_looking: 0,
+                            wipe_signup_ready: 0,
+                            wipe_signup_not_coming: 0
+                        });
+                    }
+                    
+                    const dayStats = timelineMap.get(date);
+                    
+                    // Подсчитываем по типам
+                    if (signup.signup_type === 'looking') {
+                        stats.wipe_signup_looking++;
+                        dayStats.wipe_signup_looking++;
+                    } else if (signup.signup_type === 'ready') {
+                        stats.wipe_signup_ready++;
+                        dayStats.wipe_signup_ready++;
+                    } else if (signup.signup_type === 'not_coming') {
+                        stats.wipe_signup_not_coming++;
+                        dayStats.wipe_signup_not_coming++;
+                    }
+                });
+            }
 
             stats.timeline = Array.from(timelineMap.values());
             stats.total = data.length;
@@ -257,9 +306,8 @@ function createApp() {
             cutoffDate.setDate(cutoffDate.getDate() - days);
 
             const { data, error } = await supabase
-                .from('server_analytics')
+                .from('wipe_signup_stats')
                 .select('*')
-                .in('event_type', ['wipe_signup_looking', 'wipe_signup_ready', 'wipe_signup_not_coming'])
                 .gte('created_at', cutoffDate.toISOString())
                 .order('created_at', { ascending: false });
 
@@ -277,8 +325,8 @@ function createApp() {
 
             const timelineMap = new Map();
 
-            data.forEach((event, index) => {
-                const date = new Date(event.created_at).toISOString().split('T')[0];
+            data.forEach((signup, index) => {
+                const date = new Date(signup.created_at).toISOString().split('T')[0];
                 
                 // Инициализируем день если нет
                 if (!timelineMap.has(date)) {
@@ -293,16 +341,16 @@ function createApp() {
                 const dayStats = timelineMap.get(date);
 
                 // Подсчёт по типам
-                if (event.event_type === 'wipe_signup_looking') {
+                if (signup.signup_type === 'looking') {
                     stats.looking_total++;
-                    const count = (event.event_data && event.event_data.count) || 1;
+                    const count = signup.player_count || 1;
                     stats.looking_count += count;
                     dayStats.looking++;
                     dayStats.looking_count += count;
-                } else if (event.event_type === 'wipe_signup_ready') {
+                } else if (signup.signup_type === 'ready') {
                     stats.ready_total++;
                     dayStats.ready++;
-                } else if (event.event_type === 'wipe_signup_not_coming') {
+                } else if (signup.signup_type === 'not_coming') {
                     stats.not_coming_total++;
                     dayStats.not_coming++;
                 }
@@ -310,10 +358,11 @@ function createApp() {
                 // Последние 50 записей
                 if (index < 50) {
                     stats.recent_signups.push({
-                        type: event.event_type,
-                        user_id: event.event_data?.user_id,
-                        count: event.event_data?.count || 0,
-                        created_at: event.created_at
+                        type: signup.signup_type,
+                        user_id: signup.user_id,
+                        count: signup.player_count || 0,
+                        message_content: signup.message_content,
+                        created_at: signup.created_at
                     });
                 }
             });

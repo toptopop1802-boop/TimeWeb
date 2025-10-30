@@ -437,6 +437,135 @@ class Database:
             return False
     
     # ============================================
+    # WIPE SIGNUP STATISTICS
+    # ============================================
+    
+    async def save_wipe_signup(
+        self,
+        guild_id: int,
+        user_id: int,
+        signup_type: str,
+        player_count: Optional[int] = None,
+        message_content: str = ""
+    ) -> bool:
+        """Сохраняет запись о записи на вайп
+        
+        Args:
+            guild_id: ID сервера Discord
+            user_id: ID пользователя
+            signup_type: Тип записи ('looking', 'ready', 'not_coming')
+            player_count: Количество игроков (для типа 'looking')
+            message_content: Оригинальное содержимое сообщения
+        """
+        try:
+            data = {
+                "guild_id": guild_id,
+                "user_id": user_id,
+                "signup_type": signup_type,
+                "player_count": player_count,
+                "message_content": message_content
+            }
+            self.client.table("wipe_signup_stats").insert(data).execute()
+            logging.info(f"Saved wipe signup: guild={guild_id}, user={user_id}, type={signup_type}")
+            return True
+        except Exception as exc:
+            logging.error(f"Failed to save wipe signup: {exc}")
+            return False
+    
+    async def get_wipe_signup_stats(
+        self,
+        guild_id: int,
+        days: int = 30
+    ) -> Dict[str, Any]:
+        """Получает статистику записи на вайп за указанный период
+        
+        Returns:
+            Dict с ключами:
+            - looking: количество записей "ищет игроков"
+            - ready: количество записей "готов зайти"
+            - not_coming: количество записей "не зайду"
+            - by_date: словарь с разбивкой по датам
+        """
+        try:
+            from datetime import datetime, timedelta
+            
+            cutoff_date = (datetime.utcnow() - timedelta(days=days)).isoformat()
+            
+            response = self.client.table("wipe_signup_stats")\
+                .select("*")\
+                .eq("guild_id", guild_id)\
+                .gte("created_at", cutoff_date)\
+                .order("created_at", desc=False)\
+                .execute()
+            
+            stats = {
+                "looking": 0,
+                "ready": 0,
+                "not_coming": 0,
+                "by_date": {},
+                "total": 0
+            }
+            
+            if not response.data:
+                return stats
+            
+            for record in response.data:
+                signup_type = record["signup_type"]
+                date_str = record["created_at"][:10]  # YYYY-MM-DD
+                
+                # Общая статистика по типам
+                if signup_type == "looking":
+                    stats["looking"] += 1
+                elif signup_type == "ready":
+                    stats["ready"] += 1
+                elif signup_type == "not_coming":
+                    stats["not_coming"] += 1
+                
+                # Статистика по датам
+                if date_str not in stats["by_date"]:
+                    stats["by_date"][date_str] = {
+                        "looking": 0,
+                        "ready": 0,
+                        "not_coming": 0
+                    }
+                
+                stats["by_date"][date_str][signup_type] = stats["by_date"][date_str].get(signup_type, 0) + 1
+                stats["total"] += 1
+            
+            return stats
+            
+        except Exception as exc:
+            logging.error(f"Failed to get wipe signup stats: {exc}")
+            return {
+                "looking": 0,
+                "ready": 0,
+                "not_coming": 0,
+                "by_date": {},
+                "total": 0
+            }
+    
+    async def get_user_wipe_signups(
+        self,
+        guild_id: int,
+        user_id: int,
+        limit: int = 10
+    ) -> List[Dict[str, Any]]:
+        """Получает последние записи пользователя на вайп"""
+        try:
+            response = self.client.table("wipe_signup_stats")\
+                .select("*")\
+                .eq("guild_id", guild_id)\
+                .eq("user_id", user_id)\
+                .order("created_at", desc=True)\
+                .limit(limit)\
+                .execute()
+            
+            return response.data if response.data else []
+        except Exception as exc:
+            logging.error(f"Failed to get user wipe signups: {exc}")
+            return []
+    
+    # ============================================
     # CLEANUP
     # ============================================
     

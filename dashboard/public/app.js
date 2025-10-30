@@ -242,7 +242,10 @@ async function loadAnalytics(days = 30) {
                     wipe_created: 0,
                     ticket_created: 0,
                     tournament_role_created: 0,
-                    channel_deleted: 0
+                    channel_deleted: 0,
+                    wipe_signup_looking: 0,
+                    wipe_signup_ready: 0,
+                    wipe_signup_not_coming: 0
                 });
             }
             // place today's totals at the last minute
@@ -251,6 +254,9 @@ async function loadAnalytics(days = 30) {
             last.ticket_created = data.ticket_created || 0;
             last.tournament_role_created = data.tournament_role_created || 0;
             last.channel_deleted = data.channel_deleted || 0;
+            last.wipe_signup_looking = data.wipe_signup_looking || 0;
+            last.wipe_signup_ready = data.wipe_signup_ready || 0;
+            last.wipe_signup_not_coming = data.wipe_signup_not_coming || 0;
         } else {
             const today = new Date();
             const start = new Date();
@@ -264,7 +270,10 @@ async function loadAnalytics(days = 30) {
                     wipe_created: 0,
                     ticket_created: 0,
                     tournament_role_created: 0,
-                    channel_deleted: 0
+                    channel_deleted: 0,
+                    wipe_signup_looking: 0,
+                    wipe_signup_ready: 0,
+                    wipe_signup_not_coming: 0
                 };
                 timelineNormalized.push(t);
             }
@@ -290,7 +299,10 @@ async function loadAnalytics(days = 30) {
                     wipe_created: 0,
                     ticket_created: 0,
                     tournament_role_created: 0,
-                    channel_deleted: 0
+                    channel_deleted: 0,
+                    wipe_signup_looking: 0,
+                    wipe_signup_ready: 0,
+                    wipe_signup_not_coming: 0
                 });
             }
         } else {
@@ -304,7 +316,10 @@ async function loadAnalytics(days = 30) {
                     wipe_created: 0,
                     ticket_created: 0,
                     tournament_role_created: 0,
-                    channel_deleted: 0
+                    channel_deleted: 0,
+                    wipe_signup_looking: 0,
+                    wipe_signup_ready: 0,
+                    wipe_signup_not_coming: 0
                 });
             }
         }
@@ -476,6 +491,61 @@ function updateChart(timeline, view = 'all') {
             pointHoverBackgroundColor: getAccentRgba(1),
             spanGaps: true
         }];
+    } else if (view === 'wipe-signup') {
+        // Три линии: ищут игроков, готовы зайти, не зайдут
+        datasets = [
+            {
+                label: 'Ищут игроков',
+                data: timeline.map(t => t.wipe_signup_looking || 0),
+                borderColor: '#3b9bf9',
+                backgroundColor: buildGradient(ctx, 'rgba(59, 155, 249, 1)'),
+                fill: true,
+                tension: 0.4,
+                borderWidth: 3,
+                pointRadius: 0,
+                pointHoverRadius: 6,
+                pointBackgroundColor: '#ffffff',
+                pointBorderColor: '#3b9bf9',
+                pointBorderWidth: 2,
+                pointHoverBorderWidth: 3,
+                pointHoverBackgroundColor: '#3b9bf9',
+                spanGaps: true
+            },
+            {
+                label: 'Готовы зайти',
+                data: timeline.map(t => t.wipe_signup_ready || 0),
+                borderColor: '#57F287',
+                backgroundColor: buildSecondaryGradient(ctx, 'rgba(87, 242, 135, 1)'),
+                fill: true,
+                tension: 0.4,
+                borderWidth: 2,
+                pointRadius: 0,
+                pointHoverRadius: 5,
+                pointBackgroundColor: '#ffffff',
+                pointBorderColor: '#57F287',
+                pointBorderWidth: 2,
+                pointHoverBorderWidth: 3,
+                pointHoverBackgroundColor: '#57F287',
+                spanGaps: true
+            },
+            {
+                label: 'Не зайдут',
+                data: timeline.map(t => t.wipe_signup_not_coming || 0),
+                borderColor: '#ED4245',
+                backgroundColor: buildSecondaryGradient(ctx, 'rgba(237, 66, 69, 1)'),
+                fill: true,
+                tension: 0.4,
+                borderWidth: 2,
+                pointRadius: 0,
+                pointHoverRadius: 5,
+                pointBackgroundColor: '#ffffff',
+                pointBorderColor: '#ED4245',
+                pointBorderWidth: 2,
+                pointHoverBorderWidth: 3,
+                pointHoverBackgroundColor: '#ED4245',
+                spanGaps: true
+            }
+        ];
     }
 
     const maxValue = Math.max(1, ...datasets.flatMap(ds => ds.data));
