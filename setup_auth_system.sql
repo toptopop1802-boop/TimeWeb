@@ -128,8 +128,8 @@ CREATE TABLE IF NOT EXISTS user_registrations (
     user_agent TEXT
 );
 
-CREATE INDEX idx_user_registrations_user_id ON user_registrations(user_id);
-CREATE INDEX idx_user_registrations_registered_at ON user_registrations(registered_at DESC);
+CREATE INDEX IF NOT EXISTS idx_user_registrations_user_id ON user_registrations(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_registrations_registered_at ON user_registrations(registered_at DESC);
 
 COMMENT ON TABLE user_registrations IS 'Аналитика регистраций пользователей';
 COMMENT ON COLUMN user_registrations.registered_at IS 'Дата и время регистрации';
@@ -146,9 +146,9 @@ CREATE TABLE IF NOT EXISTS user_actions (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_user_actions_user_id ON user_actions(user_id);
-CREATE INDEX idx_user_actions_created_at ON user_actions(created_at DESC);
-CREATE INDEX idx_user_actions_type ON user_actions(action_type);
+CREATE INDEX IF NOT EXISTS idx_user_actions_user_id ON user_actions(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_actions_created_at ON user_actions(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_user_actions_type ON user_actions(action_type);
 
 COMMENT ON TABLE user_actions IS 'Лог действий пользователей';
 COMMENT ON COLUMN user_actions.action_type IS 'Тип действия: map_upload, map_download, map_delete, login, logout';
