@@ -1053,6 +1053,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Sidebar expand persistence
     setupSidebarHover();
+    
+    // Initialize API endpoint URL
+    const apiEndpointInput = document.getElementById('api-endpoint-url');
+    if (apiEndpointInput) {
+        apiEndpointInput.value = `${window.location.origin}/api/images/upload`;
+    }
 
     // Period selector
     document.getElementById('period-select').addEventListener('change', (e) => {
@@ -2158,5 +2164,31 @@ function copyApiEndpoint() {
     }
 }
 
+function copyCode(elementId) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    
+    const text = element.textContent || element.innerText;
+    
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text);
+        } else {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+        }
+        showToast('✅ Код скопирован!', 'success');
+    } catch (err) {
+        showToast('Не удалось скопировать');
+    }
+}
+
 window.copyApiEndpoint = copyApiEndpoint;
+window.copyCode = copyCode;
 

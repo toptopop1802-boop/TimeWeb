@@ -5,16 +5,19 @@
 }
 
 :root {
-    --bg-dark: #1b1b1b;
-    --bg-darker: #141414;
-    --bg-card: #222222;
-    --border-color: #2d2d2d;
-    --text-primary: #ffffff;
-    --text-secondary: #a0a0a0;
-    --accent-primary: #3b9bf9;
-    --accent-secondary: #6ac1ff;
-    --success: #00d26a;
-    --danger: #ff4757;
+    /* Светлая тема с красно-розовыми акцентами */
+    --bg-dark: #ffffff;
+    --bg-darker: #f8f9fa;
+    --bg-card: #f0f0f0;
+    --bg-secondary: #e9ecef;
+    --border-color: #dee2e6;
+    --text-primary: #212529;
+    --text-secondary: #6c757d;
+    --accent-primary: #c40552;
+    --accent-secondary: #e4735c;
+    --accent-hover: #a00442;
+    --success: #28a745;
+    --danger: #dc3545;
 }
 
 body {
@@ -33,11 +36,11 @@ body::before {
     z-index: 1; /* grid above vignette, below content */
     background:
         /* grid */
-        linear-gradient(0deg, rgba(255,255,255,0.06) 1px, transparent 1px) repeat-y,
-        linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px) repeat-x,
-        /* glows under the grid */
-        radial-gradient(1200px 800px at 10% -10%, rgba(59,155,249,0.06), transparent 60%),
-        radial-gradient(1200px 800px at 120% 110%, rgba(106,193,255,0.045), transparent 60%);
+        linear-gradient(0deg, rgba(0,0,0,0.03) 1px, transparent 1px) repeat-y,
+        linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px) repeat-x,
+        /* glows under the grid - красно-розовые */
+        radial-gradient(1200px 800px at 10% -10%, rgba(196,5,82,0.04), transparent 60%),
+        radial-gradient(1200px 800px at 120% 110%, rgba(228,115,92,0.03), transparent 60%);
     background-size: 24px 24px, 24px 24px, auto, auto;
 }
 
@@ -47,7 +50,7 @@ body::after {
     inset: 0;
     pointer-events: none;
     z-index: 0; /* vignette below the grid */
-    box-shadow: inset 0 0 120px rgba(0,0,0,0.35);
+    box-shadow: inset 0 0 120px rgba(0,0,0,0.05);
 }
 
 /* Loader */
@@ -97,7 +100,7 @@ body::after {
     position: fixed;
     top: 0;
     right: 0;
-    left: 96px; /* sidebar width */
+    left: 72px; /* sidebar width */
     height: 70px;
     background: var(--bg-darker);
     border-bottom: 1px solid var(--border-color);
@@ -106,34 +109,23 @@ body::after {
     justify-content: flex-end;
     padding: 0 20px;
     z-index: 100;
-    transition: left 0.6s ease-in-out;
-}
-
-.sidebar.expanded ~ .header {
-    left: 320px; /* expanded sidebar width */
-}
-
-.sidebar.expanded ~ .content {
-    margin-left: 320px;
 }
 
 .sidebar {
-    width: 96px;
+    width: 72px; /* Уменьшенная ширина - только иконки */
     background: var(--bg-darker);
     border-right: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
-    padding: 20px 14px;
-    transition: width 0.6s ease-in-out;
+    padding: 20px 10px;
     overflow: hidden;
 }
-.sidebar.expanded { width: 320px; }
 
-.logo { display: flex; align-items: center; gap: 12px; }
+.logo { display: flex; align-items: center; justify-content: center; gap: 12px; }
 .logo h1 { font-size: 20px; margin-bottom: 2px; }
 .logo p { color: var(--text-secondary); font-size: 12px; }
-.logo .logo-icon { width: 28px; height: 28px; fill: var(--accent-primary); flex: 0 0 auto; }
-.sidebar:not(.expanded) .logo-text { display: none; }
+.logo .logo-icon { width: 32px; height: 32px; fill: var(--accent-primary); flex: 0 0 auto; }
+.logo-text { display: none; } /* Всегда скрыт */
 
 nav {
     margin-top: 40px;
@@ -143,19 +135,19 @@ nav {
 .nav-link {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 12px;
-    padding: 12px 14px;
+    padding: 14px;
     color: var(--text-secondary);
     text-decoration: none;
-    border-radius: 10px;
-    margin-bottom: 8px;
+    border-radius: 12px;
+    margin-bottom: 10px;
     transition: all 0.2s;
+    position: relative;
 }
 
-.nav-icon { width: 22px; height: 22px; stroke: var(--text-secondary); fill: none; }
-.nav-text { white-space: nowrap; }
-.sidebar:not(.expanded) .nav-text { display: none; }
-.sidebar:not(.expanded) .nav-link { justify-content: center; padding: 12px; }
+.nav-icon { width: 24px; height: 24px; stroke: var(--text-secondary); fill: none; }
+.nav-text { display: none; } /* Всегда скрыт */
 
 .nav-link:hover {
     background: var(--bg-card);
@@ -187,8 +179,7 @@ nav {
     padding: 40px;
     padding-top: 110px; /* 70px header + 40px spacing */
     overflow-y: auto;
-    margin-left: 96px; /* sidebar width */
-    transition: margin-left 0.6s ease-in-out;
+    margin-left: 72px; /* sidebar width */
 }
 
 /* Dev notice (Messages page) */

@@ -59,6 +59,10 @@
                     <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
                     <span class="nav-text">Хостинг фото</span>
                 </a>
+                <a href="#api" class="nav-link" data-page="api">
+                    <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polyline points="16 18 22 12 16 6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"></polyline><polyline points="8 6 2 12 8 18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"></polyline></svg>
+                    <span class="nav-text">API</span>
+                </a>
                 <a href="#admin" class="nav-link" data-page="admin">
                     <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
                     <span class="nav-text">Админ</span>
@@ -524,92 +528,150 @@
                     </div>
                 </div>
 
-                <!-- API Documentation -->
-                <div class="card" style="max-width: 800px; margin: 30px auto; background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(139, 92, 246, 0.05)); border: 1px solid rgba(59, 130, 246, 0.2);">
-                    <h3 style="display: flex; align-items: center; gap: 10px;">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="16 18 22 12 16 6"></polyline>
-                            <polyline points="8 6 2 12 8 18"></polyline>
-                        </svg>
-                        API для разработчиков
-                    </h3>
-                    <p style="color: var(--text-secondary); margin-bottom: 20px;">Используйте наш API для загрузки изображений из других сервисов</p>
-                    
-                    <div style="background: var(--bg-card); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
-                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-                            <strong style="color: var(--success);">POST</strong>
-                            <code style="flex: 1; margin: 0 15px; padding: 8px 12px; background: var(--bg-secondary); border-radius: 6px; font-size: 13px;">/api/images/upload</code>
-                            <button onclick="copyApiEndpoint()" style="padding: 6px 12px; background: var(--accent-primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;">📋 Копировать</button>
-                        </div>
-                        <input type="text" id="api-endpoint-url" readonly value="${window.location.origin}/api/images/upload" style="width: 100%; padding: 10px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; font-family: monospace; font-size: 12px; color: var(--text-primary); margin-top: 10px;">
-                    </div>
-
-                    <details style="margin-bottom: 15px;">
-                        <summary style="cursor: pointer; padding: 12px; background: var(--bg-card); border-radius: 6px; font-weight: 600; color: var(--text-primary); user-select: none;">
-                            📖 Пример использования (cURL)
-                        </summary>
-                        <div style="margin-top: 10px; padding: 15px; background: #1e1e1e; border-radius: 8px; overflow-x: auto;">
-                            <code style="color: #d4d4d4; font-family: 'Consolas', monospace; font-size: 12px; white-space: pre; display: block;">curl -X POST ${window.location.origin}/api/images/upload \\
-  -H "Authorization: Bearer YOUR_TOKEN" \\
-  -F "image=@/path/to/image.png"
-
-# Ответ:
-{
-  "success": true,
-  "id": "uuid",
-  "shortCode": "ABC1234",
-  "directUrl": "${window.location.origin}/i/ABC1234"
-}</code>
-                        </div>
-                    </details>
-
-                    <details style="margin-bottom: 15px;">
-                        <summary style="cursor: pointer; padding: 12px; background: var(--bg-card); border-radius: 6px; font-weight: 600; color: var(--text-primary); user-select: none;">
-                            📖 Пример (Python)
-                        </summary>
-                        <div style="margin-top: 10px; padding: 15px; background: #1e1e1e; border-radius: 8px; overflow-x: auto;">
-                            <code style="color: #d4d4d4; font-family: 'Consolas', monospace; font-size: 12px; white-space: pre; display: block;">import requests
-
-url = "${window.location.origin}/api/images/upload"
-headers = {"Authorization": "Bearer YOUR_TOKEN"}
-files = {"image": open("image.png", "rb")}
-
-response = requests.post(url, headers=headers, files=files)
-data = response.json()
-print(f"Прямая ссылка: {data['directUrl']}")</code>
-                        </div>
-                    </details>
-
-                    <details>
-                        <summary style="cursor: pointer; padding: 12px; background: var(--bg-card); border-radius: 6px; font-weight: 600; color: var(--text-primary); user-select: none;">
-                            📖 Пример (JavaScript)
-                        </summary>
-                        <div style="margin-top: 10px; padding: 15px; background: #1e1e1e; border-radius: 8px; overflow-x: auto;">
-                            <code style="color: #d4d4d4; font-family: 'Consolas', monospace; font-size: 12px; white-space: pre; display: block;">const formData = new FormData();
-formData.append('image', fileInput.files[0]);
-
-fetch('${window.location.origin}/api/images/upload', {
-  method: 'POST',
-  headers: { 'Authorization': 'Bearer YOUR_TOKEN' },
-  body: formData
-})
-.then(res => res.json())
-.then(data => console.log('Ссылка:', data.directUrl));</code>
-                        </div>
-                    </details>
-
-                    <div style="margin-top: 20px; padding: 12px; background: rgba(59, 130, 246, 0.1); border-left: 3px solid var(--accent-primary); border-radius: 6px;">
-                        <p style="margin: 0; font-size: 13px; color: var(--text-secondary);">
-                            <strong style="color: var(--text-primary);">💡 Как получить токен:</strong><br>
-                            Войдите на сайт, откройте консоль браузера (F12) и выполните: <code style="background: var(--bg-card); padding: 2px 6px; border-radius: 4px;">localStorage.getItem('auth_token')</code>
-                        </p>
-                    </div>
-                </div>
-
                 <div id="images-history" style="max-width:800px;margin:30px auto 0 auto;">
                     <h3 style="margin-bottom:20px;">📚 Ваши изображения</h3>
                     <div id="images-list">
                         <p style="color:var(--text-secondary);text-align:center;padding:40px 0;">Загрузите первое изображение</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- API Documentation Page -->
+            <div id="page-api" class="page" style="display:none;">
+                <header class="page-header">
+                    <h2>
+                        <svg class="h2-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:28px;height:28px;vertical-align:-6px;margin-right:8px;">
+                            <polyline points="16 18 22 12 16 6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"></polyline>
+                            <polyline points="8 6 2 12 8 18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"></polyline>
+                        </svg>
+                        API Документация
+                    </h2>
+                </header>
+
+                <div class="card" style="max-width: 900px; margin: 0 auto;">
+                    <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                        🚀 API для загрузки изображений
+                    </h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 30px;">Используйте наш API для загрузки изображений из других сервисов и приложений</p>
+                    
+                    <!-- Endpoint -->
+                    <div style="background: var(--bg-card); border-radius: 12px; padding: 20px; margin-bottom: 30px; border: 2px solid var(--accent-primary);">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                <span style="padding: 6px 12px; background: var(--success); color: white; border-radius: 6px; font-weight: 700; font-size: 12px;">POST</span>
+                                <code style="padding: 10px 16px; background: var(--bg-secondary); border-radius: 8px; font-size: 14px; font-family: monospace;">/api/images/upload</code>
+                            </div>
+                            <button onclick="copyApiEndpoint()" class="btn btn-sm" style="background: var(--accent-primary); color: white; padding: 8px 16px;">📋 Копировать URL</button>
+                        </div>
+                        <input type="text" id="api-endpoint-url" readonly style="width: 100%; padding: 12px; background: var(--bg-darker); border: 1px solid var(--border-color); border-radius: 8px; font-family: monospace; font-size: 13px; color: var(--text-primary);">
+                    </div>
+
+                    <!-- Получение токена -->
+                    <div style="background: linear-gradient(135deg, rgba(196,5,82,0.08), rgba(228,115,92,0.08)); border-left: 4px solid var(--accent-primary); border-radius: 8px; padding: 20px; margin-bottom: 30px;">
+                        <h4 style="margin: 0 0 10px 0; display: flex; align-items: center; gap: 8px;">
+                            <span>🔑</span>
+                            <span>Получение токена авторизации</span>
+                        </h4>
+                        <p style="color: var(--text-secondary); margin-bottom: 15px; font-size: 14px;">Для использования API необходим токен. Получите его так:</p>
+                        <ol style="margin: 0; padding-left: 20px; color: var(--text-secondary); line-height: 1.8;">
+                            <li>Войдите на сайт под своим аккаунтом</li>
+                            <li>Откройте консоль браузера (нажмите F12)</li>
+                            <li>Выполните команду:</li>
+                        </ol>
+                        <div style="position: relative; margin-top: 15px;">
+                            <div style="background: #2d2d2d; border-radius: 8px; padding: 15px; overflow-x: auto;">
+                                <code id="token-code" style="color: #4ec9b0; font-family: Consolas, monospace; font-size: 13px;">localStorage.getItem("auth_token")</code>
+                            </div>
+                            <button onclick="copyCode('token-code')" style="position: absolute; top: 10px; right: 10px; padding: 6px 12px; background: var(--accent-primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600;">📋 Копировать</button>
+                        </div>
+                    </div>
+
+                    <!-- Примеры -->
+                    <h3 style="margin: 40px 0 20px 0;">📖 Примеры использования</h3>
+
+                    <!-- cURL -->
+                    <div style="background: var(--bg-card); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                        <h4 style="margin: 0 0 15px 0; display: flex; align-items: center; gap: 10px;">
+                            <span style="padding: 4px 10px; background: var(--accent-primary); color: white; border-radius: 6px; font-size: 11px; font-weight: 700;">cURL</span>
+                            <span>Командная строка</span>
+                        </h4>
+                        <div style="position: relative;">
+                            <div style="background: #1e1e1e; border-radius: 8px; padding: 20px; overflow-x: auto;">
+                                <pre id="curl-code" style="margin: 0; color: #d4d4d4; font-family: Consolas, monospace; font-size: 12px; line-height: 1.6;"><span style="color: #569cd6;">curl</span> <span style="color: #9cdcfe;">-X</span> POST <span style="color: #ce9178;">"${window.location.origin}/api/images/upload"</span> \
+  <span style="color: #9cdcfe;">-H</span> <span style="color: #ce9178;">"Authorization: Bearer YOUR_TOKEN"</span> \
+  <span style="color: #9cdcfe;">-F</span> <span style="color: #ce9178;">"image=@/path/to/image.png"</span>
+
+<span style="color: #6a9955;"># Ответ:</span>
+{
+  <span style="color: #9cdcfe;">"success"</span>: <span style="color: #569cd6;">true</span>,
+  <span style="color: #9cdcfe;">"id"</span>: <span style="color: #ce9178;">"uuid"</span>,
+  <span style="color: #9cdcfe;">"shortCode"</span>: <span style="color: #ce9178;">"ABC1234"</span>,
+  <span style="color: #9cdcfe;">"directUrl"</span>: <span style="color: #ce9178;">"${window.location.origin}/i/ABC1234"</span>
+}</pre>
+                            </div>
+                            <button onclick="copyCode('curl-code')" style="position: absolute; top: 15px; right: 15px; padding: 8px 16px; background: var(--accent-primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">📋 Копировать</button>
+                        </div>
+                    </div>
+
+                    <!-- Python -->
+                    <div style="background: var(--bg-card); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                        <h4 style="margin: 0 0 15px 0; display: flex; align-items: center; gap: 10px;">
+                            <span style="padding: 4px 10px; background: #3776ab; color: white; border-radius: 6px; font-size: 11px; font-weight: 700;">Python</span>
+                            <span>Библиотека requests</span>
+                        </h4>
+                        <div style="position: relative;">
+                            <div style="background: #1e1e1e; border-radius: 8px; padding: 20px; overflow-x: auto;">
+                                <pre id="python-code" style="margin: 0; color: #d4d4d4; font-family: Consolas, monospace; font-size: 12px; line-height: 1.6;"><span style="color: #c586c0;">import</span> requests
+
+url = <span style="color: #ce9178;">"${window.location.origin}/api/images/upload"</span>
+headers = {<span style="color: #ce9178;">"Authorization"</span>: <span style="color: #ce9178;">"Bearer YOUR_TOKEN"</span>}
+files = {<span style="color: #ce9178;">"image"</span>: <span style="color: #dcdcaa;">open</span>(<span style="color: #ce9178;">"image.png"</span>, <span style="color: #ce9178;">"rb"</span>)}
+
+response = requests.<span style="color: #dcdcaa;">post</span>(url, headers=headers, files=files)
+data = response.<span style="color: #dcdcaa;">json</span>()
+<span style="color: #dcdcaa;">print</span>(<span style="color: #ce9178;">f"Прямая ссылка: </span><span style="color: #569cd6;">{</span>data[<span style="color: #ce9178;">"directUrl"</span>]<span style="color: #569cd6;">}</span><span style="color: #ce9178;">"</span>)</pre>
+                            </div>
+                            <button onclick="copyCode('python-code')" style="position: absolute; top: 15px; right: 15px; padding: 8px 16px; background: var(--accent-primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">📋 Копировать</button>
+                        </div>
+                    </div>
+
+                    <!-- JavaScript -->
+                    <div style="background: var(--bg-card); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                        <h4 style="margin: 0 0 15px 0; display: flex; align-items: center; gap: 10px;">
+                            <span style="padding: 4px 10px; background: #f7df1e; color: #000; border-radius: 6px; font-size: 11px; font-weight: 700;">JavaScript</span>
+                            <span>Fetch API</span>
+                        </h4>
+                        <div style="position: relative;">
+                            <div style="background: #1e1e1e; border-radius: 8px; padding: 20px; overflow-x: auto;">
+                                <pre id="js-code" style="margin: 0; color: #d4d4d4; font-family: Consolas, monospace; font-size: 12px; line-height: 1.6;"><span style="color: #c586c0;">const</span> formData = <span style="color: #c586c0;">new</span> <span style="color: #4ec9b0;">FormData</span>();
+formData.<span style="color: #dcdcaa;">append</span>(<span style="color: #ce9178;">"image"</span>, fileInput.files[<span style="color: #b5cea8;">0</span>]);
+
+<span style="color: #dcdcaa;">fetch</span>(<span style="color: #ce9178;">"${window.location.origin}/api/images/upload"</span>, {
+  method: <span style="color: #ce9178;">"POST"</span>,
+  headers: { <span style="color: #ce9178;">"Authorization"</span>: <span style="color: #ce9178;">"Bearer YOUR_TOKEN"</span> },
+  body: formData
+})
+.<span style="color: #dcdcaa;">then</span>(res => res.<span style="color: #dcdcaa;">json</span>())
+.<span style="color: #dcdcaa;">then</span>(data => console.<span style="color: #dcdcaa;">log</span>(<span style="color: #ce9178;">"Ссылка:"</span>, data.directUrl));</pre>
+                            </div>
+                            <button onclick="copyCode('js-code')" style="position: absolute; top: 15px; right: 15px; padding: 8px 16px; background: var(--accent-primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">📋 Копировать</button>
+                        </div>
+                    </div>
+
+                    <!-- Ответ API -->
+                    <div style="background: linear-gradient(135deg, rgba(40,167,69,0.08), rgba(40,167,69,0.08)); border-left: 4px solid var(--success); border-radius: 8px; padding: 20px; margin-top: 30px;">
+                        <h4 style="margin: 0 0 15px 0; display: flex; align-items: center; gap: 8px;">
+                            <span>✅</span>
+                            <span>Успешный ответ</span>
+                        </h4>
+                        <div style="background: #1e1e1e; border-radius: 8px; padding: 15px;">
+                            <pre style="margin: 0; color: #d4d4d4; font-family: Consolas, monospace; font-size: 12px;">{
+  <span style="color: #9cdcfe;">"success"</span>: <span style="color: #569cd6;">true</span>,
+  <span style="color: #9cdcfe;">"id"</span>: <span style="color: #ce9178;">"550e8400-e29b-41d4-a716-446655440000"</span>,
+  <span style="color: #9cdcfe;">"shortCode"</span>: <span style="color: #ce9178;">"A1B2C3D"</span>,
+  <span style="color: #9cdcfe;">"directUrl"</span>: <span style="color: #ce9178;">"${window.location.origin}/i/A1B2C3D"</span>
+}</pre>
+                        </div>
                     </div>
                 </div>
             </div>
