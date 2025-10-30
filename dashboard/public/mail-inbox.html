@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Входящие - Почта @bublickrust.ru</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+        }
+
+        .mail-app {
+            display: flex;
+            height: 100vh;
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 0 50px rgba(0,0,0,0.1);
+        }
+
+        .sidebar {
+            width: 300px;
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            margin-bottom: 30px;
+        }
+
+        .sidebar-header h1 {
+            margin: 0 0 10px 0;
+            font-size: 1.5em;
+        }
+
+        .mailbox-info {
+            background: rgba(255,255,255,0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        .mailbox-email {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .mailbox-stats {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .stat {
+            flex: 1;
+            background: rgba(255,255,255,0.3);
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 0.8em;
+            opacity: 0.9;
+        }
+
+        .sidebar-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .sidebar-btn {
+            padding: 12px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .sidebar-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .email-list {
+            width: 400px;
+            border-right: 1px solid #e0e0e0;
+            overflow-y: auto;
+        }
+
+        .email-list-header {
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+            background: #fafafa;
+        }
+
+        .email-list-header h2 {
+            margin: 0;
+            color: #333;
+        }
+
+        .email-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            cursor: pointer;
+            transition: background 0.2s;
+            position: relative;
+        }
+
+        .email-item:hover {
+            background: #f8f8f8;
+        }
+
+        .email-item.active {
+            background: #e3f2fd;
+            border-left: 4px solid #667eea;
+        }
+
+        .email-item.unread {
+            background: #fff8e1;
+            font-weight: bold;
+        }
+
+        .email-item.unread::before {
+            content: '●';
+            position: absolute;
+            left: 8px;
+            color: #667eea;
+            font-size: 1.5em;
+        }
+
+        .email-sender {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .email-time {
+            font-size: 0.85em;
+            color: #999;
+        }
+
+        .email-subject {
+            color: #666;
+            margin-bottom: 5px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .email-preview {
+            font-size: 0.9em;
+            color: #999;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .email-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 30px;
+        }
+
+        .email-content-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #999;
+        }
+
+        .email-content-empty-icon {
+            font-size: 5em;
+            margin-bottom: 20px;
+        }
+
+        .email-header {
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .email-subject-full {
+            font-size: 2em;
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .email-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .email-meta-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .email-meta-label {
+            font-weight: bold;
+            color: #666;
+            min-width: 80px;
+        }
+
+        .email-meta-value {
+            color: #333;
+        }
+
+        .email-body {
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .email-body iframe {
+            width: 100%;
+            min-height: 500px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+
+        .email-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 5px;
+            margin-top: 15px;
+            border-bottom: 2px solid rgba(255,255,255,0.2);
+        }
+
+        .filter-tab {
+            padding: 10px 15px;
+            background: transparent;
+            border: none;
+            color: white;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+
+        .filter-tab:hover {
+            opacity: 1;
+        }
+
+        .filter-tab.active {
+            opacity: 1;
+            border-bottom-color: white;
+        }
+
+        .attachments-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .attachments-section h4 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        .attachment-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .attachment-icon {
+            font-size: 2em;
+        }
+
+        .attachment-info {
+            flex: 1;
+        }
+
+        .attachment-name {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .attachment-size {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        @media (max-width: 1200px) {
+            .sidebar {
+                width: 250px;
+            }
+            .email-list {
+                width: 350px;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .mail-app {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+            }
+            .email-list {
+                width: 100%;
+                max-height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="mail-app">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h1>📧 Почта</h1>
+                <div id="mailboxInfo" class="mailbox-info">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="filter-tabs">
+                <button class="filter-tab active" onclick="setFilter('all')">Все</button>
+                <button class="filter-tab" onclick="setFilter('unread')">Непрочитанные</button>
+            </div>
+
+            <div class="sidebar-actions">
+                <button class="sidebar-btn" onclick="syncEmails()">
+                    🔄 Синхронизировать
+                </button>
+                <a href="/mail-admin.html" class="sidebar-btn">
+                    ⚙️ Управление ящиками
+                </a>
+                <a href="/" class="sidebar-btn">
+                    ← Главная
+                </a>
+            </div>
+        </div>
+
+        <div class="email-list">
+            <div class="email-list-header">
+                <h2>Входящие</h2>
+            </div>
+            <div id="emailList">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Загрузка писем...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="email-content">
+            <div id="emailContent" class="email-content-empty">
+                <div class="email-content-empty-icon">📭</div>
+                <h2>Выберите письмо</h2>
+                <p>Выберите письмо из списка, чтобы прочитать его</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="auth-helper.js"></script>
+    <script>
+        let currentMailboxId = null;
+        let emails = [];
+        let currentFilter = 'all';
+        let currentEmailId = null;
+        let mailboxData = null;
+
+        // Get mailbox ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        currentMailboxId = urlParams.get('mailbox');
+
+        if (!currentMailboxId) {
+            alert('Не указан почтовый ящик');
+            window.location.href = '/mail-admin.html';
+        }
+
+        // Check authentication
+        checkAuth().then(user => {
+            if (!user) {
+                window.location.href = '/login.html';
+                return;
+            }
+            if (!user.is_admin) {
+                alert('Доступ запрещен');
+                window.location.href = '/';
+                return;
+            }
+            loadMailboxInfo();
+            loadEmails();
+        });
+
+        // Load mailbox info
+        async function loadMailboxInfo() {
+            try {
+                const response = await fetch('/api/mail/mailboxes', {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) throw new Error('Failed to load mailbox info');
+
+                const mailboxes = await response.json();
+                mailboxData = mailboxes.find(m => m.id == currentMailboxId);
+
+                if (!mailboxData) {
+                    throw new Error('Mailbox not found');
+                }
+
+                // Load stats
+                const statsResponse = await fetch(`/api/mail/mailboxes/${currentMailboxId}/stats`, {
+                    credentials: 'include'
+                });
+
+                let stats = { total: 0, unread: 0 };
+                if (statsResponse.ok) {
+                    stats = await statsResponse.json();
+                }
+
+                document.getElementById('mailboxInfo').innerHTML = `
+                    <div class="mailbox-email">${mailboxData.email}</div>
+                    ${mailboxData.display_name ? `<div style="opacity: 0.9; font-size: 0.9em;">${mailboxData.display_name}</div>` : ''}
+                    <div class="mailbox-stats">
+                        <div class="stat">
+                            <div class="stat-number">${stats.total}</div>
+                            <div class="stat-label">Всего</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-number">${stats.unread}</div>
+                            <div class="stat-label">Новых</div>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading mailbox info:', error);
+                document.getElementById('mailboxInfo').innerHTML = `
+                    <div style="color: #f5576c;">Ошибка загрузки</div>
+                `;
+            }
+        }
+
+        // Load emails
+        async function loadEmails() {
+            try {
+                const response = await fetch(`/api/mail/mailboxes/${currentMailboxId}/emails?limit=100`, {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) throw new Error('Failed to load emails');
+
+                emails = await response.json();
+                renderEmailList();
+            } catch (error) {
+                console.error('Error loading emails:', error);
+                document.getElementById('emailList').innerHTML = `
+                    <div style="padding: 20px; text-align: center; color: #999;">
+                        <p>❌ Ошибка загрузки писем</p>
+                        <p style="font-size: 0.9em;">${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Render email list
+        function renderEmailList() {
+            const container = document.getElementById('emailList');
+            
+            let filteredEmails = emails;
+            if (currentFilter === 'unread') {
+                filteredEmails = emails.filter(e => !e.is_read);
+            }
+
+            if (filteredEmails.length === 0) {
+                container.innerHTML = `
+                    <div style="padding: 20px; text-align: center; color: #999;">
+                        <p>📭 Писем нет</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filteredEmails.map(email => {
+                const date = new Date(email.received_at);
+                const timeStr = formatEmailTime(date);
+                
+                return `
+                    <div class="email-item ${!email.is_read ? 'unread' : ''} ${email.id == currentEmailId ? 'active' : ''}"
+                         onclick="openEmail(${email.id})">
+                        <div class="email-sender">
+                            <span>${email.sender_name || email.sender_email}</span>
+                            <span class="email-time">${timeStr}</span>
+                        </div>
+                        <div class="email-subject">${email.subject || '(Без темы)'}</div>
+                        <div class="email-preview">${stripHtml(email.body_text || email.body_html || '').substring(0, 80)}...</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Open email
+        async function openEmail(emailId) {
+            currentEmailId = emailId;
+            renderEmailList();
+
+            try {
+                const response = await fetch(`/api/mail/emails/${emailId}`, {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) throw new Error('Failed to load email');
+
+                const email = await response.json();
+                renderEmailContent(email);
+
+                // Update email in list
+                const emailIndex = emails.findIndex(e => e.id === emailId);
+                if (emailIndex !== -1) {
+                    emails[emailIndex].is_read = true;
+                    renderEmailList();
+                    loadMailboxInfo();
+                }
+            } catch (error) {
+                console.error('Error loading email:', error);
+                document.getElementById('emailContent').innerHTML = `
+                    <div style="text-align: center; color: #999;">
+                        <p>❌ Ошибка загрузки письма</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Render email content
+        function renderEmailContent(email) {
+            const date = new Date(email.received_at);
+            const dateStr = date.toLocaleString('ru-RU');
+
+            let bodyContent = '';
+            if (email.body_html) {
+                // Create iframe for HTML content
+                bodyContent = `<iframe id="emailFrame" srcdoc="${escapeHtml(email.body_html)}" style="width: 100%; min-height: 500px; border: 1px solid #e0e0e0; border-radius: 8px;"></iframe>`;
+            } else if (email.body_text) {
+                bodyContent = `<div style="white-space: pre-wrap;">${escapeHtml(email.body_text)}</div>`;
+            } else {
+                bodyContent = `<div style="color: #999; font-style: italic;">Нет содержимого</div>`;
+            }
+
+            document.getElementById('emailContent').innerHTML = `
+                <div class="email-actions">
+                    <button class="btn btn-primary" onclick="markAsUnread(${email.id})">
+                        📧 Отметить непрочитанным
+                    </button>
+                    <button class="btn btn-danger" onclick="deleteEmail(${email.id})">
+                        🗑️ Удалить
+                    </button>
+                </div>
+
+                <div class="email-header">
+                    <div class="email-subject-full">${email.subject || '(Без темы)'}</div>
+                    <div class="email-meta">
+                        <div class="email-meta-row">
+                            <span class="email-meta-label">От:</span>
+                            <span class="email-meta-value">
+                                ${email.sender_name ? `${email.sender_name} &lt;${email.sender_email}&gt;` : email.sender_email}
+                            </span>
+                        </div>
+                        <div class="email-meta-row">
+                            <span class="email-meta-label">Кому:</span>
+                            <span class="email-meta-value">${email.recipient_email}</span>
+                        </div>
+                        <div class="email-meta-row">
+                            <span class="email-meta-label">Дата:</span>
+                            <span class="email-meta-value">${dateStr}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="email-body">
+                    ${bodyContent}
+                </div>
+
+                ${email.has_attachments ? `
+                    <div class="attachments-section">
+                        <h4>📎 Вложения</h4>
+                        <div class="attachment-item">
+                            <div class="attachment-icon">📄</div>
+                            <div class="attachment-info">
+                                <div class="attachment-name">Информация о вложениях скоро будет доступна</div>
+                            </div>
+                        </div>
+                    </div>
+                ` : ''}
+            `;
+        }
+
+        // Sync emails
+        async function syncEmails() {
+            try {
+                showAlert('🔄 Синхронизация...', 'success');
+                
+                const response = await fetch(`/api/mail/mailboxes/${currentMailboxId}/sync`, {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Sync failed');
+                }
+
+                const result = await response.json();
+                showAlert(`✅ Загружено писем: ${result.emailsFetched}`, 'success');
+                loadEmails();
+                loadMailboxInfo();
+            } catch (error) {
+                showAlert(`❌ Ошибка: ${error.message}`, 'error');
+            }
+        }
+
+        // Mark as unread
+        async function markAsUnread(emailId) {
+            try {
+                const response = await fetch(`/api/mail/emails/${emailId}/read`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ isRead: false })
+                });
+
+                if (!response.ok) throw new Error('Failed to mark as unread');
+
+                const emailIndex = emails.findIndex(e => e.id === emailId);
+                if (emailIndex !== -1) {
+                    emails[emailIndex].is_read = false;
+                    renderEmailList();
+                    loadMailboxInfo();
+                }
+                showAlert('✅ Письмо отмечено непрочитанным', 'success');
+            } catch (error) {
+                showAlert(`❌ Ошибка: ${error.message}`, 'error');
+            }
+        }
+
+        // Delete email
+        async function deleteEmail(emailId) {
+            if (!confirm('Удалить это письмо?')) return;
+
+            try {
+                const response = await fetch(`/api/mail/emails/${emailId}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+
+                if (!response.ok) throw new Error('Failed to delete email');
+
+                emails = emails.filter(e => e.id !== emailId);
+                renderEmailList();
+                document.getElementById('emailContent').innerHTML = `
+                    <div class="email-content-empty">
+                        <div class="email-content-empty-icon">📭</div>
+                        <h2>Выберите письмо</h2>
+                        <p>Выберите письмо из списка, чтобы прочитать его</p>
+                    </div>
+                `;
+                showAlert('✅ Письмо удалено', 'success');
+                loadMailboxInfo();
+            } catch (error) {
+                showAlert(`❌ Ошибка: ${error.message}`, 'error');
+            }
+        }
+
+        // Set filter
+        function setFilter(filter) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            renderEmailList();
+        }
+
+        // Helper functions
+        function formatEmailTime(date) {
+            const now = new Date();
+            const diff = now - date;
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const days = Math.floor(hours / 24);
+
+            if (hours < 1) return 'Только что';
+            if (hours < 24) return `${hours}ч назад`;
+            if (days < 7) return `${days}д назад`;
+            return date.toLocaleDateString('ru-RU');
+        }
+
+        function stripHtml(html) {
+            const tmp = document.createElement('div');
+            tmp.innerHTML = html;
+            return tmp.textContent || tmp.innerText || '';
+        }
+
+        function escapeHtml(html) {
+            return html
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function showAlert(message, type) {
+            // Simple notification (you can enhance this)
+            console.log(`[${type}] ${message}`);
+        }
+    </script>
+</body>
+</html>
+
