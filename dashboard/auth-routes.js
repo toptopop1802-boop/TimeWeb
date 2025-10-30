@@ -16,7 +16,7 @@ function setupAuthRoutes(app, supabase) {
             const cleanUsername = username.trim();
 
             // Проверяем существование пользователя с таким именем
-            const { data: existing } = await supabase
+            const { data: existing, error: checkError } = await supabase
                 .from('users')
                 .select('id, username, role')
                 .eq('username', cleanUsername)
@@ -27,6 +27,9 @@ function setupAuthRoutes(app, supabase) {
             if (existing) {
                 // Если пользователь существует - входим
                 user = existing;
+            } else if (checkError && checkError.code !== 'PGRST116') {
+                // PGRST116 = not found, это нормально для нового пользователя
+                throw checkError;
             } else {
                 // Создаем нового пользователя
                 const uniqueEmail = `${cleanUsername}-${Date.now()}@local.user`;

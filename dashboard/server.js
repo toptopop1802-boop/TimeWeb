@@ -70,7 +70,13 @@ function createApp() {
                     contentType: req.file.mimetype,
                     upsert: false
                 });
-            if (upErr) throw upErr;
+            
+            if (upErr) {
+                if (upErr.message && upErr.message.includes('Bucket not found')) {
+                    return res.status(503).json({ error: 'Bucket "images" не создан в Supabase Storage. Создайте его в Dashboard.' });
+                }
+                throw upErr;
+            }
 
             // Short code derived from id
             const cleaned = id.replace(/-/g, '');
@@ -399,6 +405,13 @@ function createApp() {
                 return res.status(503).json({ error: 'Supabase not configured' });
             }
 
+            // Require auth
+            let currentUser = null;
+            await requireAuth(req, res, async () => {
+                currentUser = req.user;
+            }, supabase);
+            if (!currentUser) return;
+
             const mapId = uuidv4();
             const fileExt = path.extname(req.file.originalname);
             const originalName = req.file.originalname;
@@ -423,13 +436,35 @@ function createApp() {
                 return res.status(500).json({ error: uploadError.message || 'Ошибка загрузки файла' });
             }
 
-            // Return map data (no database needed)
+            // Save to maps_metadata table with user_id
+            try {
+                const { error: metaError } = await supabase
+                    .from('maps_metadata')
+                    .insert({
+                        id: mapId,
+                        user_id: currentUser.id,
+                        file_name: originalName,
+                        file_size: req.file.size,
+                        storage_path: storagePath,
+                        short_code: generateShortCodeForMap(mapId)
+                    });
+                
+                if (metaError) {
+                    console.warn('Failed to save metadata:', metaError);
+                }
+            } catch (metaErr) {
+                console.warn('Metadata insert skipped:', metaErr);
+            }
+
+            // Return map data
             const mapData = {
                 id: mapId,
                 original_name: originalName,
                 storage_path: storagePath,
                 file_size: req.file.size,
-                uploaded_at: new Date().toISOString()
+                uploaded_at: new Date().toISOString(),
+                owner_id: currentUser.id,
+                owner_name: currentUser.username
             };
 
             res.json({
@@ -441,6 +476,13 @@ function createApp() {
             res.status(500).json({ error: error.message || 'Ошибка загрузки файла' });
         }
     });
+
+    // Helper: generate short code from UUID
+    function generateShortCodeForMap(uuid) {
+        const cleaned = uuid.replace(/-/g, '');
+        const hash = cleaned.split('').reduce((acc, c) => ((acc << 5) - acc) + c.charCodeAt(0), 0);
+        return Math.abs(hash).toString(36).substring(0, 7).toUpperCase().padEnd(7, '0');
+    }
 
     // Get maps: only own maps for regular users, all for admin
     app.get('/api/maps', async (req, res) => {
@@ -498,6 +540,24 @@ function createApp() {
                 return !isFolder && hasMapExtension;
             });
 
+            // Get metadata from database
+            let metaMap = {};
+            try {
+                const { data: metaRows } = await supabase
+                    .from('maps_metadata')
+                    .select('id, user_id, users(username)');
+                if (Array.isArray(metaRows)) {
+                    metaRows.forEach(meta => {
+                        metaMap[meta.id] = {
+                            user_id: meta.user_id,
+                            owner_name: meta.users?.username || 'Unknown'
+                        };
+                    });
+                }
+            } catch (e) {
+                console.warn('Metadata fetch skipped:', e.message);
+            }
+
             // Transform files to map format
             let maps = mapFiles.map(file => {
                 const fileExt = path.extname(file.name);
@@ -505,31 +565,22 @@ function createApp() {
                 // Убираем префикс 'maps/' если он есть
                 const mapId = fileName.replace('maps/', '');
                 const metadata = file.metadata || {};
+                const meta = metaMap[mapId] || {};
                 
                 return {
                     id: mapId,
                     original_name: metadata.originalName || file.name,
                     storage_path: file.name,
                     file_size: parseInt(metadata.fileSize || file.metadata?.size || '0'),
-                    uploaded_at: metadata.uploadedAt || file.created_at || new Date().toISOString()
+                    uploaded_at: metadata.uploadedAt || file.created_at || new Date().toISOString(),
+                    owner_id: meta.user_id,
+                    owner_name: meta.owner_name
                 };
             });
 
-            // If user is not admin, try to filter maps by owner using metadata table (best effort)
+            // If user is not admin, filter to own maps only
             if (currentUser && currentUser.role !== 'admin') {
-                try {
-                    const { data: metaRows } = await supabase
-                        .from('maps_metadata')
-                        .select('id, user_id');
-                    if (Array.isArray(metaRows) && metaRows.length) {
-                        const ownedIds = new Set(
-                            metaRows.filter(r => r.user_id === currentUser.id).map(r => r.id)
-                        );
-                        maps = maps.filter(m => ownedIds.has(m.id));
-                    }
-                } catch (e) {
-                    console.warn('maps_metadata filter skipped:', e.message);
-                }
+                maps = maps.filter(m => m.owner_id === currentUser.id);
             }
 
             console.log(`Found ${maps.length} maps in storage`);

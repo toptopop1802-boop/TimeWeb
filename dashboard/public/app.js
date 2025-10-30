@@ -1610,12 +1610,18 @@ async function loadMaps() {
         console.log('✅ Рендерим', maps.length, 'карт(ы)');
 
         const baseUrl = window.location.origin;
+        const isAdmin = currentUser && currentUser.user && currentUser.user.role === 'admin';
+        
         container.innerHTML = maps.map(map => {
             // Генерируем короткий 7-значный код из ID карты
             const shortCode = generateShortCode(map.id);
             const downloadUrl = `${baseUrl}/${shortCode}`;
             const uploadDate = new Date(map.uploaded_at).toLocaleString('ru-RU');
             const fileSize = formatFileSize(map.file_size || 0);
+            
+            // Owner info (только для админа)
+            const ownerInfo = isAdmin && map.owner_name ? 
+                `<span style="color: var(--text-secondary); font-size: 12px;">👤 ${map.owner_name}</span>` : '';
 
             return `
                 <div class="map-card">
@@ -1624,6 +1630,7 @@ async function loadMaps() {
                         <div class="map-meta">
                             <span>📅 ${uploadDate}</span>
                             <span>📦 ${fileSize}</span>
+                            ${ownerInfo}
                         </div>
                     </div>
                     <div class="map-link-section">
