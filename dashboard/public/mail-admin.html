@@ -442,21 +442,11 @@
         </div>
     </div>
 
-    <script src="auth-helper.js"></script>
     <script>
         let mailboxes = [];
 
-        // Check authentication
-        checkAuth().then(user => {
-            if (!user) {
-                window.location.href = '/login.html';
-                return;
-            }
-            if (!user.is_admin) {
-                showAlert('Доступ запрещен. Требуются права администратора.', 'error');
-                setTimeout(() => window.location.href = '/', 3000);
-                return;
-            }
+        // Load mailboxes on page load
+        window.addEventListener('DOMContentLoaded', () => {
             loadMailboxes();
         });
 

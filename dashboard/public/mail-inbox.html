@@ -462,7 +462,6 @@
         </div>
     </div>
 
-    <script src="auth-helper.js"></script>
     <script>
         let currentMailboxId = null;
         let emails = [];
@@ -479,17 +478,8 @@
             window.location.href = '/mail-admin.html';
         }
 
-        // Check authentication
-        checkAuth().then(user => {
-            if (!user) {
-                window.location.href = '/login.html';
-                return;
-            }
-            if (!user.is_admin) {
-                alert('Доступ запрещен');
-                window.location.href = '/';
-                return;
-            }
+        // Load on page load
+        window.addEventListener('DOMContentLoaded', () => {
             loadMailboxInfo();
             loadEmails();
         });
