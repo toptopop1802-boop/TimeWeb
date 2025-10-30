@@ -1062,6 +1062,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Load saved theme
     loadTheme();
+    
+    // Setup theme toggle button
+    const themeToggleBtn = document.getElementById('theme-toggle');
+    if (themeToggleBtn) {
+        themeToggleBtn.addEventListener('click', toggleTheme);
+    }
 
     // Period selector
     document.getElementById('period-select').addEventListener('change', (e) => {
