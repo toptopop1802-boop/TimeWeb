@@ -76,10 +76,34 @@ async function loadMembers() {
 }
 
 // ============================================
-// IMAGES HOSTING PAGE
+// IMAGES HOSTING PAGE (localStorage)
 // ============================================
 
-let uploadedImages = [];
+function getLocalImagesHistory() {
+    try {
+        const history = localStorage.getItem('images_history');
+        return history ? JSON.parse(history) : [];
+    } catch (e) {
+        console.error('Ошибка чтения истории изображений:', e);
+        return [];
+    }
+}
+
+function saveImageToLocalHistory(image) {
+    try {
+        const history = getLocalImagesHistory();
+        history.unshift(image);
+        const limited = history.slice(0, 200);
+        localStorage.setItem('images_history', JSON.stringify(limited));
+        console.log('💾 Изображение сохранено локально');
+        return limited;
+    } catch (e) {
+        console.error('Ошибка сохранения:', e);
+        return history;
+    }
+}
+
+let uploadedImages = getLocalImagesHistory();
 
 function setupImageHosting() {
     const dropZone = document.getElementById('image-drop');
@@ -171,14 +195,15 @@ async function uploadImage(file) {
                 progressDiv.style.display = 'none';
                 resultDiv.style.display = 'block';
 
-                // Add to history
-                uploadedImages.unshift({
+                // Add to local history
+                const newImage = {
                     id: response.id,
                     shortCode: response.shortCode,
                     directUrl: response.directUrl,
                     fileName: fileName,
                     uploadedAt: new Date().toISOString()
-                });
+                };
+                uploadedImages = saveImageToLocalHistory(newImage);
                 renderImagesHistory();
             } else {
                 const error = JSON.parse(xhr.responseText);
@@ -319,7 +344,7 @@ function renderImagesHistory() {
     if (!listDiv) return;
 
     if (uploadedImages.length === 0) {
-        listDiv.innerHTML = '<p style="color:var(--text-secondary);text-align:center;padding:40px 0;">Загрузите первое изображение</p>';
+        listDiv.innerHTML = '<p style="color:var(--text-secondary);text-align:center;padding:40px 0;">Загрузите первое изображение<br><small style="font-size: 11px;">История хранится локально на вашем устройстве</small></p>';
         return;
     }
 

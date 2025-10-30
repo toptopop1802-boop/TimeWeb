@@ -1517,6 +1517,10 @@ async function uploadMap(file) {
             if (xhr.status === 200) {
                 const response = JSON.parse(xhr.responseText);
                 console.log('✅ Карта загружена успешно!', response);
+                
+                // Сохраняем в локальную историю
+                saveMapToLocalHistory(response.map);
+                
                 showToast('Карта успешно загружена!', 'success');
                 progressDiv.style.display = 'none';
                 dropZone.style.opacity = '1';
@@ -1555,30 +1559,66 @@ async function uploadMap(file) {
     }
 }
 
+// ============================================
+// ЛОКАЛЬНАЯ ИСТОРИЯ КАРТ (localStorage)
+// ============================================
+
+function getLocalMapsHistory() {
+    try {
+        const history = localStorage.getItem('maps_history');
+        return history ? JSON.parse(history) : [];
+    } catch (e) {
+        console.error('Ошибка чтения истории карт:', e);
+        return [];
+    }
+}
+
+function saveMapToLocalHistory(map) {
+    try {
+        const history = getLocalMapsHistory();
+        
+        // Добавляем в начало списка
+        history.unshift({
+            id: map.id,
+            original_name: map.original_name,
+            file_size: map.file_size,
+            uploaded_at: map.uploaded_at || new Date().toISOString(),
+            download_url: generateDownloadUrl(map.id)
+        });
+        
+        // Ограничиваем историю 100 картами
+        const limited = history.slice(0, 100);
+        localStorage.setItem('maps_history', JSON.stringify(limited));
+        
+        console.log('💾 Карта сохранена в локальную историю:', map.original_name);
+    } catch (e) {
+        console.error('Ошибка сохранения истории:', e);
+    }
+}
+
+function removeMapFromLocalHistory(mapId) {
+    try {
+        const history = getLocalMapsHistory();
+        const filtered = history.filter(m => m.id !== mapId);
+        localStorage.setItem('maps_history', JSON.stringify(filtered));
+        console.log('🗑️ Карта удалена из локальной истории:', mapId);
+    } catch (e) {
+        console.error('Ошибка удаления из истории:', e);
+    }
+}
+
+function generateDownloadUrl(mapId) {
+    const shortCode = generateShortCode(mapId);
+    return `${window.location.origin}/${shortCode}`;
+}
+
 async function loadMaps() {
     try {
-        console.log('🔄 Загрузка карт из API:', `${API_URL}/api/maps`);
+        console.log('📂 Загрузка карт из локальной истории');
         
-        // Добавляем токен авторизации
-        const headers = {};
-        if (currentUser && currentUser.token) {
-            headers['Authorization'] = `Bearer ${currentUser.token}`;
-        }
-        
-        const response = await fetch(`${API_URL}/api/maps`, { headers });
-        
-        console.log('📡 Ответ сервера:', response.status, response.statusText);
-        
-        if (!response.ok) {
-            const error = await response.json().catch(() => ({ error: 'Ошибка загрузки карт' }));
-            console.error('❌ Ошибка от сервера:', error);
-            throw new Error(error.error || `HTTP ${response.status}`);
-        }
-
-        const maps = await response.json();
-        console.log('📦 Получены данные:', maps);
-        console.log('📊 Тип данных:', typeof maps, Array.isArray(maps) ? 'Array' : 'Not Array');
-        console.log('📈 Количество карт:', Array.isArray(maps) ? maps.length : 'N/A');
+        // Загружаем из localStorage
+        const maps = getLocalMapsHistory();
+        console.log('💾 Найдено карт в истории:', maps.length);
 
         const container = document.getElementById('maps-list');
         if (!container) {
@@ -1586,42 +1626,18 @@ async function loadMaps() {
             return;
         }
 
-        // Проверяем, что maps - это массив
-        if (!Array.isArray(maps)) {
-            console.error('❌ Expected array, got:', maps);
-            let errorMsg = 'Ошибка загрузки данных';
-            if (maps && maps.error) {
-                if (maps.error.includes('Supabase not configured')) {
-                    errorMsg = 'Supabase не настроен. Проверьте переменные окружения в Vercel.';
-                } else {
-                    errorMsg = maps.error;
-                }
-            }
-            container.innerHTML = `<p class="maps-empty" style="color: var(--danger);">⚠️ ${errorMsg}</p>`;
-            return;
-        }
-
         if (maps.length === 0) {
-            console.log('ℹ️ Карт не найдено, показываем пустое сообщение');
-            container.innerHTML = '<p class="maps-empty">Загрузите первую карту для начала</p>';
+            console.log('ℹ️ История пуста, показываем пустое сообщение');
+            container.innerHTML = '<p class="maps-empty">Загрузите первую карту для начала<br><small style="color: var(--text-secondary); font-size: 12px;">История хранится локально на вашем устройстве</small></p>';
             return;
         }
         
-        console.log('✅ Рендерим', maps.length, 'карт(ы)');
+        console.log('✅ Рендерим', maps.length, 'карт(ы) из локальной истории');
 
-        const baseUrl = window.location.origin;
-        const isAdmin = currentUser && currentUser.user && currentUser.user.role === 'admin';
-        
         container.innerHTML = maps.map(map => {
-            // Генерируем короткий 7-значный код из ID карты
-            const shortCode = generateShortCode(map.id);
-            const downloadUrl = `${baseUrl}/${shortCode}`;
+            const downloadUrl = map.download_url || generateDownloadUrl(map.id);
             const uploadDate = new Date(map.uploaded_at).toLocaleString('ru-RU');
             const fileSize = formatFileSize(map.file_size || 0);
-            
-            // Owner info (только для админа)
-            const ownerInfo = isAdmin && map.owner_name ? 
-                `<span style="color: var(--text-secondary); font-size: 12px;">👤 ${map.owner_name}</span>` : '';
 
             return `
                 <div class="map-card">
@@ -1630,13 +1646,13 @@ async function loadMaps() {
                         <div class="map-meta">
                             <span>📅 ${uploadDate}</span>
                             <span>📦 ${fileSize}</span>
-                            ${ownerInfo}
+                            <span style="color: var(--success); font-size: 12px;">💾 Локально</span>
                         </div>
                     </div>
                     <div class="map-link-section">
                         <input type="text" class="map-link-input" value="${downloadUrl}" readonly id="map-link-${map.id}">
-                        <button class="map-link-btn" onclick="copyMapLink('${map.id}')">⧉ Копировать</button>
-                        <button class="map-delete-btn" onclick="deleteMap('${map.id}')">🗑️ Удалить</button>
+                        <button class="map-link-btn" onclick="copyMapLink('${map.id}', '${downloadUrl}')">⧉ Копировать</button>
+                        <button class="map-delete-btn" onclick="deleteMapLocal('${map.id}')">🗑️ Удалить</button>
                     </div>
                 </div>
             `;
@@ -1659,7 +1675,15 @@ async function loadMaps() {
     }
 }
 
-window.copyMapLink = function(mapId) {
+function deleteMapLocal(mapId) {
+    if (!confirm('Удалить карту из локальной истории?')) return;
+    
+    removeMapFromLocalHistory(mapId);
+    loadMaps();
+    showToast('Карта удалена из истории', 'success');
+}
+
+window.copyMapLink = function(mapId, url) {
     const input = document.getElementById(`map-link-${mapId}`);
     if (!input) return;
 
