@@ -5,13 +5,20 @@ const { Client, GatewayIntentBits } = require('discord.js');
 const multer = require('multer');
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
+const cookieParser = require('cookie-parser');
 require('dotenv').config();
+
+const { setupAuthRoutes } = require('./auth-routes');
+const { requireAuth, requireAdmin } = require('./auth-middleware');
 
 const PORT = process.env.PORT || 3000;
 const IS_SERVERLESS = !!process.env.VERCEL;
 
 function createApp() {
     const app = express();
+
+    // Middleware
+    app.use(cookieParser());
 
     // Configure multer for file uploads (memory storage for serverless)
     const upload = multer({
