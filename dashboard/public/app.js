@@ -1,49 +1,24 @@
-// === AUTH CHECK ===
-// Проверяем авторизацию перед загрузкой приложения
-let currentUser = null;
-
-(async function initAuth() {
-    try {
-        const authData = await requireAuth();
-        if (!authData) {
-            return; // Редирект на login произойдет в requireAuth
-        }
-        
-        currentUser = authData;
-        
-        // Настраиваем UI в зависимости от роли
-        setupRoleBasedUI(authData);
-        
-        console.log('✅ Авторизован как:', authData.user.username, '| Роль:', authData.user.role);
-    } catch (error) {
-        console.error('Auth error:', error);
-        window.location.href = '/login.html';
-    }
-})();
-
-// API Base URL (can be overridden via window.API_URL or ?api=...)
-const API_URL = (function() {
-    const qp = new URLSearchParams(window.location.search).get('api');
-    if (typeof window.API_URL === 'string' && window.API_URL.trim()) return window.API_URL.trim();
-    if (qp && qp.trim()) return qp.trim();
-    return window.location.origin;
-})();
-
-// Global State
-let chart = null;
-let autoRefreshInterval = null;
-let currentChartData = null;
-let currentChartView = 'all';
-// Demo
-let demoChart = null;
-let demoCurrentDays = 30;
-let demoCurrentType = 'all';
+// ============================================
+// UTILITY FUNCTIONS (defined first for global access)
+// ============================================
 
 // Utility: Escape HTML
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// Utility: Show toast notification
+function showToast(message, type) {
+    const el = document.getElementById('toast');
+    if (!el) return;
+    el.textContent = message;
+    el.classList.remove('success');
+    if (type === 'success') el.classList.add('success');
+    el.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => el.classList.remove('show'), 1800);
 }
 
 // ============================================
@@ -134,6 +109,47 @@ function copyCode(elementId) {
 // Экспортируем функции глобально сразу
 window.copyApiEndpoint = copyApiEndpoint;
 window.copyCode = copyCode;
+
+// === AUTH CHECK ===
+// Проверяем авторизацию перед загрузкой приложения
+let currentUser = null;
+
+(async function initAuth() {
+    try {
+        const authData = await requireAuth();
+        if (!authData) {
+            return; // Редирект на login произойдет в requireAuth
+        }
+        
+        currentUser = authData;
+        
+        // Настраиваем UI в зависимости от роли
+        setupRoleBasedUI(authData);
+        
+        console.log('✅ Авторизован как:', authData.user.username, '| Роль:', authData.user.role);
+    } catch (error) {
+        console.error('Auth error:', error);
+        window.location.href = '/login.html';
+    }
+})();
+
+// API Base URL (can be overridden via window.API_URL or ?api=...)
+const API_URL = (function() {
+    const qp = new URLSearchParams(window.location.search).get('api');
+    if (typeof window.API_URL === 'string' && window.API_URL.trim()) return window.API_URL.trim();
+    if (qp && qp.trim()) return qp.trim();
+    return window.location.origin;
+})();
+
+// Global State
+let chart = null;
+let autoRefreshInterval = null;
+let currentChartData = null;
+let currentChartView = 'all';
+// Demo
+let demoChart = null;
+let demoCurrentDays = 30;
+let demoCurrentType = 'all';
 
 // Utility: Generate short code from UUID (7 characters alphanumeric)
 function generateShortCode(uuid) {
@@ -1526,17 +1542,6 @@ function rgbToHsl(r, g, b) {
         h /= 6;
     }
     return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
-}
-
-function showToast(message, type) {
-    const el = document.getElementById('toast');
-    if (!el) return;
-    el.textContent = message;
-    el.classList.remove('success');
-    if (type === 'success') el.classList.add('success');
-    el.classList.add('show');
-    clearTimeout(showToast._t);
-    showToast._t = setTimeout(() => el.classList.remove('show'), 1800);
 }
 
 // ============================================
