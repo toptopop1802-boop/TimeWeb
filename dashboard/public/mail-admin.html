@@ -451,7 +451,13 @@
         window.addEventListener('DOMContentLoaded', async () => {
             // Check authentication
             authData = await requireAuth();
-            if (!authData) return;
+            if (!authData) {
+                console.error('No auth data - redirecting to login');
+                return;
+            }
+
+            console.log('Auth data:', authData);
+            console.log('Is admin?', isAdmin(authData));
 
             // Check if user is admin
             if (!isAdmin(authData)) {
@@ -460,20 +466,25 @@
                 return;
             }
 
+            console.log('Loading mailboxes with token:', authData.token);
             loadMailboxes();
         });
 
         // Load mailboxes
         async function loadMailboxes() {
             try {
+                console.log('Fetching mailboxes with Authorization header:', `Bearer ${authData.token}`);
                 const response = await fetch('/api/mail/mailboxes', {
                     headers: {
                         'Authorization': `Bearer ${authData.token}`
                     }
                 });
 
+                console.log('Response status:', response.status);
                 if (!response.ok) {
-                    throw new Error('Failed to load mailboxes');
+                    const errorText = await response.text();
+                    console.error('Error response:', errorText);
+                    throw new Error('Failed to load mailboxes: ' + response.status);
                 }
 
                 mailboxes = await response.json();

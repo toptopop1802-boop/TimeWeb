@@ -1170,8 +1170,11 @@ function createApp() {
     // Initialize mail service
     const mailService = supabase ? new MailService(supabase) : null;
 
+    // Create auth middleware wrapper that passes supabase
+    const authMiddleware = (req, res, next) => requireAuth(req, res, next, supabase);
+
     // Получить список всех почтовых ящиков (только для админов)
-    app.get('/api/mail/mailboxes', requireAuth, requireAdmin, async (req, res) => {
+    app.get('/api/mail/mailboxes', authMiddleware, requireAdmin, async (req, res) => {
         try {
             if (!mailService) {
                 return res.status(503).json({ error: 'Mail service not configured' });
@@ -1188,7 +1191,7 @@ function createApp() {
     });
 
     // Создать новый почтовый ящик (только для админов)
-    app.post('/api/mail/mailboxes', requireAuth, requireAdmin, async (req, res) => {
+    app.post('/api/mail/mailboxes', authMiddleware, requireAdmin, async (req, res) => {
         try {
             if (!mailService) {
                 return res.status(503).json({ error: 'Mail service not configured' });
@@ -1218,7 +1221,7 @@ function createApp() {
     });
 
     // Удалить почтовый ящик (только для админов)
-    app.delete('/api/mail/mailboxes/:id', requireAuth, requireAdmin, async (req, res) => {
+    app.delete('/api/mail/mailboxes/:id', authMiddleware, requireAdmin, async (req, res) => {
         try {
             if (!mailService) {
                 return res.status(503).json({ error: 'Mail service not configured' });
@@ -1235,7 +1238,7 @@ function createApp() {
     });
 
     // Обновить пароль почтового ящика (только для админов)
-    app.patch('/api/mail/mailboxes/:id/password', requireAuth, requireAdmin, async (req, res) => {
+    app.patch('/api/mail/mailboxes/:id/password', authMiddleware, requireAdmin, async (req, res) => {
         try {
             if (!mailService) {
                 return res.status(503).json({ error: 'Mail service not configured' });
@@ -1258,7 +1261,7 @@ function createApp() {
     });
 
     // Получить письма для почтового ящика (только для админов)
-    app.get('/api/mail/mailboxes/:id/emails', requireAuth, requireAdmin, async (req, res) => {
+    app.get('/api/mail/mailboxes/:id/emails', authMiddleware, requireAdmin, async (req, res) => {
         try {
             if (!mailService) {
                 return res.status(503).json({ error: 'Mail service not configured' });
@@ -1278,7 +1281,7 @@ function createApp() {
     });
 
     // Синхронизировать письма с IMAP сервера (только для админов)
-    app.post('/api/mail/mailboxes/:id/sync', requireAuth, requireAdmin, async (req, res) => {
+    app.post('/api/mail/mailboxes/:id/sync', authMiddleware, requireAdmin, async (req, res) => {
         try {
             if (!mailService) {
                 return res.status(503).json({ error: 'Mail service not configured' });
@@ -1307,7 +1310,7 @@ function createApp() {
     });
 
     // Получить одно письмо (только для админов)
-    app.get('/api/mail/emails/:id', requireAuth, requireAdmin, async (req, res) => {
+    app.get('/api/mail/emails/:id', authMiddleware, requireAdmin, async (req, res) => {
         try {
             if (!mailService) {
                 return res.status(503).json({ error: 'Mail service not configured' });
@@ -1324,7 +1327,7 @@ function createApp() {
     });
 
     // Пометить письмо как прочитанное/непрочитанное (только для админов)
-    app.patch('/api/mail/emails/:id/read', requireAuth, requireAdmin, async (req, res) => {
+    app.patch('/api/mail/emails/:id/read', authMiddleware, requireAdmin, async (req, res) => {
         try {
             if (!mailService) {
                 return res.status(503).json({ error: 'Mail service not configured' });
@@ -1342,7 +1345,7 @@ function createApp() {
     });
 
     // Удалить письмо (только для админов)
-    app.delete('/api/mail/emails/:id', requireAuth, requireAdmin, async (req, res) => {
+    app.delete('/api/mail/emails/:id', authMiddleware, requireAdmin, async (req, res) => {
         try {
             if (!mailService) {
                 return res.status(503).json({ error: 'Mail service not configured' });
@@ -1359,7 +1362,7 @@ function createApp() {
     });
 
     // Получить статистику по почтовому ящику (только для админов)
-    app.get('/api/mail/mailboxes/:id/stats', requireAuth, requireAdmin, async (req, res) => {
+    app.get('/api/mail/mailboxes/:id/stats', authMiddleware, requireAdmin, async (req, res) => {
         try {
             if (!mailService) {
                 return res.status(503).json({ error: 'Mail service not configured' });
