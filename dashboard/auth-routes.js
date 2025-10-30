@@ -2,6 +2,18 @@
 const crypto = require('crypto');
 const { generateToken, hashPassword, verifyPassword, requireAuth, requireAdmin } = require('./auth-middleware');
 
+// Функция для получения реального IP адреса
+function getRealIP(req) {
+    // Проверяем заголовки прокси в порядке приоритета
+    return req.headers['x-real-ip'] || 
+           req.headers['x-forwarded-for']?.split(',')[0].trim() || 
+           req.headers['cf-connecting-ip'] || 
+           req.connection?.remoteAddress || 
+           req.socket?.remoteAddress || 
+           req.ip || 
+           'unknown';
+}
+
 function setupAuthRoutes(app, supabase) {
     
     // Простая регистрация - только имя пользователя
@@ -60,7 +72,7 @@ function setupAuthRoutes(app, supabase) {
                     .insert({
                         user_id: user.id,
                         username: user.username,
-                        ip_address: req.ip,
+                        ip_address: getRealIP(req),
                         user_agent: req.headers['user-agent']
                     });
             }
@@ -75,7 +87,7 @@ function setupAuthRoutes(app, supabase) {
                     user_id: user.id,
                     token,
                     expires_at: expires_at.toISOString(),
-                    ip_address: req.ip,
+                    ip_address: getRealIP(req),
                     user_agent: req.headers['user-agent']
                 });
 
@@ -86,7 +98,7 @@ function setupAuthRoutes(app, supabase) {
                     user_id: user.id,
                     action_type: 'login',
                     action_details: {
-                        ip_address: req.ip,
+                        ip_address: getRealIP(req),
                         user_agent: req.headers['user-agent']
                     }
                 });
@@ -159,7 +171,7 @@ function setupAuthRoutes(app, supabase) {
                     user_id: admin.id,
                     token,
                     expires_at: expires_at.toISOString(),
-                    ip_address: req.ip,
+                    ip_address: getRealIP(req),
                     user_agent: req.headers['user-agent']
                 });
 
@@ -170,7 +182,7 @@ function setupAuthRoutes(app, supabase) {
                     user_id: admin.id,
                     action_type: 'login',
                     action_details: {
-                        ip_address: req.ip,
+                        ip_address: getRealIP(req),
                         user_agent: req.headers['user-agent'],
                         login_type: 'admin'
                     }
@@ -243,7 +255,7 @@ function setupAuthRoutes(app, supabase) {
                     user_id: user.id,
                     token,
                     expires_at: expires_at.toISOString(),
-                    ip_address: req.ip,
+                    ip_address: getRealIP(req),
                     user_agent: req.headers['user-agent']
                 });
 
@@ -307,7 +319,7 @@ function setupAuthRoutes(app, supabase) {
                     user_id: user.id,
                     token,
                     expires_at: expires_at.toISOString(),
-                    ip_address: req.ip,
+                    ip_address: getRealIP(req),
                     user_agent: req.headers['user-agent']
                 });
 
@@ -318,7 +330,7 @@ function setupAuthRoutes(app, supabase) {
                     user_id: user.id,
                     action_type: 'login',
                     action_details: {
-                        ip_address: req.ip,
+                        ip_address: getRealIP(req),
                         user_agent: req.headers['user-agent']
                     }
                 });
@@ -373,7 +385,7 @@ function setupAuthRoutes(app, supabase) {
                     user_id: user.id,
                     token,
                     expires_at: expires_at.toISOString(),
-                    ip_address: req.ip,
+                    ip_address: getRealIP(req),
                     user_agent: req.headers['user-agent']
                 });
 
