@@ -1051,14 +1051,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Setup admin page
     setupAdminPage();
 
-    // Sidebar expand persistence
-    setupSidebarHover();
+    // Sidebar всегда свернут - отключено расширение
+    // setupSidebarHover();
     
     // Initialize API endpoint URL
     const apiEndpointInput = document.getElementById('api-endpoint-url');
     if (apiEndpointInput) {
         apiEndpointInput.value = `${window.location.origin}/api/images/upload`;
     }
+    
+    // Load saved theme
+    loadTheme();
 
     // Period selector
     document.getElementById('period-select').addEventListener('change', (e) => {
@@ -2166,29 +2169,113 @@ function copyApiEndpoint() {
 
 function copyCode(elementId) {
     const element = document.getElementById(elementId);
-    if (!element) return;
+    if (!element) {
+        console.error('Element not found:', elementId);
+        return;
+    }
     
-    const text = element.textContent || element.innerText;
+    // Для pre элементов берем весь текст включая форматирование
+    let text = '';
+    if (element.tagName === 'PRE') {
+        // Копируем весь текст из pre, убирая HTML теги но сохраняя структуру
+        const clone = element.cloneNode(true);
+        // Удаляем все span элементы для получения чистого текста
+        clone.querySelectorAll('span').forEach(span => {
+            const textNode = document.createTextNode(span.textContent);
+            span.parentNode.replaceChild(textNode, span);
+        });
+        text = clone.textContent || clone.innerText;
+    } else {
+        text = element.textContent || element.innerText || element.value;
+    }
+    
+    // Убираем лишние пробелы и переносы строк
+    text = text.trim();
     
     try {
         if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(text);
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('✅ Код скопирован!', 'success');
+            }).catch(() => {
+                fallbackCopy(text);
+            });
         } else {
-            const textarea = document.createElement('textarea');
-            textarea.value = text;
-            textarea.style.position = 'fixed';
-            textarea.style.opacity = '0';
-            document.body.appendChild(textarea);
-            textarea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textarea);
+            fallbackCopy(text);
         }
+    } catch (err) {
+        console.error('Copy error:', err);
+        fallbackCopy(text);
+    }
+}
+
+function fallbackCopy(text) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    textarea.style.left = '-9999px';
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+        document.execCommand('copy');
         showToast('✅ Код скопирован!', 'success');
     } catch (err) {
-        showToast('Не удалось скопировать');
+        showToast('Не удалось скопировать', 'error');
     }
+    document.body.removeChild(textarea);
+}
+
+// Переключение темы
+function toggleTheme() {
+    const html = document.documentElement;
+    const currentTheme = html.getAttribute('data-theme') || 'light';
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    
+    html.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    
+    updateThemeStyles(newTheme);
+    updateThemeButton(newTheme);
+}
+
+function updateThemeStyles(theme) {
+    const root = document.documentElement;
+    
+    if (theme === 'dark') {
+        root.style.setProperty('--bg-dark', '#1b1b1b');
+        root.style.setProperty('--bg-darker', '#141414');
+        root.style.setProperty('--bg-card', '#222222');
+        root.style.setProperty('--bg-secondary', '#2d2d2d');
+        root.style.setProperty('--border-color', '#2d2d2d');
+        root.style.setProperty('--text-primary', '#ffffff');
+        root.style.setProperty('--text-secondary', '#a0a0a0');
+    } else {
+        root.style.setProperty('--bg-dark', '#ffffff');
+        root.style.setProperty('--bg-darker', '#f8f9fa');
+        root.style.setProperty('--bg-card', '#f0f0f0');
+        root.style.setProperty('--bg-secondary', '#e9ecef');
+        root.style.setProperty('--border-color', '#dee2e6');
+        root.style.setProperty('--text-primary', '#212529');
+        root.style.setProperty('--text-secondary', '#6c757d');
+    }
+}
+
+function updateThemeButton(theme) {
+    const themeText = document.getElementById('theme-text');
+    if (themeText) {
+        themeText.textContent = theme === 'light' ? 'Темная' : 'Светлая';
+    }
+}
+
+// Загрузить сохраненную тему при загрузке
+function loadTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    updateThemeStyles(savedTheme);
+    updateThemeButton(savedTheme);
 }
 
 window.copyApiEndpoint = copyApiEndpoint;
 window.copyCode = copyCode;
+window.toggleTheme = toggleTheme;
 

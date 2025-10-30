@@ -579,8 +579,26 @@ nav {
 .pipette-row span { color: var(--text-secondary); width: 70px; }
 .pipette-value { display: flex; gap: 8px; flex: 1; }
 .pipette-value input { flex: 1; padding: 10px 12px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); }
-.copy-btn { padding: 10px 12px; border-radius: 8px; background: var(--bg-darker); border: 1px solid var(--border-color); color: var(--text-secondary); cursor: pointer; }
-.copy-btn:hover { border-color: var(--accent-primary); color: #fff; }
+.copy-btn { 
+    padding: 10px; 
+    border-radius: 8px; 
+    background: var(--bg-darker); 
+    border: 1px solid var(--border-color); 
+    color: var(--text-secondary); 
+    cursor: pointer; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+.copy-btn:hover { 
+    border-color: var(--accent-primary); 
+    background: var(--accent-primary);
+    color: #fff; 
+}
+.copy-btn svg {
+    display: block;
+}
 
 /* Toast */
 .toast {
