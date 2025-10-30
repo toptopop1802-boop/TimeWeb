@@ -2660,11 +2660,25 @@ function initGradientRolePage() {
             console.log('📥 [Gradient Role] Ответ от API:', {
                 status: response.status,
                 statusText: response.statusText,
-                ok: response.ok
+                ok: response.ok,
+                url: response.url,
+                headers: Object.fromEntries(response.headers.entries())
             });
             
-            const result = await response.json();
-            console.log('📦 [Gradient Role] Данные ответа:', result);
+            // Получаем текст ответа для отладки
+            const responseText = await response.text();
+            console.log('📄 [Gradient Role] Текст ответа (первые 500 символов):', responseText.substring(0, 500));
+            
+            // Пытаемся распарсить JSON
+            let result;
+            try {
+                result = JSON.parse(responseText);
+                console.log('📦 [Gradient Role] Данные ответа:', result);
+            } catch (parseError) {
+                console.error('❌ [Gradient Role] Не удалось распарсить JSON:', parseError);
+                console.error('📄 [Gradient Role] Полный текст ответа:', responseText);
+                throw new Error(`Сервер вернул не JSON (status ${response.status}): ${responseText.substring(0, 100)}`);
+            }
             
             if (response.ok && result.success) {
                 console.log('✅ [Gradient Role] Заявка успешно отправлена!');
