@@ -111,6 +111,50 @@ async def handle_gradient_role_request(request: web.Request) -> web.Response:
             reason=f"Заявка на градиентную роль от пользователя {user_id}"
         )
         
+        # Парсим и ищем участников
+        found_members = []
+        not_found = []
+        
+        # Разбиваем строку по пробелам, запятым и переносам строк
+        import re
+        member_tokens = re.split(r'[,\s\n]+', members_raw.strip())
+        
+        for token in member_tokens:
+            if not token:
+                continue
+                
+            # Убираем @ если есть
+            token = token.lstrip('@')
+            
+            # Пытаемся найти по разным критериям
+            member = None
+            
+            # 1. Попробуем как Discord ID
+            if token.isdigit():
+                member = guild.get_member(int(token))
+            
+            # 2. Попробуем как username (с учетом discriminator)
+            if not member:
+                if '#' in token:
+                    # Старый формат username#1234
+                    username, discriminator = token.rsplit('#', 1)
+                    member = discord.utils.get(guild.members, name=username, discriminator=discriminator)
+                else:
+                    # Новый формат без discriminator или display_name
+                    member = discord.utils.find(
+                        lambda m: m.name.lower() == token.lower() or 
+                                 m.display_name.lower() == token.lower() or
+                                 m.global_name and m.global_name.lower() == token.lower(),
+                        guild.members
+                    )
+            
+            if member:
+                found_members.append(member)
+                # Даём права на чтение канала участнику
+                await channel.set_permissions(member, read_messages=True, send_messages=True)
+            else:
+                not_found.append(token)
+        
         # Создаем embed с заявкой
         color_value = int(color1, 16) if color1 else 0x5865F2
         embed = discord.Embed(
@@ -123,20 +167,64 @@ async def handle_gradient_role_request(request: web.Request) -> web.Response:
         embed.add_field(name="🎨 Цвет 1", value=f"#{color1.upper()}", inline=True)
         if color2:
             embed.add_field(name="🎨 Цвет 2 (градиент)", value=f"#{color2.upper()}", inline=True)
-        embed.add_field(name="👥 Участники (указанные)", value=members_raw, inline=False)
-        embed.add_field(name="📊 Статус", value="⏳ **Ожидание рассмотрения**", inline=False)
+        
+        # Список найденных участников с тегами
+        if found_members:
+            members_text = ", ".join([member.mention for member in found_members])
+            embed.add_field(name="👥 Участники (найдены)", value=members_text, inline=False)
+        
+        # Список не найденных
+        if not_found:
+            embed.add_field(name="⚠️ Не найдены", value=", ".join([f"`{nf}`" for nf in not_found]), inline=False)
+        
+        embed.add_field(name="📊 Статус", value="⏳ **Ожидание рассмотрения администрацией**", inline=False)
         
         # Отправляем embed в канал
         msg = await channel.send(embed=embed)
         
-        # Отправляем инструкцию
-        await channel.send(
-            f"📌 **Инструкция для администрации:**\n"
-            f"1. Отметьте всех участников команды через @упоминание в этом канале\n"
-            f"2. После подтверждения всех участников используйте команду:\n"
-            f"```/assignrole members:@user1 @user2 role_name:\"{role_name}\" color_hex:#{color1}```\n"
-            f"{'⚠️ **Градиент**: Для градиента создайте 2 роли с разными цветами и назначьте их участникам вручную' if color2 else ''}"
+        # Создаем кнопки для одобрения/отказа
+        view = discord.ui.View(timeout=None)
+        
+        # Кнопка одобрения
+        approve_button = discord.ui.Button(
+            style=discord.ButtonStyle.success,
+            label="✅ Одобрить",
+            custom_id=f"approve_{channel.id}"
         )
+        
+        # Кнопка отказа
+        reject_button = discord.ui.Button(
+            style=discord.ButtonStyle.danger,
+            label="❌ Отказать",
+            custom_id=f"reject_{channel.id}"
+        )
+        
+        view.add_item(approve_button)
+        view.add_item(reject_button)
+        
+        # Отправляем кнопки и инструкцию
+        await channel.send(
+            f"📌 **Для администрации:**\n"
+            f"• Проверьте список участников выше\n"
+            f"• Нажмите **✅ Одобрить** чтобы создать роль и назначить её участникам\n"
+            f"• Нажмите **❌ Отказать** чтобы отклонить заявку и удалить канал\n"
+            f"{'⚠️ **Градиент**: При одобрении будут созданы 2 роли с разными цветами' if color2 else ''}",
+            view=view
+        )
+        
+        # Сохраняем данные заявки для обработки кнопок
+        # (в реальном проекте лучше использовать базу данных)
+        if not hasattr(bot, 'gradient_requests'):
+            bot.gradient_requests = {}
+        
+        bot.gradient_requests[str(channel.id)] = {
+            'role_name': role_name,
+            'color1': color1,
+            'color2': color2,
+            'members': [m.id for m in found_members],
+            'channel_id': channel.id,
+            'message_id': msg.id
+        }
         
         logging.info(f"✅ Created gradient role request channel: {channel.id} for role '{role_name}'")
         
@@ -703,6 +791,114 @@ def main() -> None:
         print("=" * 50)
         print("Бот готов к работе!")
         print("=" * 50)
+    
+    @bot.event
+    async def on_interaction(interaction: discord.Interaction) -> None:
+        """Обработчик взаимодействий с кнопками"""
+        if interaction.type != discord.InteractionType.component:
+            return
+        
+        custom_id = interaction.data.get('custom_id', '')
+        
+        # Обработка кнопок градиентных ролей
+        if custom_id.startswith('approve_') or custom_id.startswith('reject_'):
+            action, channel_id_str = custom_id.split('_', 1)
+            
+            # Проверяем права администратора
+            if not interaction.user.guild_permissions.administrator:
+                await interaction.response.send_message(
+                    "❌ Только администраторы могут одобрять/отклонять заявки!",
+                    ephemeral=True
+                )
+                return
+            
+            # Получаем данные заявки
+            if not hasattr(bot, 'gradient_requests') or channel_id_str not in bot.gradient_requests:
+                await interaction.response.send_message(
+                    "❌ Данные заявки не найдены. Возможно бот был перезапущен.",
+                    ephemeral=True
+                )
+                return
+            
+            request_data = bot.gradient_requests[channel_id_str]
+            channel = interaction.channel
+            
+            if action == 'approve':
+                await interaction.response.defer()
+                
+                try:
+                    # Создаём роль
+                    role_name = request_data['role_name']
+                    color1 = int(request_data['color1'], 16)
+                    color2_hex = request_data.get('color2')
+                    member_ids = request_data['members']
+                    
+                    # Создаём первую роль
+                    role1 = await interaction.guild.create_role(
+                        name=role_name,
+                        color=discord.Color(color1),
+                        reason=f"Одобрено {interaction.user.name}"
+                    )
+                    
+                    # Назначаем роль участникам
+                    assigned = []
+                    for member_id in member_ids:
+                        member = interaction.guild.get_member(member_id)
+                        if member:
+                            await member.add_roles(role1)
+                            assigned.append(member.mention)
+                    
+                    # Если есть второй цвет для градиента
+                    if color2_hex:
+                        color2 = int(color2_hex, 16)
+                        role2 = await interaction.guild.create_role(
+                            name=f"{role_name} (градиент 2)",
+                            color=discord.Color(color2),
+                            reason=f"Одобрено {interaction.user.name} (градиент)"
+                        )
+                        result_text = (
+                            f"✅ **Заявка одобрена {interaction.user.mention}!**\n\n"
+                            f"Созданы роли:\n"
+                            f"• {role1.mention} (цвет #{request_data['color1'].upper()})\n"
+                            f"• {role2.mention} (цвет #{color2_hex.upper()})\n\n"
+                            f"Первая роль назначена участникам: {', '.join(assigned) if assigned else 'никому'}\n\n"
+                            f"⚠️ Для градиента назначьте вторую роль вручную нужным участникам"
+                        )
+                    else:
+                        result_text = (
+                            f"✅ **Заявка одобрена {interaction.user.mention}!**\n\n"
+                            f"Создана роль: {role1.mention}\n"
+                            f"Назначена участникам: {', '.join(assigned) if assigned else 'никому'}"
+                        )
+                    
+                    await interaction.followup.send(result_text)
+                    
+                    # Удаляем заявку из памяти
+                    del bot.gradient_requests[channel_id_str]
+                    
+                    # Через 30 секунд удаляем канал
+                    await asyncio.sleep(30)
+                    await channel.delete(reason="Заявка одобрена и обработана")
+                    
+                except Exception as e:
+                    await interaction.followup.send(
+                        f"❌ Ошибка при создании роли: {e}",
+                        ephemeral=True
+                    )
+                    logging.error(f"Error approving gradient role: {e}", exc_info=True)
+            
+            elif action == 'reject':
+                await interaction.response.send_message(
+                    f"❌ **Заявка отклонена {interaction.user.mention}**\n"
+                    f"Канал будет удалён через 10 секунд."
+                )
+                
+                # Удаляем заявку из памяти
+                del bot.gradient_requests[channel_id_str]
+                
+                # Через 10 секунд удаляем канал
+                await asyncio.sleep(10)
+                await channel.delete(reason=f"Заявка отклонена {interaction.user.name}")
         
         if guild_id:
             guild = bot.get_guild(guild_id)
