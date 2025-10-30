@@ -1568,19 +1568,27 @@ function rgbToHsl(r, g, b) {
 
 let colorWheelCanvas = null;
 let colorWheelCtx = null;
+let colorWheelDragging = false;
 
 function initColorWheel() {
     colorWheelCanvas = document.getElementById('color-wheel-canvas');
     if (!colorWheelCanvas) return;
     
-    colorWheelCtx = colorWheelCanvas.getContext('2d');
+    colorWheelCtx = colorWheelCanvas.getContext('2d', { willReadFrequently: true });
     drawColorWheel();
     
-    // Обработчик клика на color wheel
-    colorWheelCanvas.addEventListener('click', handleColorWheelClick);
-    colorWheelCanvas.addEventListener('mousemove', handleColorWheelHover);
+    // Обработчики для drag режима
+    colorWheelCanvas.addEventListener('mousedown', handleColorWheelMouseDown);
+    colorWheelCanvas.addEventListener('mousemove', handleColorWheelMouseMove);
+    colorWheelCanvas.addEventListener('mouseup', handleColorWheelMouseUp);
+    colorWheelCanvas.addEventListener('mouseleave', handleColorWheelMouseUp);
     
-    console.log('🎨 Color wheel initialized');
+    // Touch support для мобильных
+    colorWheelCanvas.addEventListener('touchstart', handleColorWheelTouchStart);
+    colorWheelCanvas.addEventListener('touchmove', handleColorWheelTouchMove);
+    colorWheelCanvas.addEventListener('touchend', handleColorWheelMouseUp);
+    
+    console.log('🎨 Color wheel initialized with drag support');
 }
 
 function drawColorWheel() {
@@ -1662,43 +1670,13 @@ function drawColorWheel() {
     console.log('✅ Color wheel drawn successfully');
 }
 
-function handleColorWheelClick(e) {
-    const rect = colorWheelCanvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
-    const size = colorWheelCanvas.width;
-    const centerX = size / 2;
-    const centerY = size / 2;
-    const radius = size / 2 - 10;
-    
-    // Проверяем, что клик внутри круга
-    const dx = x - centerX;
-    const dy = y - centerY;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    
-    if (distance <= radius) {
-        // Получаем цвет из точки
-        const imageData = colorWheelCtx.getImageData(x, y, 1, 1);
-        const r = imageData.data[0];
-        const g = imageData.data[1];
-        const b = imageData.data[2];
-        
-        const hex = rgbToHex(r, g, b);
-        
-        // Обновляем превью и поле ввода
-        const preview = document.getElementById('color-wheel-preview');
-        const hexInput = document.getElementById('color-wheel-hex');
-        
-        if (preview) preview.style.background = hex;
-        if (hexInput) hexInput.value = hex;
-        
-        console.log('🎨 Selected color:', hex);
-        showToast(`Выбран цвет: ${hex}`, 'success');
-    }
+function handleColorWheelMouseDown(e) {
+    e.preventDefault();
+    colorWheelDragging = true;
+    updateColorFromPosition(e.clientX, e.clientY);
 }
 
-function handleColorWheelHover(e) {
+function handleColorWheelMouseMove(e) {
     const rect = colorWheelCanvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -1715,8 +1693,72 @@ function handleColorWheelHover(e) {
     
     if (distance <= radius) {
         colorWheelCanvas.style.cursor = 'crosshair';
+        
+        // Если зажата кнопка мыши - обновляем цвет
+        if (colorWheelDragging) {
+            updateColorFromPosition(e.clientX, e.clientY, true);
+        }
     } else {
         colorWheelCanvas.style.cursor = 'default';
+    }
+}
+
+function handleColorWheelMouseUp(e) {
+    if (colorWheelDragging) {
+        colorWheelDragging = false;
+        console.log('🎨 Drag ended');
+    }
+}
+
+function handleColorWheelTouchStart(e) {
+    e.preventDefault();
+    colorWheelDragging = true;
+    const touch = e.touches[0];
+    updateColorFromPosition(touch.clientX, touch.clientY);
+}
+
+function handleColorWheelTouchMove(e) {
+    e.preventDefault();
+    if (colorWheelDragging && e.touches.length > 0) {
+        const touch = e.touches[0];
+        updateColorFromPosition(touch.clientX, touch.clientY, true);
+    }
+}
+
+function updateColorFromPosition(clientX, clientY, isDragging = false) {
+    const rect = colorWheelCanvas.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+    
+    const size = colorWheelCanvas.width;
+    const centerX = size / 2;
+    const centerY = size / 2;
+    const radius = size / 2 - 10;
+    
+    // Проверяем, что точка внутри круга
+    const dx = x - centerX;
+    const dy = y - centerY;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    if (distance <= radius) {
+        // Получаем цвет из точки
+        const imageData = colorWheelCtx.getImageData(Math.round(x), Math.round(y), 1, 1);
+        const r = imageData.data[0];
+        const g = imageData.data[1];
+        const b = imageData.data[2];
+        
+        const hex = rgbToHex(r, g, b);
+        
+        // Обновляем превью и поле ввода
+        const preview = document.getElementById('color-wheel-preview');
+        const hexInput = document.getElementById('color-wheel-hex');
+        
+        if (preview) preview.style.background = hex;
+        if (hexInput) hexInput.value = hex;
+        
+        if (!isDragging) {
+            console.log('🎨 Selected color:', hex);
+        }
     }
 }
 
@@ -2595,11 +2637,18 @@ function initGradientRolePage() {
         };
         
         console.log('📤 [Gradient Role] Отправка запроса на API:', requestData);
-        console.log('🔗 [Gradient Role] URL:', 'http://localhost:8787/api/gradient-role');
+        
+        // Определяем URL API - если на проде используем прокси, иначе localhost
+        const apiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://localhost:8787/api/gradient-role'
+            : '/api/gradient-role';
+        
+        console.log('🔗 [Gradient Role] URL:', apiUrl);
+        console.log('🌐 [Gradient Role] Hostname:', window.location.hostname);
         
         try {
-            // Отправляем запрос на локальный API бота
-            const response = await fetch('http://localhost:8787/api/gradient-role', {
+            // Отправляем запрос на API бота
+            const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
