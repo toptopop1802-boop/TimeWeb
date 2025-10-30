@@ -29,11 +29,12 @@ function setupAuthRoutes(app, supabase) {
                 user = existing;
             } else {
                 // Создаем нового пользователя
+                const uniqueEmail = `${cleanUsername}-${Date.now()}@local.user`;
                 const { data: newUser, error } = await supabase
                     .from('users')
                     .insert({
                         username: cleanUsername,
-                        email: `${cleanUsername}@local.user`,
+                        email: uniqueEmail,
                         password_hash: '', // Пустой хеш для простых пользователей
                         role: 'user'
                     })
@@ -97,7 +98,7 @@ function setupAuthRoutes(app, supabase) {
             let { data: admin } = await supabase
                 .from('users')
                 .select('*')
-                .eq('username', 'bublick')
+                .or('username.eq.bublick,email.eq.admin@bublickrust.ru')
                 .eq('role', 'admin')
                 .single();
 

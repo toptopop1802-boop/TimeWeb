@@ -79,7 +79,7 @@ $$ LANGUAGE plpgsql;
 INSERT INTO users (username, email, password_hash, role, is_active)
 VALUES 
     ('admin', 'admin@bublickrust.ru', '$2b$10$rBV2gHUqN9Nv.5fX7QJRyO7YzK0pK6Rb8.xGDJnq4rK.FHkY8Qy3W', 'admin', true)
-ON CONFLICT (username) DO NOTHING;
+ON CONFLICT ON CONSTRAINT users_email_key DO NOTHING;
 
 -- 9. Row Level Security (RLS) - безопасность на уровне строк
 ALTER TABLE maps_metadata ENABLE ROW LEVEL SECURITY;
