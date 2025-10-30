@@ -434,6 +434,51 @@
 
                 <div class="pipette-layout">
                     <div class="pipette-left">
+                        <!-- Color Wheel Picker -->
+                        <div id="color-wheel-container" style="margin-bottom: 30px;">
+                            <h3 style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <path d="M12 2a10 10 0 0 0 0 20"></path>
+                                </svg>
+                                Круговая палитра цветов
+                            </h3>
+                            <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+                                <div style="position: relative; width: 220px; height: 220px;">
+                                    <canvas id="color-wheel-canvas" width="220" height="220" style="border-radius: 50%; cursor: crosshair; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></canvas>
+                                </div>
+                                <div style="flex: 1; min-width: 200px;">
+                                    <div style="background: var(--bg-card); border-radius: 12px; padding: 20px; border: 2px solid var(--border-color);">
+                                        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+                                            <div id="color-wheel-preview" style="width: 60px; height: 60px; border-radius: 12px; border: 2px solid var(--border-color); background: #3b9bf9; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"></div>
+                                            <div style="flex: 1;">
+                                                <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 5px;">HEX Цвет</div>
+                                                <div style="display: flex; gap: 8px;">
+                                                    <input id="color-wheel-hex" type="text" value="#3b9bf9" readonly style="flex: 1; padding: 8px 12px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; font-family: monospace; font-size: 14px; font-weight: 600; color: var(--text-primary);">
+                                                    <button onclick="copyColorFromWheel()" class="btn btn-primary" style="padding: 8px 16px; white-space: nowrap;">
+                                                        📋
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
+                                            <div>💡 Кликните на круге для выбора цвета</div>
+                                            <div>📋 Нажмите кнопку для копирования HEX</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="margin: 30px 0; height: 1px; background: var(--border-color);"></div>
+
+                        <!-- Image Upload Pipette -->
+                        <h3 style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 7l3-3 3 3-3 3M4 17l6-6m0 0l4-4 3 3-4 4m-3-3l-6 6v3h3l6-6"></path>
+                            </svg>
+                            Пипетка из изображения
+                        </h3>
                         <label class="pipette-upload" for="pipette-file">
                             <input id="pipette-file" type="file" accept="image/*" hidden>
                             <div class="pipette-drop" id="pipette-drop">

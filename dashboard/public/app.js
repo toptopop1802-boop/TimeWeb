@@ -1111,6 +1111,8 @@ function navigateToPage(page) {
     } else if (page === 'channels') {
         loadAutoDeleteChannels();
     } else if (page === 'pipette') {
+        // Инициализируем color wheel
+        initColorWheel();
         // nothing to load, but ensure canvas resizes
         resizePipetteCanvas();
         // layout pass first
@@ -1551,6 +1553,148 @@ function rgbToHsl(r, g, b) {
     }
     return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
 }
+
+// ============================================
+// COLOR WHEEL PICKER
+// ============================================
+
+let colorWheelCanvas = null;
+let colorWheelCtx = null;
+
+function initColorWheel() {
+    colorWheelCanvas = document.getElementById('color-wheel-canvas');
+    if (!colorWheelCanvas) return;
+    
+    colorWheelCtx = colorWheelCanvas.getContext('2d');
+    drawColorWheel();
+    
+    // Обработчик клика на color wheel
+    colorWheelCanvas.addEventListener('click', handleColorWheelClick);
+    colorWheelCanvas.addEventListener('mousemove', handleColorWheelHover);
+    
+    console.log('🎨 Color wheel initialized');
+}
+
+function drawColorWheel() {
+    if (!colorWheelCtx || !colorWheelCanvas) return;
+    
+    const size = colorWheelCanvas.width;
+    const centerX = size / 2;
+    const centerY = size / 2;
+    const radius = size / 2 - 10;
+    
+    // Очищаем canvas
+    colorWheelCtx.clearRect(0, 0, size, size);
+    
+    // Рисуем цветовой круг
+    for (let angle = 0; angle < 360; angle += 1) {
+        const startAngle = (angle - 90) * Math.PI / 180;
+        const endAngle = (angle + 1 - 90) * Math.PI / 180;
+        
+        // Создаем градиент от центра (белый) к краю (насыщенный цвет)
+        const gradient = colorWheelCtx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
+        gradient.addColorStop(0, '#ffffff');
+        gradient.addColorStop(0.7, `hsl(${angle}, 100%, 50%)`);
+        gradient.addColorStop(1, `hsl(${angle}, 100%, 40%)`);
+        
+        colorWheelCtx.beginPath();
+        colorWheelCtx.moveTo(centerX, centerY);
+        colorWheelCtx.arc(centerX, centerY, radius, startAngle, endAngle);
+        colorWheelCtx.closePath();
+        colorWheelCtx.fillStyle = gradient;
+        colorWheelCtx.fill();
+    }
+    
+    // Рисуем внешнюю границу
+    colorWheelCtx.beginPath();
+    colorWheelCtx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+    colorWheelCtx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+    colorWheelCtx.lineWidth = 2;
+    colorWheelCtx.stroke();
+}
+
+function handleColorWheelClick(e) {
+    const rect = colorWheelCanvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    const size = colorWheelCanvas.width;
+    const centerX = size / 2;
+    const centerY = size / 2;
+    const radius = size / 2 - 10;
+    
+    // Проверяем, что клик внутри круга
+    const dx = x - centerX;
+    const dy = y - centerY;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    if (distance <= radius) {
+        // Получаем цвет из точки
+        const imageData = colorWheelCtx.getImageData(x, y, 1, 1);
+        const r = imageData.data[0];
+        const g = imageData.data[1];
+        const b = imageData.data[2];
+        
+        const hex = rgbToHex(r, g, b);
+        
+        // Обновляем превью и поле ввода
+        const preview = document.getElementById('color-wheel-preview');
+        const hexInput = document.getElementById('color-wheel-hex');
+        
+        if (preview) preview.style.background = hex;
+        if (hexInput) hexInput.value = hex;
+        
+        console.log('🎨 Selected color:', hex);
+        showToast(`Выбран цвет: ${hex}`, 'success');
+    }
+}
+
+function handleColorWheelHover(e) {
+    const rect = colorWheelCanvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    const size = colorWheelCanvas.width;
+    const centerX = size / 2;
+    const centerY = size / 2;
+    const radius = size / 2 - 10;
+    
+    // Проверяем, что курсор внутри круга
+    const dx = x - centerX;
+    const dy = y - centerY;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    if (distance <= radius) {
+        colorWheelCanvas.style.cursor = 'crosshair';
+    } else {
+        colorWheelCanvas.style.cursor = 'default';
+    }
+}
+
+function copyColorFromWheel() {
+    const hexInput = document.getElementById('color-wheel-hex');
+    if (!hexInput) return;
+    
+    const hex = hexInput.value;
+    
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(hex).then(() => {
+                showToast('✅ HEX код скопирован: ' + hex, 'success');
+                console.log('📋 Copied color:', hex);
+            }).catch(() => {
+                fallbackCopy(hex);
+            });
+        } else {
+            fallbackCopy(hex);
+        }
+    } catch (err) {
+        fallbackCopy(hex);
+    }
+}
+
+// Экспортируем функцию для использования в HTML
+window.copyColorFromWheel = copyColorFromWheel;
 
 // ============================================
 // MAPS HOSTING PAGE
@@ -2332,6 +2476,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
+        console.log('🌈 [Gradient Role] Форма отправлена');
         
         const roleName = document.getElementById('role-name').value.trim();
         const color1 = document.getElementById('role-color1').value.trim();
@@ -2339,7 +2484,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const members = document.getElementById('role-members').value.trim();
         const statusDiv = document.getElementById('gradient-role-status');
         
+        console.log('📝 [Gradient Role] Данные формы:', {
+            roleName,
+            color1,
+            color2,
+            members
+        });
+        
         if (!roleName || !color1 || !members) {
+            console.warn('⚠️ [Gradient Role] Не заполнены обязательные поля');
             if (statusDiv) {
                 statusDiv.style.display = 'block';
                 statusDiv.style.background = 'rgba(239,68,68,0.1)';
@@ -2352,7 +2505,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Получаем данные пользователя
         const authData = getAuthData();
+        console.log('👤 [Gradient Role] Auth данные:', authData);
+        
         if (!authData || !authData.user) {
+            console.error('❌ [Gradient Role] Пользователь не авторизован');
             if (statusDiv) {
                 statusDiv.style.display = 'block';
                 statusDiv.style.background = 'rgba(239,68,68,0.1)';
@@ -2372,6 +2528,17 @@ document.addEventListener('DOMContentLoaded', () => {
             statusDiv.textContent = '⏳ Отправка заявки...';
         }
         
+        const requestData = {
+            roleName: roleName,
+            color1: color1.replace('#', ''),
+            color2: color2 ? color2.replace('#', '') : null,
+            members: members,
+            userId: authData.user.discord_id || authData.user.id
+        };
+        
+        console.log('📤 [Gradient Role] Отправка запроса на API:', requestData);
+        console.log('🔗 [Gradient Role] URL:', 'http://localhost:8787/api/gradient-role');
+        
         try {
             // Отправляем запрос на локальный API бота
             const response = await fetch('http://localhost:8787/api/gradient-role', {
@@ -2380,18 +2547,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer bublickrust'
                 },
-                body: JSON.stringify({
-                    roleName: roleName,
-                    color1: color1.replace('#', ''),
-                    color2: color2 ? color2.replace('#', '') : null,
-                    members: members,
-                    userId: authData.user.discord_id || authData.user.id
-                })
+                body: JSON.stringify(requestData)
+            });
+            
+            console.log('📥 [Gradient Role] Ответ от API:', {
+                status: response.status,
+                statusText: response.statusText,
+                ok: response.ok
             });
             
             const result = await response.json();
+            console.log('📦 [Gradient Role] Данные ответа:', result);
             
             if (response.ok && result.success) {
+                console.log('✅ [Gradient Role] Заявка успешно отправлена!');
                 if (statusDiv) {
                     statusDiv.style.display = 'block';
                     statusDiv.style.background = 'rgba(16,185,129,0.1)';
@@ -2405,7 +2574,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(result.error || 'Ошибка отправки');
             }
         } catch (error) {
-            console.error('Gradient role request error:', error);
+            console.error('❌ [Gradient Role] Ошибка запроса:', error);
+            console.error('❌ [Gradient Role] Stack trace:', error.stack);
             if (statusDiv) {
                 statusDiv.style.display = 'block';
                 statusDiv.style.background = 'rgba(239,68,68,0.1)';
