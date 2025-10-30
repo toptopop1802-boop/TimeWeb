@@ -314,6 +314,7 @@ def main() -> None:
     CONTENT_GUARD_EXEMPT_USER_ID = 663_045_468_871_196_709
     ROLE_POSITION_REFERENCE_ID = 1_380_215_358_685_839_461
     TICKET_SYSTEM_CHANNEL_ID = 1_430_092_137_583_870_092
+    WIPE_SIGNUP_CHANNEL_ID = 1_380_209_030_693_126_144  # Канал для записи на вайп
     API_PORT = int(os.getenv("API_PORT", "8787"))
     API_SECRET = os.getenv("API_SECRET", "bublickrust")
     RUST_SERVER_HOST = os.getenv("RUST_SERVER_HOST", "185.189.255.110")
@@ -3717,6 +3718,59 @@ def main() -> None:
             color=discord.Color.red(),
         )
 
+    async def handle_wipe_signup_message(message: discord.Message) -> None:
+        """Обрабатывает сообщения в канале записи на вайп"""
+        try:
+            content = message.content.strip().lower()
+            
+            # Проверяем паттерны
+            formatted_message = None
+            
+            # Паттерн +1, +2, +3 и т.д.
+            plus_match = re.match(r'\+(\d+)', content)
+            if plus_match:
+                count = plus_match.group(1)
+                formatted_message = f"🎮 **Ищет ({count})**"
+            
+            # Паттерн "зайду", "иду", "буду"
+            elif content in ["зайду", "иду", "буду", "пойду", "готов"]:
+                formatted_message = "✅ **Зайду на вайп**"
+            
+            # Паттерн "не зайду", "не буду", "пропущу"
+            elif content in ["не зайду", "не буду", "не иду", "пропущу", "пас"]:
+                formatted_message = "❌ **Не зайду**"
+            
+            # Если не распознали паттерн - пропускаем
+            if not formatted_message:
+                return
+            
+            # Получаем или создаём вебхук для канала
+            webhooks = await message.channel.webhooks()
+            webhook = discord.utils.get(webhooks, name="WipeSignup")
+            
+            if webhook is None:
+                webhook = await message.channel.create_webhook(
+                    name="WipeSignup",
+                    reason="Вебхук для записи на вайп"
+                )
+            
+            # Отправляем сообщение от имени пользователя через вебхук
+            await webhook.send(
+                content=formatted_message,
+                username=message.author.display_name,
+                avatar_url=message.author.display_avatar.url,
+                allowed_mentions=discord.AllowedMentions.none()
+            )
+            
+            # Удаляем оригинальное сообщение
+            try:
+                await message.delete()
+            except discord.HTTPException as exc:
+                logging.warning(f"Failed to delete wipe signup message: {exc}")
+        
+        except Exception as exc:
+            logging.error(f"Error handling wipe signup message: {exc}", exc_info=True)
+    
     @bot.event
     async def on_invite_create(invite: discord.Invite) -> None:
         if invite.guild is None:
@@ -3757,6 +3811,11 @@ def main() -> None:
             return
         if message.author.bot:
             await bot.process_commands(message)
+            return
+        
+        # Обработка канала записи на вайп
+        if message.channel.id == WIPE_SIGNUP_CHANNEL_ID:
+            await handle_wipe_signup_message(message)
             return
         
         # Проверяем, является ли канал каналом заявки на роль (role-request-*)
