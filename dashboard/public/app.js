@@ -1405,6 +1405,14 @@ function setupPipette() {
             drawPipetteImage();
             canvasWrap.style.display = 'block';
             if (dropZone) dropZone.style.display = 'none';
+            
+            // Скрываем color wheel когда загружается фото
+            const colorWheelContainer = document.getElementById('color-wheel-container');
+            if (colorWheelContainer) {
+                colorWheelContainer.style.display = 'none';
+                console.log('🎨 Color wheel hidden (photo loaded)');
+            }
+            
             showToast('Изображение загружено', 'success');
             URL.revokeObjectURL(url);
         };
@@ -1583,34 +1591,75 @@ function drawColorWheel() {
     const centerY = size / 2;
     const radius = size / 2 - 10;
     
-    // Очищаем canvas
-    colorWheelCtx.clearRect(0, 0, size, size);
+    console.log('🎨 Drawing color wheel, size:', size);
     
-    // Рисуем цветовой круг
-    for (let angle = 0; angle < 360; angle += 1) {
-        const startAngle = (angle - 90) * Math.PI / 180;
-        const endAngle = (angle + 1 - 90) * Math.PI / 180;
-        
-        // Создаем градиент от центра (белый) к краю (насыщенный цвет)
-        const gradient = colorWheelCtx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
-        gradient.addColorStop(0, '#ffffff');
-        gradient.addColorStop(0.7, `hsl(${angle}, 100%, 50%)`);
-        gradient.addColorStop(1, `hsl(${angle}, 100%, 40%)`);
-        
-        colorWheelCtx.beginPath();
-        colorWheelCtx.moveTo(centerX, centerY);
-        colorWheelCtx.arc(centerX, centerY, radius, startAngle, endAngle);
-        colorWheelCtx.closePath();
-        colorWheelCtx.fillStyle = gradient;
-        colorWheelCtx.fill();
+    // Очищаем canvas белым фоном
+    colorWheelCtx.fillStyle = '#ffffff';
+    colorWheelCtx.fillRect(0, 0, size, size);
+    
+    // Рисуем цветовой круг pixel by pixel
+    const imageData = colorWheelCtx.createImageData(size, size);
+    const data = imageData.data;
+    
+    for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+            const dx = x - centerX;
+            const dy = y - centerY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance <= radius) {
+                // Вычисляем угол (hue) и насыщенность
+                const angle = Math.atan2(dy, dx);
+                const hue = (angle * 180 / Math.PI + 90 + 360) % 360;
+                const saturation = distance / radius;
+                
+                // Конвертируем HSV в RGB
+                const value = 1.0; // Яркость максимальная
+                const c = value * saturation;
+                const x1 = c * (1 - Math.abs((hue / 60) % 2 - 1));
+                const m = value - c;
+                
+                let r, g, b;
+                if (hue < 60) {
+                    r = c; g = x1; b = 0;
+                } else if (hue < 120) {
+                    r = x1; g = c; b = 0;
+                } else if (hue < 180) {
+                    r = 0; g = c; b = x1;
+                } else if (hue < 240) {
+                    r = 0; g = x1; b = c;
+                } else if (hue < 300) {
+                    r = x1; g = 0; b = c;
+                } else {
+                    r = c; g = 0; b = x1;
+                }
+                
+                const index = (y * size + x) * 4;
+                data[index] = Math.round((r + m) * 255);
+                data[index + 1] = Math.round((g + m) * 255);
+                data[index + 2] = Math.round((b + m) * 255);
+                data[index + 3] = 255; // Alpha
+            } else {
+                // За пределами круга - прозрачно
+                const index = (y * size + x) * 4;
+                data[index] = 255;
+                data[index + 1] = 255;
+                data[index + 2] = 255;
+                data[index + 3] = 0;
+            }
+        }
     }
+    
+    colorWheelCtx.putImageData(imageData, 0, 0);
     
     // Рисуем внешнюю границу
     colorWheelCtx.beginPath();
     colorWheelCtx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-    colorWheelCtx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
-    colorWheelCtx.lineWidth = 2;
+    colorWheelCtx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+    colorWheelCtx.lineWidth = 3;
     colorWheelCtx.stroke();
+    
+    console.log('✅ Color wheel drawn successfully');
 }
 
 function handleColorWheelClick(e) {
@@ -2462,17 +2511,26 @@ window.toggleTheme = toggleTheme;
 // GRADIENT ROLE REQUEST FORM
 // ============================================
 
+// Флаг инициализации формы
+let gradientRoleFormInitialized = false;
+
 // Инициализация страницы градиентной роли
 function initGradientRolePage() {
-    // Страница уже инициализирована при загрузке DOMContentLoaded
-    // Здесь можно добавить дополнительную логику при переходе на страницу
-    console.log('Gradient role page initialized');
-}
-
-// Обработчик формы заявки на градиентную роль
-document.addEventListener('DOMContentLoaded', () => {
+    console.log('🌈 [Gradient Role] Инициализация страницы');
+    
+    // Если форма уже инициализирована, не добавляем обработчик повторно
+    if (gradientRoleFormInitialized) {
+        console.log('🌈 [Gradient Role] Форма уже инициализирована');
+        return;
+    }
+    
     const form = document.getElementById('gradient-role-form');
-    if (!form) return;
+    if (!form) {
+        console.warn('⚠️ [Gradient Role] Форма не найдена!');
+        return;
+    }
+    
+    console.log('✅ [Gradient Role] Форма найдена, добавляем обработчик');
     
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -2586,5 +2644,8 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast('Ошибка отправки заявки', 'error');
         }
     });
-});
+    
+    gradientRoleFormInitialized = true;
+    console.log('✅ [Gradient Role] Обработчик формы установлен');
+}
 
