@@ -46,6 +46,95 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+// ============================================
+// COPY HELPERS (defined early for onclick handlers)
+// ============================================
+
+function fallbackCopy(text) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    textarea.style.left = '-9999px';
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+        document.execCommand('copy');
+        showToast('✅ Скопировано!', 'success');
+    } catch (err) {
+        showToast('Не удалось скопировать', 'error');
+    }
+    document.body.removeChild(textarea);
+}
+
+function copyApiEndpoint() {
+    const input = document.getElementById('api-endpoint-url');
+    if (!input) return;
+    
+    input.select();
+    input.setSelectionRange(0, 99999);
+    
+    const text = input.value;
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('✅ API endpoint скопирован!', 'success');
+            }).catch(() => {
+                fallbackCopy(text);
+            });
+        } else {
+            fallbackCopy(text);
+        }
+    } catch (err) {
+        fallbackCopy(text);
+    }
+}
+
+function copyCode(elementId) {
+    const element = document.getElementById(elementId);
+    if (!element) {
+        console.error('Element not found:', elementId);
+        return;
+    }
+    
+    // Для pre элементов берем весь текст включая форматирование
+    let text = '';
+    if (element.tagName === 'PRE') {
+        // Копируем весь текст из pre, убирая HTML теги но сохраняя структуру
+        const clone = element.cloneNode(true);
+        // Удаляем все span элементы для получения чистого текста
+        clone.querySelectorAll('span').forEach(span => {
+            const textNode = document.createTextNode(span.textContent);
+            span.parentNode.replaceChild(textNode, span);
+        });
+        text = clone.textContent || clone.innerText;
+    } else {
+        text = element.textContent || element.innerText || element.value;
+    }
+    
+    // Убираем лишние пробелы и переносы строк
+    text = text.trim();
+    
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('✅ Код скопирован!', 'success');
+            }).catch(() => {
+                fallbackCopy(text);
+            });
+        } else {
+            fallbackCopy(text);
+        }
+    } catch (err) {
+        console.error('Copy error:', err);
+        fallbackCopy(text);
+    }
+}
+
+// Экспортируем функции глобально сразу
+window.copyApiEndpoint = copyApiEndpoint;
+window.copyCode = copyCode;
+
 // Utility: Generate short code from UUID (7 characters alphanumeric)
 function generateShortCode(uuid) {
     // Берем первые символы UUID и создаем 7-значный код
@@ -2157,95 +2246,6 @@ async function incrementChangelogViews(id) {
         console.error('Error incrementing views:', error);
     }
 }
-
-// ============================================
-// COPY HELPERS (defined early for onclick handlers)
-// ============================================
-
-function fallbackCopy(text) {
-    const textarea = document.createElement('textarea');
-    textarea.value = text;
-    textarea.style.position = 'fixed';
-    textarea.style.opacity = '0';
-    textarea.style.left = '-9999px';
-    document.body.appendChild(textarea);
-    textarea.select();
-    try {
-        document.execCommand('copy');
-        showToast('✅ Скопировано!', 'success');
-    } catch (err) {
-        showToast('Не удалось скопировать', 'error');
-    }
-    document.body.removeChild(textarea);
-}
-
-function copyApiEndpoint() {
-    const input = document.getElementById('api-endpoint-url');
-    if (!input) return;
-    
-    input.select();
-    input.setSelectionRange(0, 99999);
-    
-    const text = input.value;
-    try {
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(text).then(() => {
-                showToast('✅ API endpoint скопирован!', 'success');
-            }).catch(() => {
-                fallbackCopy(text);
-            });
-        } else {
-            fallbackCopy(text);
-        }
-    } catch (err) {
-        fallbackCopy(text);
-    }
-}
-
-function copyCode(elementId) {
-    const element = document.getElementById(elementId);
-    if (!element) {
-        console.error('Element not found:', elementId);
-        return;
-    }
-    
-    // Для pre элементов берем весь текст включая форматирование
-    let text = '';
-    if (element.tagName === 'PRE') {
-        // Копируем весь текст из pre, убирая HTML теги но сохраняя структуру
-        const clone = element.cloneNode(true);
-        // Удаляем все span элементы для получения чистого текста
-        clone.querySelectorAll('span').forEach(span => {
-            const textNode = document.createTextNode(span.textContent);
-            span.parentNode.replaceChild(textNode, span);
-        });
-        text = clone.textContent || clone.innerText;
-    } else {
-        text = element.textContent || element.innerText || element.value;
-    }
-    
-    // Убираем лишние пробелы и переносы строк
-    text = text.trim();
-    
-    try {
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(text).then(() => {
-                showToast('✅ Код скопирован!', 'success');
-            }).catch(() => {
-                fallbackCopy(text);
-            });
-        } else {
-            fallbackCopy(text);
-        }
-    } catch (err) {
-        console.error('Copy error:', err);
-        fallbackCopy(text);
-    }
-}
-
-// Экспортируем функции глобально сразу
-window.copyApiEndpoint = copyApiEndpoint;
-window.copyCode = copyCode;
 
 // Переключение темы
 function toggleTheme() {
