@@ -80,11 +80,7 @@ async def handle_gradient_role_request(request: web.Request) -> web.Response:
         if not guild:
             return web.json_response({'error': 'Guild not found'}, status=404)
         
-        # Находим категорию для создания канала
-        category_id = int(os.getenv("GRADIENT_ROLE_CATEGORY_ID", "663045468871196709"))
-        category = guild.get_channel(category_id)
-        
-        # Создаем приватный канал
+        # Создаем приватный канал (без категории - будет в общем списке)
         overwrites = {
             guild.default_role: discord.PermissionOverwrite(read_messages=False),
             guild.me: discord.PermissionOverwrite(read_messages=True, send_messages=True)
@@ -104,7 +100,6 @@ async def handle_gradient_role_request(request: web.Request) -> web.Response:
         channel_name = f"gradient-{role_name.lower().replace(' ', '-')}"[:100]
         channel = await guild.create_text_channel(
             name=channel_name,
-            category=category if isinstance(category, discord.CategoryChannel) else None,
             overwrites=overwrites,
             reason=f"Заявка на градиентную роль от пользователя {user_id}"
         )
@@ -199,7 +194,6 @@ def main() -> None:
     CONTENT_GUARD_EXEMPT_USER_ID = 663_045_468_871_196_709
     ROLE_POSITION_REFERENCE_ID = 1_380_215_358_685_839_461
     TICKET_SYSTEM_CHANNEL_ID = 1_430_092_137_583_870_092
-    GRADIENT_ROLE_CATEGORY_ID = 663_045_468_871_196_709  # ID категории для заявок на роли (ЗАМЕНИТЬ НА ПРАВИЛЬНЫЙ)
     API_PORT = int(os.getenv("API_PORT", "8787"))
     API_SECRET = os.getenv("API_SECRET", "bublickrust")
     RUST_SERVER_HOST = os.getenv("RUST_SERVER_HOST", "185.189.255.110")
