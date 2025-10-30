@@ -246,6 +246,88 @@ function createApp() {
         }
     });
 
+    // Получить статистику записи на вайп
+    app.get('/api/wipe-signup-stats', async (req, res) => {
+        try {
+            if (!supabase) {
+                return res.status(503).json({ error: 'Supabase not configured' });
+            }
+            const days = parseInt(req.query.days) || 30;
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - days);
+
+            const { data, error } = await supabase
+                .from('server_analytics')
+                .select('*')
+                .in('event_type', ['wipe_signup_looking', 'wipe_signup_ready', 'wipe_signup_not_coming'])
+                .gte('created_at', cutoffDate.toISOString())
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+
+            // Подсчёт статистики
+            const stats = {
+                looking_total: 0,      // Всего ищут игроков
+                looking_count: 0,      // Сколько всего слотов ищут
+                ready_total: 0,        // Сколько готовы зайти
+                not_coming_total: 0,   // Сколько не зайдут
+                recent_signups: [],    // Последние 50 записей
+                timeline: []           // По дням
+            };
+
+            const timelineMap = new Map();
+
+            data.forEach((event, index) => {
+                const date = new Date(event.created_at).toISOString().split('T')[0];
+                
+                // Инициализируем день если нет
+                if (!timelineMap.has(date)) {
+                    timelineMap.set(date, {
+                        date,
+                        looking: 0,
+                        looking_count: 0,
+                        ready: 0,
+                        not_coming: 0
+                    });
+                }
+                const dayStats = timelineMap.get(date);
+
+                // Подсчёт по типам
+                if (event.event_type === 'wipe_signup_looking') {
+                    stats.looking_total++;
+                    const count = (event.event_data && event.event_data.count) || 1;
+                    stats.looking_count += count;
+                    dayStats.looking++;
+                    dayStats.looking_count += count;
+                } else if (event.event_type === 'wipe_signup_ready') {
+                    stats.ready_total++;
+                    dayStats.ready++;
+                } else if (event.event_type === 'wipe_signup_not_coming') {
+                    stats.not_coming_total++;
+                    dayStats.not_coming++;
+                }
+
+                // Последние 50 записей
+                if (index < 50) {
+                    stats.recent_signups.push({
+                        type: event.event_type,
+                        user_id: event.event_data?.user_id,
+                        count: event.event_data?.count || 0,
+                        created_at: event.created_at
+                    });
+                }
+            });
+
+            stats.timeline = Array.from(timelineMap.values()).reverse();
+            stats.total = data.length;
+
+            res.json(stats);
+        } catch (error) {
+            console.error('Error fetching wipe signup stats:', error);
+            res.status(500).json({ error: error.message });
+        }
+    });
+
     // Получить активные каналы для автоудаления
     app.get('/api/auto-delete-channels', async (req, res) => {
         try {

@@ -3764,14 +3764,19 @@ def main() -> None:
                 embed_description = "Пропущу этот вайп"
                 embed_color = 0xED4245  # Красный
             
-            # Если не распознали паттерн - пропускаем
+            # Если не распознали паттерн - удаляем сообщение
             if not embed_title:
+                try:
+                    await message.delete()
+                    logging.info(f"Deleted non-pattern message in wipe signup channel from {message.author.id}")
+                except discord.HTTPException as exc:
+                    logging.warning(f"Failed to delete non-pattern message: {exc}")
                 return
             
-            # Создаём embed
+            # Создаём embed с упоминанием пользователя
             embed = discord.Embed(
                 title=embed_title,
-                description=embed_description,
+                description=f"{message.author.mention} {embed_description}",
                 color=embed_color,
                 timestamp=discord.utils.utcnow()
             )
@@ -3805,6 +3810,25 @@ def main() -> None:
                 await message.delete()
             except discord.HTTPException as exc:
                 logging.warning(f"Failed to delete wipe signup message: {exc}")
+            
+            # Логируем в БД для статистики
+            if bot.db and message.guild:
+                event_type = "wipe_signup_looking"  # Ищет игроков
+                event_data = {"count": 0, "user_id": message.author.id}
+                
+                if plus_match:
+                    event_type = "wipe_signup_looking"
+                    event_data["count"] = count
+                elif content in ["зайду", "иду", "буду", "пойду", "готов"]:
+                    event_type = "wipe_signup_ready"
+                elif content in ["не зайду", "не буду", "не иду", "пропущу", "пас"]:
+                    event_type = "wipe_signup_not_coming"
+                
+                await bot.db.log_event(
+                    guild_id=message.guild.id,
+                    event_type=event_type,
+                    event_data=event_data
+                )
         
         except Exception as exc:
             logging.error(f"Error handling wipe signup message: {exc}", exc_info=True)
