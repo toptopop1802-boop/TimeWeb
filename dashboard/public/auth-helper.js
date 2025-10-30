@@ -289,24 +289,6 @@ function displayUserInfo(authData) {
                 </div>
                 
                 <div style="padding: 8px 0;">
-                    <button onclick="showUserActions()" style="
-                        width: 100%;
-                        padding: 10px 12px;
-                        background: transparent;
-                        color: var(--text-primary);
-                        border: none;
-                        border-radius: 8px;
-                        cursor: pointer;
-                        text-align: left;
-                        display: flex;
-                        align-items: center;
-                        gap: 10px;
-                        transition: all 0.2s;
-                    " onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background='transparent'">
-                        <span style="font-size: 18px;">📊</span>
-                        <span>Моя активность</span>
-                    </button>
-                    
                     <button onclick="logout()" style="
                         width: 100%;
                         padding: 10px 12px;
@@ -341,128 +323,6 @@ function toggleUserMenu() {
     }
 }
 
-// Показать историю действий пользователя
-async function showUserActions() {
-    const authData = getAuthData();
-    if (!authData) return;
-    
-    try {
-        const response = await fetch('/api/user/actions', {
-            headers: { 'Authorization': `Bearer ${authData.token}` }
-        });
-        
-        const actions = await response.json();
-        
-        // Создаем модальное окно с историей
-        let modal = document.getElementById('user-actions-modal');
-        if (!modal) {
-            modal = document.createElement('div');
-            modal.id = 'user-actions-modal';
-            modal.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: rgba(0, 0, 0, 0.8);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 2000;
-            `;
-            
-            modal.innerHTML = `
-                <div style="
-                    background: var(--bg-card);
-                    border: 1px solid var(--border-color);
-                    border-radius: 16px;
-                    padding: 30px;
-                    max-width: 600px;
-                    width: 90%;
-                    max-height: 80vh;
-                    overflow-y: auto;
-                ">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h3 style="margin: 0; color: var(--text-primary);">📊 Моя активность</h3>
-                        <button onclick="closeUserActionsModal()" style="
-                            background: transparent;
-                            border: none;
-                            color: var(--text-secondary);
-                            font-size: 24px;
-                            cursor: pointer;
-                            width: 32px;
-                            height: 32px;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            border-radius: 8px;
-                        ">×</button>
-                    </div>
-                    <div id="user-actions-list"></div>
-                </div>
-            `;
-            
-            document.body.appendChild(modal);
-        }
-        
-        // Отображаем действия
-        const actionsList = document.getElementById('user-actions-list');
-        if (actions.length === 0) {
-            actionsList.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 40px 0;">Пока нет действий</p>';
-        } else {
-            actionsList.innerHTML = actions.map(action => {
-                const actionIcons = {
-                    'map_upload': '⬆️',
-                    'map_download': '⬇️',
-                    'map_delete': '🗑️',
-                    'login': '🔓',
-                    'logout': '🔒'
-                };
-                
-                const actionNames = {
-                    'map_upload': 'Загрузка карты',
-                    'map_download': 'Скачивание карты',
-                    'map_delete': 'Удаление карты',
-                    'login': 'Вход в систему',
-                    'logout': 'Выход из системы'
-                };
-                
-                const date = new Date(action.created_at);
-                return `
-                    <div style="
-                        padding: 12px;
-                        background: var(--bg-secondary);
-                        border-radius: 8px;
-                        margin-bottom: 8px;
-                        display: flex;
-                        align-items: center;
-                        gap: 12px;
-                    ">
-                        <span style="font-size: 24px;">${actionIcons[action.action_type] || '📝'}</span>
-                        <div style="flex: 1;">
-                            <div style="font-weight: 600; color: var(--text-primary);">${actionNames[action.action_type] || action.action_type}</div>
-                            <div style="font-size: 12px; color: var(--text-secondary);">${date.toLocaleString('ru-RU')}</div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-        
-        modal.style.display = 'flex';
-        toggleUserMenu(); // Закрываем dropdown
-    } catch (error) {
-        console.error('Failed to load user actions:', error);
-        alert('Не удалось загрузить историю действий');
-    }
-}
-
-function closeUserActionsModal() {
-    const modal = document.getElementById('user-actions-modal');
-    if (modal) {
-        modal.style.display = 'none';
-    }
-}
-
 // Экспорт функций для глобального использования
 window.createGuestSession = createGuestSession;
 window.getAuthData = getAuthData;
@@ -472,6 +332,4 @@ window.logout = logout;
 window.fetchWithAuth = fetchWithAuth;
 window.setupRoleBasedUI = setupRoleBasedUI;
 window.toggleUserMenu = toggleUserMenu;
-window.showUserActions = showUserActions;
-window.closeUserActionsModal = closeUserActionsModal;
 
