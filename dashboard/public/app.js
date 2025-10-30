@@ -23,6 +23,18 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+// Utility: Generate short code from UUID (7 characters alphanumeric)
+function generateShortCode(uuid) {
+    // Берем первые символы UUID и создаем 7-значный код
+    const cleaned = uuid.replace(/-/g, '');
+    const hash = cleaned.split('').reduce((acc, char) => {
+        return ((acc << 5) - acc) + char.charCodeAt(0);
+    }, 0);
+    
+    const code = Math.abs(hash).toString(36).substring(0, 7).toUpperCase();
+    return code.padEnd(7, '0');
+}
+
 // Utility: Format time
 function formatTime(seconds) {
     const hours = Math.floor(seconds / 3600);
@@ -1542,7 +1554,9 @@ async function loadMaps() {
 
         const baseUrl = window.location.origin;
         container.innerHTML = maps.map(map => {
-            const downloadUrl = `${baseUrl}/api/maps/download/${map.id}`;
+            // Генерируем короткий 7-значный код из ID карты
+            const shortCode = generateShortCode(map.id);
+            const downloadUrl = `${baseUrl}/${shortCode}`;
             const uploadDate = new Date(map.uploaded_at).toLocaleString('ru-RU');
             const fileSize = formatFileSize(map.file_size || 0);
 

@@ -710,6 +710,78 @@ function createApp() {
         });
     });
 
+    // Short URL handler for map downloads (e.g., /ABC1234)
+    app.get('/:shortCode([A-Z0-9]{7})', async (req, res) => {
+        try {
+            if (!supabase) {
+                return res.status(503).json({ error: 'Supabase not configured' });
+            }
+
+            const shortCode = req.params.shortCode;
+            
+            // List all maps to find matching short code
+            const { data: files, error: listError } = await supabase.storage
+                .from('maps')
+                .list('');
+
+            if (listError) throw listError;
+
+            // Generate short codes and find match
+            const file = files?.find(f => {
+                const fileExt = path.extname(f.name);
+                const fileId = path.basename(f.name, fileExt);
+                
+                // Generate same short code as frontend
+                const cleaned = fileId.replace(/-/g, '');
+                const hash = cleaned.split('').reduce((acc, char) => {
+                    return ((acc << 5) - acc) + char.charCodeAt(0);
+                }, 0);
+                const code = Math.abs(hash).toString(36).substring(0, 7).toUpperCase().padEnd(7, '0');
+                
+                return code === shortCode;
+            });
+
+            if (!file) {
+                return res.status(404).send(`
+                    <!DOCTYPE html>
+                    <html><head><meta charset="UTF-8"><title>Карта не найдена</title></head>
+                    <body style="font-family:sans-serif;text-align:center;padding:50px;">
+                        <h1>❌ Карта не найдена</h1>
+                        <p>Код: ${shortCode}</p>
+                        <a href="/">← Вернуться на главную</a>
+                    </body></html>
+                `);
+            }
+
+            const storagePath = file.name;
+
+            // Download file from storage
+            const { data: fileData, error: downloadError } = await supabase.storage
+                .from('maps')
+                .download(storagePath);
+
+            if (downloadError || !fileData) {
+                return res.status(404).json({ error: 'Файл не найден' });
+            }
+
+            // Get original name from metadata
+            const metadata = file.metadata || {};
+            const originalName = metadata.originalName || file.name;
+
+            // Convert blob to buffer
+            const arrayBuffer = await fileData.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+
+            res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(originalName)}"`);
+            res.setHeader('Content-Type', 'application/octet-stream');
+            res.setHeader('Content-Length', buffer.length);
+            res.send(buffer);
+        } catch (error) {
+            console.error('Error downloading map via short code:', error);
+            res.status(500).json({ error: error.message });
+        }
+    });
+
     // Serve static files (after all API routes)
     // Skip /api routes to avoid conflicts
     const staticMiddleware = express.static('public');
