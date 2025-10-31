@@ -367,28 +367,60 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
             const offset = Math.max(parseInt(req.query.offset) || 0, 0);
             const q = (req.query.q || '').trim();
 
-            let query = supabase
-                .from('images_metadata')
-                .select('image_id, user_id, original_name, file_size, mime_type, storage_path, short_code, created_at', { count: 'exact' })
-                .order('created_at', { ascending: false });
+            const base = process.env.PUBLIC_BASE_URL || (req.headers['x-forwarded-proto'] ? `${req.headers['x-forwarded-proto']}://${req.headers.host}` : `${req.protocol}://${req.get('host')}`);
 
-            if (q) {
-                // Поиск по имени или коду
-                query = query.or(`original_name.ilike.%${q}%,short_code.ilike.%${q}%`);
+            // 1) Пробуем читать из БД (быстро)
+            try {
+                let query = supabase
+                    .from('images_metadata')
+                    .select('image_id, user_id, original_name, file_size, mime_type, storage_path, short_code, created_at', { count: 'exact' })
+                    .order('created_at', { ascending: false });
+
+                if (q) {
+                    query = query.or(`original_name.ilike.%${q}%,short_code.ilike.%${q}%`);
+                }
+
+                query = query.range(offset, offset + limit - 1);
+
+                const { data, error, count } = await query;
+                if (!error && Array.isArray(data)) {
+                    const items = data.map(row => ({
+                        ...row,
+                        directUrl: `${base}/i/${row.short_code}`
+                    }));
+                    res.setHeader('Cache-Control', 'no-store');
+                    return res.json({ items, count: count ?? items.length, offset, limit });
+                }
+                // если ошибка — перейдём к резервному способу
+                if (error) console.warn('images/list meta fallback:', error.message);
+            } catch (metaErr) {
+                console.warn('images/list meta try failed:', metaErr.message);
             }
 
-            query = query.range(offset, offset + limit - 1);
+            // 2) Резерв: листинг бакета Storage
+            const { data: files, error: storageError } = await supabase.storage
+                .from('images')
+                .list('images', { limit, offset, sortBy: { column: 'created_at', order: 'desc' } });
+            if (storageError) throw storageError;
 
-            const { data, error, count } = await query;
-            if (error) throw error;
-
-            const base = process.env.PUBLIC_BASE_URL || (req.headers['x-forwarded-proto'] ? `${req.headers['x-forwarded-proto']}://${req.headers.host}` : `${req.protocol}://${req.get('host')}`);
-            const items = (data || []).map(row => ({
-                ...row,
-                directUrl: `${base}/i/${row.short_code}`
-            }));
+            const items = (files || []).map(f => {
+                const ext = path.extname(f.name);
+                const id = path.basename(f.name, ext).replace(/-/g, '');
+                const hash = id.split('').reduce((acc, c) => ((acc << 5) - acc) + c.charCodeAt(0), 0);
+                const short = Math.abs(hash).toString(36).substring(0, 7).toUpperCase().padEnd(7, '0');
+                return {
+                    image_id: id,
+                    original_name: f.name,
+                    file_size: parseInt(f?.metadata?.size || '0'),
+                    mime_type: null,
+                    storage_path: f.name.startsWith('images/') ? f.name : `images/${f.name}`,
+                    short_code: short,
+                    created_at: f.created_at || f.last_modified || null,
+                    directUrl: `${base}/i/${short}`
+                };
+            });
             res.setHeader('Cache-Control', 'no-store');
-            res.json({ items, count: count ?? items.length, offset, limit });
+            return res.json({ items, count: items.length, offset, limit });
         } catch (e) {
             console.error('Image list error:', e);
             res.status(500).json({ error: e.message });
@@ -1650,6 +1682,9 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
     app.get(GALLERY_PATH, (req, res) => {
         res.sendFile(path.join(__dirname, 'public', 'images-gallery.html'));
     });
+
+    // Avoid 404 spam from browsers requesting site icon
+    app.get('/favicon.ico', (req, res) => res.status(204).end());
 
     return app;
 }
