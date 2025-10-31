@@ -70,8 +70,14 @@ async function generateCode() {
       message: '⚙️ Генерация CUI кода...'
     });
     
+    // Создаем Map с URL изображений
+    const imageMap = new Map();
+    for (const img of uploadedImages) {
+      imageMap.set(img.hash, img.url);
+    }
+    
     const cuiCode = generateRustCUI(node, uploadedImages);
-    const csharpCode = generateCSharpCode(node);
+    const csharpCode = generateCSharpCode(node, imageMap);
 
     // Отправляем результат в UI
     figma.ui.postMessage({
@@ -335,7 +341,7 @@ function traverseForCUI(node, elements, imageMap, parentName = "root") {
 }
 
 // Генерация C# кода для Rust
-function generateCSharpCode(node) {
+function generateCSharpCode(node, imageMap) {
   const className = toPascalCase(sanitizeClassName(node.name));
   let code = `using Oxide.Game.Rust.Cui;\nusing System.Collections.Generic;\nusing UnityEngine;\n\n`;
   code += `public class ${className}UI\n{\n`;
@@ -349,7 +355,7 @@ function generateCSharpCode(node) {
   code += `            CursorEnabled = true\n`;
   code += `        }, "Overlay", "${className}");\n\n`;
   
-  code += generateCSharpElements(node, `"${className}"`, 1);
+  code += generateCSharpElements(node, `"${className}"`, 1, imageMap);
   
   code += `        CuiHelper.AddUi(player, elements);\n`;
   code += `    }\n\n`;
@@ -361,7 +367,7 @@ function generateCSharpCode(node) {
   return code;
 }
 
-function generateCSharpElements(node, parentName, level) {
+function generateCSharpElements(node, parentName, level, imageMap) {
   let code = '';
   const indent = '        ' + '    '.repeat(level);
   
@@ -371,22 +377,35 @@ function generateCSharpElements(node, parentName, level) {
       const childName = sanitizeClassName(`${node.name}_${child.name}_${i}`);
       
       if (child.type === 'TEXT') {
+        const textColor = getRGBAColor(child);
+        const textAlign = getTextAlign(child);
         code += `${indent}// Text: ${child.name}\n`;
         code += `${indent}elements.Add(new CuiLabel\n`;
         code += `${indent}{\n`;
-        code += `${indent}    Text = { Text = "${child.characters || ''}", FontSize = ${child.fontSize || 14}, Align = TextAnchor.MiddleCenter },\n`;
+        code += `${indent}    Text = { Text = "${child.characters || ''}", FontSize = ${child.fontSize || 14}, Align = TextAnchor.${textAlign}, Color = "${textColor}" },\n`;
         code += `${indent}    RectTransform = { AnchorMin = "${calculateAnchorMin(child)}", AnchorMax = "${calculateAnchorMax(child)}" }\n`;
         code += `${indent}}, ${parentName});\n\n`;
       } else {
+        // Проверяем, есть ли изображение
+        const hasImage = hasImageFill(child, imageMap);
+        const imageUrl = hasImage ? getImageUrl(child, imageMap) : null;
         const color = getRGBAColor(child);
+        
         code += `${indent}// Panel: ${child.name}\n`;
         code += `${indent}elements.Add(new CuiPanel\n`;
         code += `${indent}{\n`;
-        code += `${indent}    Image = { Color = "${color}" },\n`;
+        
+        if (hasImage && imageUrl) {
+          // Используем RawImage для загрузки изображения
+          code += `${indent}    Image = { Color = "${color}", Png = "${imageUrl}" },\n`;
+        } else {
+          code += `${indent}    Image = { Color = "${color}" },\n`;
+        }
+        
         code += `${indent}    RectTransform = { AnchorMin = "${calculateAnchorMin(child)}", AnchorMax = "${calculateAnchorMax(child)}" }\n`;
         code += `${indent}}, ${parentName}, "${childName}");\n\n`;
         
-        code += generateCSharpElements(child, `"${childName}"`, level + 1);
+        code += generateCSharpElements(child, `"${childName}"`, level + 1, imageMap);
       }
     }
   }
