@@ -19,8 +19,24 @@ figma.ui.onmessage = async (msg) => {
     await generateCode();
   } else if (msg.type === 'cancel') {
     figma.closePlugin();
+  } else if (msg.type === 'save-token') {
+    try {
+      await figma.clientStorage.setAsync('apiToken', msg.apiToken || '');
+      currentApiToken = msg.apiToken || '';
+    } catch (e) {}
   }
 };
+
+// При старте пробуем восстановить токен из локального хранилища
+(async () => {
+  try {
+    const saved = await figma.clientStorage.getAsync('apiToken');
+    if (saved) {
+      currentApiToken = saved;
+      figma.ui.postMessage({ type: 'prefill-token', apiToken: saved });
+    }
+  } catch (_) {}
+})();
 
 // Главная функция генерации кода
 async function generateCode() {

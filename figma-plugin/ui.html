@@ -399,6 +399,13 @@
       parent.postMessage({ pluginMessage: { type: 'generate-code', apiToken } }, '*');
     }
 
+    // Сохраняем токен локально при изменении
+    const tokenInput = document.getElementById('api-token');
+    tokenInput.addEventListener('change', () => {
+      const apiToken = tokenInput.value.trim();
+      parent.postMessage({ pluginMessage: { type: 'save-token', apiToken } }, '*');
+    });
+
     function cancel() {
       parent.postMessage({ pluginMessage: { type: 'cancel' } }, '*');
     }
@@ -519,6 +526,13 @@
         const btn = document.getElementById('generate');
         btn.disabled = false;
         btn.textContent = '⚡ Генерировать код';
+      }
+      else if (msg.type === 'prefill-token') {
+        const { apiToken } = msg;
+        if (apiToken) {
+          const input = document.getElementById('api-token');
+          input.value = apiToken;
+        }
       }
     };
   </script>

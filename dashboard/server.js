@@ -290,6 +290,17 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
             
             console.log('   ✅ Authenticated as:', currentUser.username || currentUser.id);
 
+            // API usage log (per token)
+            try {
+                if (req.tokenType === 'api' && req.apiTokenId) {
+                    await supabase
+                        .from('api_usage_logs')
+                        .insert({ token_id: req.apiTokenId, endpoint: 'images/upload' });
+                }
+            } catch (e) {
+                console.warn('   ⚠️ Failed to log API usage:', e.message);
+            }
+
             if (!req.file) return res.status(400).json({ error: 'Файл не получен' });
 
             const ext = path.extname(req.file.originalname).toLowerCase();
@@ -1822,6 +1833,81 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
 
     // Avoid 404 spam from browsers requesting site icon
     app.get('/favicon.ico', (req, res) => res.status(204).end());
+
+    // =====================
+    // API TOKENS MANAGEMENT
+    // =====================
+    // Create new API token for current user
+    app.post('/api/api-tokens', async (req, res) => {
+        await requireAuth(req, res, async () => {}, supabase);
+        if (!req.user) return;
+        try {
+            const name = (req.body && req.body.name) || 'Figma Plugin';
+            const description = (req.body && req.body.description) || null;
+            const token = require('crypto').randomBytes(32).toString('hex');
+            const { data, error } = await supabase
+                .from('api_tokens')
+                .insert({ user_id: req.user.id, token, name, description, is_active: true })
+                .select('id, created_at')
+                .single();
+            if (error) throw error;
+            res.json({ success: true, token, id: data.id, created_at: data.created_at });
+        } catch (e) {
+            console.error('Create token error:', e);
+            res.status(500).json({ error: e.message });
+        }
+    });
+
+    // List current user's tokens with usage counts
+    app.get('/api/api-tokens/mine', async (req, res) => {
+        await requireAuth(req, res, async () => {}, supabase);
+        if (!req.user) return;
+        try {
+            const { data: tokens, error } = await supabase
+                .from('api_tokens')
+                .select('id, name, description, is_active, created_at, last_used_at')
+                .eq('user_id', req.user.id)
+                .order('created_at', { ascending: false });
+            if (error) throw error;
+
+            // Get usage counts
+            let usage = [];
+            try {
+                const { data: u } = await supabase
+                    .from('api_usage_logs')
+                    .select('token_id, count:token_id')
+                    .in('token_id', (tokens || []).map(t => t.id))
+                    .group('token_id');
+                usage = u || [];
+            } catch (_) {}
+
+            const map = new Map(usage.map(r => [r.token_id, r.count]));
+            const result = (tokens || []).map(t => ({ ...t, calls: map.get(t.id) || 0 }));
+            res.json({ items: result });
+        } catch (e) {
+            console.error('List tokens error:', e);
+            res.status(500).json({ error: e.message });
+        }
+    });
+
+    // Revoke token
+    app.delete('/api/api-tokens/:id', async (req, res) => {
+        await requireAuth(req, res, async () => {}, supabase);
+        if (!req.user) return;
+        try {
+            const { id } = req.params;
+            const { error } = await supabase
+                .from('api_tokens')
+                .update({ is_active: false })
+                .eq('id', id)
+                .eq('user_id', req.user.id);
+            if (error) throw error;
+            res.json({ success: true });
+        } catch (e) {
+            console.error('Revoke token error:', e);
+            res.status(500).json({ error: e.message });
+        }
+    });
 
     return app;
 }

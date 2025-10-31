@@ -1206,6 +1206,11 @@ function navigateToPage(page) {
         if (typeof renderImagesHistory === 'function') {
             renderImagesHistory();
         }
+    } else if (page === 'api') {
+        // Загрузка и отрисовка токенов API
+        if (typeof loadApiTokens === 'function') {
+            loadApiTokens();
+        }
     } else if (page === 'admin') {
         loadAdminChangelog();
     } else if (page === 'gradient-role') {
@@ -2787,6 +2792,57 @@ function initGradientRolePage() {
     
     gradientRoleFormInitialized = true;
     console.log('✅ [Gradient Role] Обработчик формы установлен');
+}
+
+// ================= API TOKENS (USER) =================
+async function loadApiTokens(){
+    try{
+        const auth = getAuthData();
+        if(!auth){ return; }
+        const listRes = await fetch('/api/api-tokens/mine', { headers: { 'Authorization': `Bearer ${auth.token}` }});
+        const listData = listRes.ok ? await listRes.json() : { items: [] };
+        const container = document.getElementById('api-tokens-container');
+        if(!container) return;
+        const items = listData.items || [];
+        if(items.length === 0){ container.innerHTML = `<div style="color:var(--text-secondary)">Токенов нет. Создайте первый токен.</div>`; }
+        else {
+            container.innerHTML = items.map(t => `
+                <div style=\"display:flex;align-items:center;justify-content:space-between;border:1px solid var(--border-color);border-radius:8px;padding:10px;margin:8px 0;background:var(--bg-card)\">
+                  <div style=\"display:flex;flex-direction:column;gap:4px\">
+                    <div style=\"font-weight:700\">${t.name}</div>
+                    <div style=\"color:var(--text-secondary);font-size:12px\">Создан: ${new Date(t.created_at).toLocaleString()} • Вызовов: ${t.calls}</div>
+                  </div>
+                  <div style=\"display:flex;gap:8px;align-items:center\">
+                    <span style=\"font-family:monospace;color:var(--text-secondary)\">••••••••••••••••••••</span>
+                    <button class=\"btn btn-danger btn-sm\" onclick=\"revokeToken('${t.id}')\">Отозвать</button>
+                  </div>
+                </div>`).join('');
+        }
+        const createBtn = document.getElementById('api-create-btn');
+        if(createBtn){
+            createBtn.onclick = async ()=>{
+                createBtn.disabled = true;
+                const r = await fetch('/api/api-tokens', { method:'POST', headers: { 'Authorization': `Bearer ${auth.token}`, 'Content-Type':'application/json' }, body: JSON.stringify({ name:'Figma Plugin' }) });
+                createBtn.disabled = false;
+                if(!r.ok){ alert('Не удалось создать токен'); return; }
+                const d = await r.json();
+                const box = document.getElementById('api-new-token');
+                const inp = document.getElementById('api-new-token-input');
+                inp.value = d.token;
+                box.style.display = 'block';
+                loadApiTokens();
+            };
+        }
+    }catch(e){ console.error(e); }
+}
+
+async function revokeToken(id){
+    const auth = getAuthData();
+    if(!auth) return;
+    if(!confirm('Отозвать токен?')) return;
+    const r = await fetch(`/api/api-tokens/${id}`, { method:'DELETE', headers: { 'Authorization': `Bearer ${auth.token}` }});
+    if(!r.ok){ alert('Ошибка'); return; }
+    loadApiTokens();
 }
 
 // ==========================================

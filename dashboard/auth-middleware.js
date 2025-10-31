@@ -31,6 +31,7 @@ async function requireAuth(req, res, next, supabase) {
             console.log('   ✅ Valid API token for user:', apiToken.users.username);
             req.user = apiToken.users;
             req.tokenType = 'api';
+            req.apiTokenId = apiToken.id;
             
             // Обновляем last_used_at
             await supabase
