@@ -87,266 +87,650 @@ namespace Oxide.Plugins
                 CursorEnabled = false
             }, UIName, UIName + ".Content");
 
-                    // Panel: image 368
+            // Center wrapper to keep layout centered on any aspect ratio (1920x1080 reference)
+            // Size derived from original anchors of the main group (~1104 x ~738)
+            elements.Add(new CuiPanel
+            {
+                Image = { Color = "0 0 0 0" },
+                RectTransform = { AnchorMin = "0.5 0.5", AnchorMax = "0.5 0.5", OffsetMin = "-552 -369", OffsetMax = "552 369" }
+            }, UIName + ".Content", UIName + ".Center");
+
+                    // Panel: Group 1 (fit inside center wrapper)
                     elements.Add(new CuiPanel
                     {
                         Image = { Color = "0 0 0 0" },
-                        RectTransform = { AnchorMin = "0.0000 0.0019", AnchorMax = "1.0000 1.0000" }
-                    }, UIName + ".Content", "frame_20_image_368_0");
+                        RectTransform = { AnchorMin = "0 0", AnchorMax = "1 1" }
+                    }, UIName + ".Center", "frame_20_group_1_0");
 
-                    // Panel: Rectangle 2613
-                    elements.Add(new CuiPanel
-                    {
-                        Image = { Color = "0.365 0.424 0.247 1.000" },
-                        RectTransform = { AnchorMin = "0.2036 0.3769", AnchorMax = "0.3448 0.7102" }
-                    }, UIName + ".Content", "frame_20_rectangle_2613_1");
-
-                    // Panel: Rectangle 2619
-                    elements.Add(new CuiPanel
-                    {
-                        Image = { Color = "0.365 0.424 0.247 1.000" },
-                        RectTransform = { AnchorMin = "0.3521 0.3769", AnchorMax = "0.4932 0.7102" }
-                    }, UIName + ".Content", "frame_20_rectangle_2619_2");
-
-                    // Panel: Rectangle 2620
-                    elements.Add(new CuiPanel
-                    {
-                        Image = { Color = "0.365 0.424 0.247 1.000" },
-                        RectTransform = { AnchorMin = "0.5005 0.3769", AnchorMax = "0.6417 0.7102" }
-                    }, UIName + ".Content", "frame_20_rectangle_2620_3");
-
-                    // Panel: Rectangle 2621
-                    elements.Add(new CuiPanel
-                    {
-                        Image = { Color = "0.365 0.424 0.247 1.000" },
-                        RectTransform = { AnchorMin = "0.6490 0.3769", AnchorMax = "0.7901 0.7102" }
-                    }, UIName + ".Content", "frame_20_rectangle_2621_4");
-
-                    // Panel: Rectangle 2614
-                    elements.Add(new CuiPanel
-                    {
-                        Image = { Color = "0.412 0.494 0.271 1.000" },
-                        RectTransform = { AnchorMin = "0.3599 0.3833", AnchorMax = "0.4849 0.4250" }
-                    }, UIName + ".Content", "frame_20_rectangle_2614_5");
-
-                    // Panel: Rectangle 2616
-                    elements.Add(new CuiPanel
-                    {
-                        Image = { Color = "0.412 0.494 0.271 1.000" },
-                        RectTransform = { AnchorMin = "0.2115 0.3833", AnchorMax = "0.3365 0.4250" }
-                    }, UIName + ".Content", "frame_20_rectangle_2616_6");
-
-                    // Panel: Rectangle 2618
-                    elements.Add(new CuiPanel
-                    {
-                        Image = { Color = "0.412 0.494 0.271 1.000" },
-                        RectTransform = { AnchorMin = "0.2115 0.3833", AnchorMax = "0.3365 0.4250" }
-                    }, UIName + ".Content", "frame_20_rectangle_2618_7");
-
-                    // Panel: Rectangle 2615
-                    elements.Add(new CuiPanel
-                    {
-                        Image = { Color = "0.412 0.494 0.271 1.000" },
-                        RectTransform = { AnchorMin = "0.5083 0.3833", AnchorMax = "0.6333 0.4250" }
-                    }, UIName + ".Content", "frame_20_rectangle_2615_8");
-
-                    // Panel: Rectangle 2617
-                    elements.Add(new CuiPanel
-                    {
-                        Image = { Color = "0.412 0.494 0.271 1.000" },
-                        RectTransform = { AnchorMin = "0.6568 0.3833", AnchorMax = "0.7818 0.4250" }
-                    }, UIName + ".Content", "frame_20_rectangle_2617_9");
-
-                    // Text: взять
-                    elements.Add(new CuiLabel
-                    {
-                        Text = { Text = "взять", FontSize = 24, Align = TextAnchor.MiddleCenter, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-bold.ttf" },
-                        RectTransform = { AnchorMin = "0.2115 0.3833", AnchorMax = "0.3365 0.4250" }
-                    }, UIName + ".Content");
-
-                    // Text: название кита
-                    elements.Add(new CuiLabel
-                    {
-                        Text = { Text = "название кита", FontSize = 24, Align = TextAnchor.MiddleCenter, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-bold.ttf" },
-                        RectTransform = { AnchorMin = "0.2115 0.4917", AnchorMax = "0.3365 0.5333" }
-                    }, UIName + ".Content");
-
-                    // Text: название кита
-                    elements.Add(new CuiLabel
-                    {
-                        Text = { Text = "название кита", FontSize = 24, Align = TextAnchor.MiddleCenter, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-bold.ttf" },
-                        RectTransform = { AnchorMin = "0.3599 0.4917", AnchorMax = "0.4849 0.5333" }
-                    }, UIName + ".Content");
-
-                    // Text: название кита
-                    elements.Add(new CuiLabel
-                    {
-                        Text = { Text = "название кита", FontSize = 24, Align = TextAnchor.MiddleCenter, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-bold.ttf" },
-                        RectTransform = { AnchorMin = "0.5083 0.4917", AnchorMax = "0.6333 0.5333" }
-                    }, UIName + ".Content");
-
-                    // Text: название кита
-                    elements.Add(new CuiLabel
-                    {
-                        Text = { Text = "название кита", FontSize = 24, Align = TextAnchor.MiddleCenter, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-bold.ttf" },
-                        RectTransform = { AnchorMin = "0.6568 0.4917", AnchorMax = "0.7818 0.5333" }
-                    }, UIName + ".Content");
-
-                    // Text: взять
-                    elements.Add(new CuiLabel
-                    {
-                        Text = { Text = "взять", FontSize = 24, Align = TextAnchor.MiddleCenter, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-bold.ttf" },
-                        RectTransform = { AnchorMin = "0.3599 0.3833", AnchorMax = "0.4849 0.4250" }
-                    }, UIName + ".Content");
-
-                    // Text: взять
-                    elements.Add(new CuiLabel
-                    {
-                        Text = { Text = "взять", FontSize = 24, Align = TextAnchor.MiddleCenter, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-bold.ttf" },
-                        RectTransform = { AnchorMin = "0.5083 0.3833", AnchorMax = "0.6333 0.4250" }
-                    }, UIName + ".Content");
-
-                    // Text: взять
-                    elements.Add(new CuiLabel
-                    {
-                        Text = { Text = "взять", FontSize = 24, Align = TextAnchor.MiddleCenter, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-bold.ttf" },
-                        RectTransform = { AnchorMin = "0.6573 0.3833", AnchorMax = "0.7823 0.4250" }
-                    }, UIName + ".Content");
-
-                    // Panel: image 363
-                    elements.Add(new CuiPanel
-                    {
-                        Image = { Color = "0 0 0 0" },
-                        RectTransform = { AnchorMin = "0.5328 0.5333", AnchorMax = "0.6094 0.6694" }
-                    }, UIName + ".Content", "frame_20_image_363_18");
-
-                    // Image for image 363
-                    elements.Add(new CuiElement
-                    {
-                        Parent = "frame_20_image_363_18",
-                        Components =
+                        // Text: КЛАНОВОЕ МЕНЮ
+                        elements.Add(new CuiLabel
                         {
-                            new CuiRawImageComponent { Url = "https://bublickrust.ru/i/XX779O0" },
-                            new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
-                        }
-                    });
+                            Text = { Text = "КЛАНОВОЕ МЕНЮ", FontSize = 40, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "0.6600 0.6938", AnchorMax = "1.0000 0.7683" }
+                        }, "frame_20_group_1_0");
 
-                    // Panel: image 365
-                    elements.Add(new CuiPanel
-                    {
-                        Image = { Color = "0 0 0 0" },
-                        RectTransform = { AnchorMin = "0.6813 0.5333", AnchorMax = "0.7578 0.6694" }
-                    }, UIName + ".Content", "frame_20_image_365_19");
-
-                    // Image for image 365
-                    elements.Add(new CuiElement
-                    {
-                        Parent = "frame_20_image_365_19",
-                        Components =
+                        // Panel: Rectangle 39
+                        elements.Add(new CuiPanel
                         {
-                            new CuiRawImageComponent { Url = "https://bublickrust.ru/i/XX779O0" },
-                            new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
-                        }
-                    });
+                            Image = { Color = "0.816 0.776 0.741 0.200" },
+                            RectTransform = { AnchorMin = "0.3699 0.3320", AnchorMax = "0.5204 0.5501" }
+                        }, "frame_20_group_1_0", "group_1_rectangle_39_1");
 
-                    // Panel: image 366
-                    elements.Add(new CuiPanel
-                    {
-                        Image = { Color = "0 0 0 0" },
-                        RectTransform = { AnchorMin = "0.2359 0.5333", AnchorMax = "0.3125 0.6694" }
-                    }, UIName + ".Content", "frame_20_image_366_20");
-
-                    // Image for image 366
-                    elements.Add(new CuiElement
-                    {
-                        Parent = "frame_20_image_366_20",
-                        Components =
+                        // Panel: Rectangle 49
+                        elements.Add(new CuiPanel
                         {
-                            new CuiRawImageComponent { Url = "https://bublickrust.ru/i/XX779O0" },
-                            new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
-                        }
-                    });
+                            Image = { Color = "0.816 0.776 0.741 0.200" },
+                            RectTransform = { AnchorMin = "1.0000 0.3320", AnchorMax = "1.0000 0.5501" }
+                        }, "frame_20_group_1_0", "group_1_rectangle_49_2");
 
-                    // Panel: image 367
-                    elements.Add(new CuiPanel
-                    {
-                        Image = { Color = "0 0 0 0" },
-                        RectTransform = { AnchorMin = "0.3844 0.5333", AnchorMax = "0.4609 0.6694" }
-                    }, UIName + ".Content", "frame_20_image_367_21");
-
-                    // Image for image 367
-                    elements.Add(new CuiElement
-                    {
-                        Parent = "frame_20_image_367_21",
-                        Components =
+                        // Panel: Rectangle 56
+                        elements.Add(new CuiPanel
                         {
-                            new CuiRawImageComponent { Url = "https://bublickrust.ru/i/XX779O0" },
-                            new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
-                        }
-                    });
+                            Image = { Color = "0.816 0.776 0.741 0.200" },
+                            RectTransform = { AnchorMin = "1.0000 0.3780", AnchorMax = "1.0000 0.4837" }
+                        }, "frame_20_group_1_0", "group_1_rectangle_56_3");
 
-                    // Panel: Rectangle 2622
-                    elements.Add(new CuiPanel
-                    {
-                        Image = { Color = "0.851 0.851 0.851 0.330" },
-                        RectTransform = { AnchorMin = "0.3271 0.6796", AnchorMax = "0.3427 0.7074" }
-                    }, UIName + ".Content", "frame_20_rectangle_2622_22");
+                        // Panel: Rectangle 57
+                        elements.Add(new CuiPanel
+                        {
+                            Image = { Color = "0.816 0.776 0.741 0.200" },
+                            RectTransform = { AnchorMin = "1.0000 0.3780", AnchorMax = "1.0000 0.4837" }
+                        }, "frame_20_group_1_0", "group_1_rectangle_57_4");
 
-                    // Text: ?
-                    elements.Add(new CuiLabel
-                    {
-                        Text = { Text = "?", FontSize = 20, Align = TextAnchor.MiddleCenter, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-bold.ttf" },
-                        RectTransform = { AnchorMin = "0.3302 0.6843", AnchorMax = "0.3401 0.7019" }
-                    }, UIName + ".Content");
+                        // Panel: Rectangle 43
+                        elements.Add(new CuiPanel
+                        {
+                            Image = { Color = "0.816 0.776 0.741 0.200" },
+                            RectTransform = { AnchorMin = "0.3699 0.1694", AnchorMax = "0.5340 0.3252" }
+                        }, "frame_20_group_1_0", "group_1_rectangle_43_5");
 
-                    // Panel: Rectangle 2623
-                    elements.Add(new CuiPanel
-                    {
-                        Image = { Color = "0.851 0.851 0.851 0.330" },
-                        RectTransform = { AnchorMin = "0.4755 0.6796", AnchorMax = "0.4911 0.7074" }
-                    }, UIName + ".Content", "frame_20_rectangle_2623_24");
+                        // Panel: Rectangle 48
+                        elements.Add(new CuiPanel
+                        {
+                            Image = { Color = "0.816 0.776 0.741 0.200" },
+                            RectTransform = { AnchorMin = "1.0000 0.1694", AnchorMax = "1.0000 0.3252" }
+                        }, "frame_20_group_1_0", "group_1_rectangle_48_6");
 
-                    // Text: ?
-                    elements.Add(new CuiLabel
-                    {
-                        Text = { Text = "?", FontSize = 20, Align = TextAnchor.MiddleCenter, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-bold.ttf" },
-                        RectTransform = { AnchorMin = "0.4786 0.6843", AnchorMax = "0.4885 0.7019" }
-                    }, UIName + ".Content");
+                        // Panel: Rectangle 58
+                        elements.Add(new CuiPanel
+                        {
+                            Image = { Color = "0.571 0.537 0.507 0.200" },
+                            RectTransform = { AnchorMin = "1.0000 0.0000", AnchorMax = "1.0000 0.1233" }
+                        }, "frame_20_group_1_0", "group_1_rectangle_58_7");
 
-                    // Panel: Rectangle 2624
-                    elements.Add(new CuiPanel
-                    {
-                        Image = { Color = "0.851 0.851 0.851 0.330" },
-                        RectTransform = { AnchorMin = "0.6240 0.6796", AnchorMax = "0.6396 0.7074" }
-                    }, UIName + ".Content", "frame_20_rectangle_2624_26");
+                        // Panel: Rectangle 59
+                        elements.Add(new CuiPanel
+                        {
+                            Image = { Color = "0.816 0.776 0.741 0.200" },
+                            RectTransform = { AnchorMin = "1.0000 0.0000", AnchorMax = "1.0000 0.0000" }
+                        }, "frame_20_group_1_0", "group_1_rectangle_59_8");
 
-                    // Text: ?
-                    elements.Add(new CuiLabel
-                    {
-                        Text = { Text = "?", FontSize = 20, Align = TextAnchor.MiddleCenter, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-bold.ttf" },
-                        RectTransform = { AnchorMin = "0.6271 0.6843", AnchorMax = "0.6370 0.7019" }
-                    }, UIName + ".Content");
+                        // Panel: image 25
+                        elements.Add(new CuiPanel
+                        {
+                            Image = { Color = "0 0 0 0" },
+                            RectTransform = { AnchorMin = "1.0000 0.1721", AnchorMax = "1.0000 0.3252" }
+                        }, "frame_20_group_1_0", "group_1_image_25_9");
 
-                    // Panel: Rectangle 2625
-                    elements.Add(new CuiPanel
-                    {
-                        Image = { Color = "0.851 0.851 0.851 0.330" },
-                        RectTransform = { AnchorMin = "0.7729 0.6796", AnchorMax = "0.7885 0.7074" }
-                    }, UIName + ".Content", "frame_20_rectangle_2625_28");
+                        // Image for image 25
+                        elements.Add(new CuiElement
+                        {
+                            Parent = "group_1_image_25_9",
+                            Components =
+                            {
+                                new CuiRawImageComponent { Url = "https://bublickrust.ru/i/1WNBFX4" },
+                                new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
+                            }
+                        });
 
-                    // Text: ?
-                    elements.Add(new CuiLabel
-                    {
-                        Text = { Text = "?", FontSize = 20, Align = TextAnchor.MiddleCenter, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-bold.ttf" },
-                        RectTransform = { AnchorMin = "0.7760 0.6843", AnchorMax = "0.7859 0.7019" }
-                    }, UIName + ".Content");
+                        // Text: 1
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "1", FontSize = 36, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "1.0000 0.3997", AnchorMax = "1.0000 0.4621" }
+                        }, "frame_20_group_1_0");
 
-                    // Text: Тест плагина Figma
-                    elements.Add(new CuiLabel
-                    {
-                        Text = { Text = "Тест плагина Figma", FontSize = 40, Align = TextAnchor.MiddleCenter, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-bold.ttf" },
-                        RectTransform = { AnchorMin = "0.2938 0.8185", AnchorMax = "0.7078 0.9204" }
-                    }, UIName + ".Content");
+                        // Text: 10
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "10", FontSize = 36, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "1.0000 0.3997", AnchorMax = "1.0000 0.4621" }
+                        }, "frame_20_group_1_0");
+
+                        // Text: Место в топе
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "Место в топе", FontSize = 15, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "1.0000 0.5149", AnchorMax = "1.0000 0.5407" }
+                        }, "frame_20_group_1_0");
+
+                        // Text: По очкам
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "По очкам", FontSize = 15, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "1.0000 0.4837", AnchorMax = "1.0000 0.5095" }
+                        }, "frame_20_group_1_0");
+
+                        // Text: По рейдам
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "По рейдам", FontSize = 15, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "1.0000 0.4837", AnchorMax = "1.0000 0.5095" }
+                        }, "frame_20_group_1_0");
+
+                        // Panel: Rectangle 47
+                        elements.Add(new CuiPanel
+                        {
+                            Image = { Color = "0.816 0.776 0.741 0.200" },
+                            RectTransform = { AnchorMin = "1.0000 0.1694", AnchorMax = "1.0000 0.3252" }
+                        }, "frame_20_group_1_0", "group_1_rectangle_47_15");
+
+                        // Panel: Rectangle 46
+                        elements.Add(new CuiPanel
+                        {
+                            Image = { Color = "0.816 0.776 0.741 0.200" },
+                            RectTransform = { AnchorMin = "0.8767 0.1694", AnchorMax = "1.0000 0.3252" }
+                        }, "frame_20_group_1_0", "group_1_rectangle_46_16");
+
+                        // Panel: Rectangle 45
+                        elements.Add(new CuiPanel
+                        {
+                            Image = { Color = "0.816 0.776 0.741 0.200" },
+                            RectTransform = { AnchorMin = "0.7081 0.1694", AnchorMax = "0.8731 0.3252" }
+                        }, "frame_20_group_1_0", "group_1_rectangle_45_17");
+
+                        // Panel: Rectangle 44
+                        elements.Add(new CuiPanel
+                        {
+                            Image = { Color = "0.816 0.776 0.741 0.200" },
+                            RectTransform = { AnchorMin = "0.5385 0.1694", AnchorMax = "0.7044 0.3252" }
+                        }, "frame_20_group_1_0", "group_1_rectangle_44_18");
+
+                        // Panel: image 24
+                        elements.Add(new CuiPanel
+                        {
+                            Image = { Color = "0 0 0 0" },
+                            RectTransform = { AnchorMin = "1.0000 0.1707", AnchorMax = "1.0000 0.3252" }
+                        }, "frame_20_group_1_0", "group_1_image_24_19");
+
+                        // Image for image 24
+                        elements.Add(new CuiElement
+                        {
+                            Parent = "group_1_image_24_19",
+                            Components =
+                            {
+                                new CuiRawImageComponent { Url = "https://bublickrust.ru/i/4QPWOPM" },
+                                new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
+                            }
+                        });
+
+                        // Panel: Rectangle 40
+                        elements.Add(new CuiPanel
+                        {
+                            Image = { Color = "0.816 0.776 0.741 0.200" },
+                            RectTransform = { AnchorMin = "0.5258 0.4837", AnchorMax = "1.0000 0.5501" }
+                        }, "frame_20_group_1_0", "group_1_rectangle_40_20");
+
+                        // Panel: Rectangle 42
+                        elements.Add(new CuiPanel
+                        {
+                            Image = { Color = "0.816 0.776 0.741 0.200" },
+                            RectTransform = { AnchorMin = "0.5258 0.3320", AnchorMax = "1.0000 0.3984" }
+                        }, "frame_20_group_1_0", "group_1_rectangle_42_21");
+
+                        // Panel: Rectangle 50
+                        elements.Add(new CuiPanel
+                        {
+                            Image = { Color = "0.816 0.776 0.741 0.200" },
+                            RectTransform = { AnchorMin = "0.3699 0.1314", AnchorMax = "1.0000 0.1599" }
+                        }, "frame_20_group_1_0", "group_1_rectangle_50_22");
+
+                        // Panel: Rectangle 54
+                        elements.Add(new CuiPanel
+                        {
+                            Image = { Color = "0.816 0.776 0.741 0.200" },
+                            RectTransform = { AnchorMin = "0.3699 0.0000", AnchorMax = "1.0000 0.0000" }
+                        }, "frame_20_group_1_0", "group_1_rectangle_54_23");
+
+                        // Panel: Rectangle 55
+                        elements.Add(new CuiPanel
+                        {
+                            Image = { Color = "0.816 0.776 0.741 0.200" },
+                            RectTransform = { AnchorMin = "0.3699 0.0000", AnchorMax = "1.0000 0.0000" }
+                        }, "frame_20_group_1_0", "group_1_rectangle_55_24");
+
+                        // Panel: Rectangle 53
+                        elements.Add(new CuiPanel
+                        {
+                            Image = { Color = "0.816 0.776 0.741 0.200" },
+                            RectTransform = { AnchorMin = "0.3699 0.0000", AnchorMax = "1.0000 0.0000" }
+                        }, "frame_20_group_1_0", "group_1_rectangle_53_25");
+
+                        // Panel: Rectangle 52
+                        elements.Add(new CuiPanel
+                        {
+                            Image = { Color = "0.816 0.776 0.741 0.200" },
+                            RectTransform = { AnchorMin = "0.3699 0.0000", AnchorMax = "1.0000 0.0501" }
+                        }, "frame_20_group_1_0", "group_1_rectangle_52_26");
+
+                        // Panel: Rectangle 51
+                        elements.Add(new CuiPanel
+                        {
+                            Image = { Color = "0.816 0.776 0.741 0.200" },
+                            RectTransform = { AnchorMin = "0.3699 0.0596", AnchorMax = "1.0000 0.1220" }
+                        }, "frame_20_group_1_0", "group_1_rectangle_51_27");
+
+                        // Panel: Rectangle 41
+                        elements.Add(new CuiPanel
+                        {
+                            Image = { Color = "0.816 0.776 0.741 0.200" },
+                            RectTransform = { AnchorMin = "0.5258 0.4079", AnchorMax = "1.0000 0.4743" }
+                        }, "frame_20_group_1_0", "group_1_rectangle_41_28");
+
+                        // Text: Глава клана:
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "Глава клана:", FontSize = 15, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "0.5394 0.5027", AnchorMax = "0.6546 0.5312" }
+                        }, "frame_20_group_1_0");
+
+                        // Text: имя игрока
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "имя игрока", FontSize = 15, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "0.3762 0.1233", AnchorMax = "0.5050 0.1599" }
+                        }, "frame_20_group_1_0");
+
+                        // Text: очков
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "очков", FontSize = 15, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "0.6102 0.1233", AnchorMax = "0.6772 0.1599" }
+                        }, "frame_20_group_1_0");
+
+                        // Text: убийств
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "убийств", FontSize = 15, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "0.7579 0.1233", AnchorMax = "0.8540 0.1599" }
+                        }, "frame_20_group_1_0");
+
+                        // Text: смертей
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "смертей", FontSize = 15, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "0.9257 0.1233", AnchorMax = "1.0000 0.1599" }
+                        }, "frame_20_group_1_0");
+
+                        // Text: статус
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "статус", FontSize = 15, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "1.0000 0.1233", AnchorMax = "1.0000 0.1599" }
+                        }, "frame_20_group_1_0");
+
+                        // Text: к/д
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "к/д", FontSize = 15, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "1.0000 0.1233", AnchorMax = "1.0000 0.1599" }
+                        }, "frame_20_group_1_0");
+
+                        // Text: Участников в игре:
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "Участников в игре:", FontSize = 15, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "0.5394 0.4268", AnchorMax = "0.7099 0.4553" }
+                        }, "frame_20_group_1_0");
+
+                        // Text: Очки клана:
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "Очки клана:", FontSize = 15, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "0.5394 0.3509", AnchorMax = "0.6473 0.3794" }
+                        }, "frame_20_group_1_0");
+
+                        // Text: Deity
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "Deity", FontSize = 15, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "1.0000 0.5027", AnchorMax = "1.0000 0.5312" }
+                        }, "frame_20_group_1_0");
+
+                        // Text: Deity
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "Deity", FontSize = 20, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "0.3926 0.0732", AnchorMax = "0.4497 0.1084" }
+                        }, "frame_20_group_1_0");
+
+                        // Text: 1007
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "1007", FontSize = 20, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "0.6083 0.0732", AnchorMax = "0.6636 0.1084" }
+                        }, "frame_20_group_1_0");
+
+                        // Text: 52
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "52", FontSize = 20, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "0.7770 0.0732", AnchorMax = "0.8114 0.1084" }
+                        }, "frame_20_group_1_0");
+
+                        // Text: 52
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "52", FontSize = 20, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "0.9465 0.0732", AnchorMax = "0.9801 0.1084" }
+                        }, "frame_20_group_1_0");
+
+                        // Text: 5.2
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "5.2", FontSize = 20, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "1.0000 0.0732", AnchorMax = "1.0000 0.1084" }
+                        }, "frame_20_group_1_0");
+
+                        // Text: Deity
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "Deity", FontSize = 20, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "0.3908 0.0000", AnchorMax = "0.4479 0.0000" }
+                        }, "frame_20_group_1_0");
+
+                        // Text: Deity
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "Deity", FontSize = 20, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "0.3926 0.0000", AnchorMax = "0.4497 0.0000" }
+                        }, "frame_20_group_1_0");
+
+                        // Text: Deity
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "Deity", FontSize = 20, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "0.3926 0.0000", AnchorMax = "0.4497 0.0000" }
+                        }, "frame_20_group_1_0");
+
+                        // Text: Deity
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "Deity", FontSize = 20, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "0.3908 0.0000", AnchorMax = "0.4479 0.0366" }
+                        }, "frame_20_group_1_0");
+
+                        // Text: 1 из 5
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "1 из 5", FontSize = 15, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "1.0000 0.4268", AnchorMax = "1.0000 0.4553" }
+                        }, "frame_20_group_1_0");
+
+                        // Text: 1007
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "1007", FontSize = 15, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "1.0000 0.3509", AnchorMax = "1.0000 0.3794" }
+                        }, "frame_20_group_1_0");
+
+                        // Panel: image
+                        elements.Add(new CuiPanel
+                        {
+                            Image = { Color = "0 0 0 0" },
+                            RectTransform = { AnchorMin = "0.3953 0.3862", AnchorMax = "0.4841 0.5190" }
+                        }, "frame_20_group_1_0", "group_1_image_50");
+
+                        // Image for image
+                        elements.Add(new CuiElement
+                        {
+                            Parent = "group_1_image_50",
+                            Components =
+                            {
+                                new CuiRawImageComponent { Url = "https://bublickrust.ru/i/1126QEP" },
+                                new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
+                            }
+                        });
+
+                        // Text: имя клана
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "имя клана", FontSize = 15, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "0.3926 0.3482", AnchorMax = "0.4878 0.3767" }
+                        }, "frame_20_group_1_0");
+
+                        // Panel: image 20
+                        elements.Add(new CuiPanel
+                        {
+                            Image = { Color = "0 0 0 0" },
+                            RectTransform = { AnchorMin = "0.3935 0.1721", AnchorMax = "0.5005 0.3238" }
+                        }, "frame_20_group_1_0", "group_1_image_20_52");
+
+                        // Image for image 20
+                        elements.Add(new CuiElement
+                        {
+                            Parent = "group_1_image_20_52",
+                            Components =
+                            {
+                                new CuiRawImageComponent { Url = "https://bublickrust.ru/i/184QIYO" },
+                                new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
+                            }
+                        });
+
+                        // Panel: image 21
+                        elements.Add(new CuiPanel
+                        {
+                            Image = { Color = "0 0 0 0" },
+                            RectTransform = { AnchorMin = "0.5603 0.1612", AnchorMax = "0.6827 0.3320" }
+                        }, "frame_20_group_1_0", "group_1_image_21_53");
+
+                        // Image for image 21
+                        elements.Add(new CuiElement
+                        {
+                            Parent = "group_1_image_21_53",
+                            Components =
+                            {
+                                new CuiRawImageComponent { Url = "https://bublickrust.ru/i/1EOKA0H" },
+                                new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
+                            }
+                        });
+
+                        // Panel: image 22
+                        elements.Add(new CuiPanel
+                        {
+                            Image = { Color = "0 0 0 0" },
+                            RectTransform = { AnchorMin = "0.7335 0.1694", AnchorMax = "0.8450 0.3252" }
+                        }, "frame_20_group_1_0", "group_1_image_22_54");
+
+                        // Image for image 22
+                        elements.Add(new CuiElement
+                        {
+                            Parent = "group_1_image_22_54",
+                            Components =
+                            {
+                                new CuiRawImageComponent { Url = "https://bublickrust.ru/i/ABG3DOR" },
+                                new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
+                            }
+                        });
+
+                        // Panel: image 23
+                        elements.Add(new CuiPanel
+                        {
+                            Image = { Color = "0 0 0 0" },
+                            RectTransform = { AnchorMin = "0.9030 0.1694", AnchorMax = "1.0000 0.3252" }
+                        }, "frame_20_group_1_0", "group_1_image_23_55");
+
+                        // Image for image 23
+                        elements.Add(new CuiElement
+                        {
+                            Parent = "group_1_image_23_55",
+                            Components =
+                            {
+                                new CuiRawImageComponent { Url = "https://bublickrust.ru/i/4MO8SBN" },
+                                new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
+                            }
+                        });
+
+                        // Text: ↑
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "↑", FontSize = 64, Align = TextAnchor.MiddleLeft, Color = "0.300 0.300 0.300 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "1.0000 0.0217", AnchorMax = "1.0000 0.0921" }
+                        }, "frame_20_group_1_0");
+
+                        // Text: ↓
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "↓", FontSize = 64, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "1.0000 0.0000", AnchorMax = "1.0000 0.0000" }
+                        }, "frame_20_group_1_0");
+
+                        // Panel: Ellipse 2
+                        elements.Add(new CuiPanel
+                        {
+                            Image = { Color = "0.570 1.000 0.500 1.000" },
+                            RectTransform = { AnchorMin = "1.0000 0.0799", AnchorMax = "1.0000 0.1016" }
+                        }, "frame_20_group_1_0", "group_1_ellipse_2_58");
+
+                        // Text: 1007
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "1007", FontSize = 20, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "0.6083 0.0000", AnchorMax = "0.6636 0.0000" }
+                        }, "frame_20_group_1_0");
+
+                        // Text: 52
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "52", FontSize = 20, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "0.7770 0.0000", AnchorMax = "0.8114 0.0000" }
+                        }, "frame_20_group_1_0");
+
+                        // Text: 52
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "52", FontSize = 20, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "0.9465 0.0000", AnchorMax = "0.9801 0.0000" }
+                        }, "frame_20_group_1_0");
+
+                        // Text: 5.2
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "5.2", FontSize = 20, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "1.0000 0.0000", AnchorMax = "1.0000 0.0000" }
+                        }, "frame_20_group_1_0");
+
+                        // Panel: Ellipse 6
+                        elements.Add(new CuiPanel
+                        {
+                            Image = { Color = "0.570 1.000 0.500 1.000" },
+                            RectTransform = { AnchorMin = "1.0000 0.0000", AnchorMax = "1.0000 0.0000" }
+                        }, "frame_20_group_1_0", "group_1_ellipse_6_63");
+
+                        // Text: 1007
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "1007", FontSize = 20, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "0.6083 0.0000", AnchorMax = "0.6636 0.0000" }
+                        }, "frame_20_group_1_0");
+
+                        // Text: 52
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "52", FontSize = 20, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "0.7770 0.0000", AnchorMax = "0.8114 0.0000" }
+                        }, "frame_20_group_1_0");
+
+                        // Text: 52
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "52", FontSize = 20, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "0.9465 0.0000", AnchorMax = "0.9801 0.0000" }
+                        }, "frame_20_group_1_0");
+
+                        // Text: 5.2
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "5.2", FontSize = 20, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "1.0000 0.0000", AnchorMax = "1.0000 0.0000" }
+                        }, "frame_20_group_1_0");
+
+                        // Panel: Ellipse 5
+                        elements.Add(new CuiPanel
+                        {
+                            Image = { Color = "0.925 0.166 0.302 1.000" },
+                            RectTransform = { AnchorMin = "1.0000 0.0000", AnchorMax = "1.0000 0.0000" }
+                        }, "frame_20_group_1_0", "group_1_ellipse_5_68");
+
+                        // Text: 1007
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "1007", FontSize = 20, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "0.6083 0.0000", AnchorMax = "0.6636 0.0000" }
+                        }, "frame_20_group_1_0");
+
+                        // Text: 52
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "52", FontSize = 20, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "0.7770 0.0000", AnchorMax = "0.8114 0.0000" }
+                        }, "frame_20_group_1_0");
+
+                        // Text: 52
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "52", FontSize = 20, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "0.9465 0.0000", AnchorMax = "0.9801 0.0000" }
+                        }, "frame_20_group_1_0");
+
+                        // Text: 5.2
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "5.2", FontSize = 20, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "1.0000 0.0000", AnchorMax = "1.0000 0.0000" }
+                        }, "frame_20_group_1_0");
+
+                        // Panel: Ellipse 4
+                        elements.Add(new CuiPanel
+                        {
+                            Image = { Color = "0.570 1.000 0.500 1.000" },
+                            RectTransform = { AnchorMin = "1.0000 0.0000", AnchorMax = "1.0000 0.0000" }
+                        }, "frame_20_group_1_0", "group_1_ellipse_4_73");
+
+                        // Text: 1007
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "1007", FontSize = 20, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "0.6083 0.0000", AnchorMax = "0.6636 0.0366" }
+                        }, "frame_20_group_1_0");
+
+                        // Text: 52
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "52", FontSize = 20, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "0.7770 0.0000", AnchorMax = "0.8114 0.0366" }
+                        }, "frame_20_group_1_0");
+
+                        // Text: 52
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "52", FontSize = 20, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "0.9465 0.0000", AnchorMax = "0.9801 0.0366" }
+                        }, "frame_20_group_1_0");
+
+                        // Text: 5.2
+                        elements.Add(new CuiLabel
+                        {
+                            Text = { Text = "5.2", FontSize = 20, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-regular.ttf" },
+                            RectTransform = { AnchorMin = "1.0000 0.0000", AnchorMax = "1.0000 0.0366" }
+                        }, "frame_20_group_1_0");
+
+                        // Panel: Ellipse 3
+                        elements.Add(new CuiPanel
+                        {
+                            Image = { Color = "0.925 0.166 0.302 1.000" },
+                            RectTransform = { AnchorMin = "1.0000 0.0068", AnchorMax = "1.0000 0.0298" }
+                        }, "frame_20_group_1_0", "group_1_ellipse_3_78");
 
             Puts($"[Frame20UI] Adding {elements.Count} UI elements to player");
             CuiHelper.AddUi(player, elements);

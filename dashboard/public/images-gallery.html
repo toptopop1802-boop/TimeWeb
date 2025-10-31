@@ -32,6 +32,21 @@
     .toast.show{opacity:1;transform:translateX(-50%) translateY(-6px)}
   </style>
   <script>
+    // Access guard in UI: only admins can view data
+    async function ensureAdmin(){
+      try{
+        const token = localStorage.getItem('auth_token');
+        if(!token) throw new Error('no token');
+        const r = await fetch('/api/auth/me', { headers: { 'Authorization': `Bearer ${token}` }});
+        if(!r.ok) throw new Error('not ok');
+        const me = await r.json();
+        if(!me.user || me.user.role !== 'admin') throw new Error('not admin');
+        return true;
+      }catch(e){
+        document.body.innerHTML = '<div style="max-width:800px;margin:80px auto;color:#e5e7eb;background:#111827;border:1px solid rgba(255,255,255,.1);padding:20px;border-radius:12px;text-align:center">⛔ Доступ запрещён. Требуются права администратора.</div>';
+        return false;
+      }
+    }
     let _offset = 0; let _limit = 60; let _loading = false; let _done = false; let _items = []; let _sort = 'created_at:desc';
     async function fetchImages(){
       if (_loading || _done) return [];
@@ -74,6 +89,8 @@
       document.getElementById('count').textContent = document.getElementById('grid').children.length;
     }
     async function init(){
+      const ok = await ensureAdmin();
+      if(!ok) return;
       try{
         _items = await fetchImages();
         append(_items);

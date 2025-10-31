@@ -359,8 +359,15 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
         }
     });
 
-    // List images (for gallery)
+    // List images (admin only)
     app.get('/api/images/list', async (req, res) => {
+        // Admin gate
+        await requireAuth(req, res, async () => {
+            if (!req.user || req.user.role !== 'admin') {
+                return res.status(403).json({ error: 'Требуются права администратора' });
+            }
+        }, supabase);
+        if (!req.user || req.user.role !== 'admin') return;
         try {
             if (!supabase) return res.status(503).json({ error: 'Supabase not configured' });
             const limit = Math.min(Math.max(parseInt(req.query.limit) || 60, 1), 200);
@@ -447,6 +454,13 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
 
     // Daily stats for images (counts and bytes)
     app.get('/api/images/stats', async (req, res) => {
+        // Admin gate
+        await requireAuth(req, res, async () => {
+            if (!req.user || req.user.role !== 'admin') {
+                return res.status(403).json({ error: 'Требуются права администратора' });
+            }
+        }, supabase);
+        if (!req.user || req.user.role !== 'admin') return;
         try {
             if (!supabase) return res.status(503).json({ error: 'Supabase not configured' });
             const days = Math.min(Math.max(parseInt(req.query.days) || 30, 1), 365);

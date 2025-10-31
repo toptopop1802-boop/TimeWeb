@@ -410,6 +410,10 @@ function generateCSharpCode(node, imageMap) {
   const className = toPascalCase(sanitizeClassName(node.name));
   const uiName = className;
   const commandName = className.toLowerCase();
+  const rootWidth = Math.round(('width' in node ? node.width : 1104) || 1104);
+  const rootHeight = Math.round(('height' in node ? node.height : 738) || 738);
+  const halfW = Math.round(rootWidth / 2);
+  const halfH = Math.round(rootHeight / 2);
   
   let code = `using Oxide.Core.Plugins;\n`;
   code += `using Oxide.Game.Rust.Cui;\n`;
@@ -491,8 +495,16 @@ function generateCSharpCode(node, imageMap) {
   code += `                RectTransform = { AnchorMin = "0 0", AnchorMax = "1 1" },\n`;
   code += `                CursorEnabled = false\n`;
   code += `            }, UIName, UIName + ".Content");\n\n`;
+
+  // Center wrapper to keep layout centered across aspect ratios
+  code += `            // Center wrapper (keeps Figma frame centered)\n`;
+  code += `            elements.Add(new CuiPanel\n`;
+  code += `            {\n`;
+  code += `                Image = { Color = "0 0 0 0" },\n`;
+  code += `                RectTransform = { AnchorMin = "0.5 0.5", AnchorMax = "0.5 0.5", OffsetMin = "-${halfW} -${halfH}", OffsetMax = "${halfW} ${halfH}" }\n`;
+  code += `            }, UIName + ".Content", UIName + ".Center");\n\n`;
   
-  code += generateCSharpElements(node, `UIName + ".Content"`, 3, imageMap);
+  code += generateCSharpElements(node, `UIName + ".Center"`, 3, imageMap);
   
   code += `            Puts($"[${className}UI] Adding {elements.Count} UI elements to player");\n`;
   code += `            CuiHelper.AddUi(player, elements);\n`;
