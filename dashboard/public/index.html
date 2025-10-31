@@ -929,7 +929,8 @@ formData.<span style="color: #dcdcaa;">append</span>(<span style="color: #ce9178
                         </svg>
                         Сервер (Rust)
                     </h2>
-                    <div class="header-controls">
+                    <div class="header-controls" style="display:flex; align-items:center; gap:10px;">
+                        <span id="server-online-count" style="padding:6px 10px; background: var(--bg-secondary); border:1px solid var(--border-color); border-radius: 8px; font-weight:700; color: var(--text-primary);">Онлайн: 0</span>
                         <button id="server-refresh-btn" class="btn btn-primary">🔄 Обновить</button>
                     </div>
                 </header>
@@ -954,6 +955,7 @@ formData.<span style="color: #dcdcaa;">append</span>(<span style="color: #ce9178
                                     <th style="padding:10px; border-bottom:1px solid var(--border-color);">XYZ</th>
                                     <th style="padding:10px; border-bottom:1px solid var(--border-color);">Статус</th>
                                     <th style="padding:10px; border-bottom:1px solid var(--border-color);">Обновлено</th>
+                                    <th style="padding:10px; border-bottom:1px solid var(--border-color); text-align:right;">Действия</th>
                                 </tr>
                             </thead>
                             <tbody id="server-table-body">
@@ -1000,6 +1002,22 @@ formData.<span style="color: #dcdcaa;">append</span>(<span style="color: #ce9178
             <div class="confirm-modal-actions">
                 <button class="btn btn-cancel" id="delete-cancel-btn">Отмена</button>
                 <button class="btn btn-danger" id="delete-confirm-btn">Удалить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Server Team Modal -->
+    <div id="server-team-modal" class="modal">
+        <div class="modal-content" style="max-width: 560px;">
+            <div class="modal-header">
+                <h3>👥 Состав команды</h3>
+                <button class="modal-close" id="server-team-close">&times;</button>
+            </div>
+            <div id="server-team-body" class="confirm-modal-body" style="display:block;">
+                <!-- заполняется динамически -->
+            </div>
+            <div class="confirm-modal-actions">
+                <button class="btn btn-primary" id="server-team-ok">OK</button>
             </div>
         </div>
     </div>

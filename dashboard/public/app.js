@@ -1236,7 +1236,8 @@ async function loadServerPlayers() {
         const data = await res.json();
         const search = (document.getElementById('server-search')?.value || '').trim().toLowerCase();
 
-        let players = Array.isArray(data) ? data : [];
+        window.__serverPlayersCache = Array.isArray(data) ? data : [];
+        let players = window.__serverPlayersCache;
         if (onlineOnly) players = players.filter(p => p.online);
         if (search) {
             players = players.filter(p =>
@@ -1247,13 +1248,20 @@ async function loadServerPlayers() {
             );
         }
 
+        // Update online count
+        try {
+            const totalOnline = (window.__serverPlayersCache || []).filter(p => p.online).length;
+            const badge = document.getElementById('server-online-count');
+            if (badge) badge.textContent = `Онлайн: ${totalOnline}`;
+        } catch(_) {}
+
         const rows = players.map(p => {
             const teamSize = Array.isArray(p.team_members) ? p.team_members.length : (p.team_members && p.team_members.members ? p.team_members.members.length : 0);
             const teamLabel = p.team_id ? `${p.team_id} (${teamSize})` : '-';
             const xyz = [p.x, p.y, p.z].every(v => typeof v === 'number') ? `${p.x.toFixed(1)}, ${p.y.toFixed(1)}, ${p.z.toFixed(1)}` : '-';
             const status = p.online ? '🟢 Онлайн' : '⚫ Оффлайн';
             const updated = p.updated_at ? new Date(p.updated_at).toLocaleString() : '';
-            return `<tr>
+            return `<tr data-steamid="${p.steam_id}">
                 <td style=\"padding:10px; border-bottom:1px solid var(--border-color); font-weight:600;\">${escapeHtml(p.name || '-') }</td>
                 <td style=\"padding:10px; border-bottom:1px solid var(--border-color); font-family: monospace;\">${escapeHtml(p.steam_id || '-') }</td>
                 <td style=\"padding:10px; border-bottom:1px solid var(--border-color);\">${escapeHtml(p.ip || '-') }</td>
@@ -1262,16 +1270,19 @@ async function loadServerPlayers() {
                 <td style=\"padding:10px; border-bottom:1px solid var(--border-color);\">${xyz}</td>
                 <td style=\"padding:10px; border-bottom:1px solid var(--border-color);\">${status}</td>
                 <td style=\"padding:10px; border-bottom:1px solid var(--border-color); color: var(--text-secondary);\">${updated}</td>
+                <td style=\"padding:10px; border-bottom:1px solid var(--border-color); text-align:right;\">
+                    <button class=\"btn btn-sm\" data-action=\"team\" data-id=\"${escapeHtml(p.steam_id || '')}\" style=\"padding:6px 10px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; cursor:pointer;\">👥 Состав</button>
+                </td>
             </tr>`;
         });
 
         if (tbody) {
-            tbody.innerHTML = rows.length ? rows.join('') : `<tr><td colspan=\"8\" style=\"padding:14px; color: var(--text-secondary);\">Нет данных</td></tr>`;
+            tbody.innerHTML = rows.length ? rows.join('') : `<tr><td colspan=\"9\" style=\"padding:14px; color: var(--text-secondary);\">Нет данных</td></tr>`;
         }
     } catch (e) {
         console.error('Failed to load players:', e);
         const tbody = document.getElementById('server-table-body');
-        if (tbody) tbody.innerHTML = `<tr><td colspan=\"8\" style=\"padding:14px; color: var(--danger);\">Ошибка загрузки: ${escapeHtml(e.message)}</td></tr>`;
+        if (tbody) tbody.innerHTML = `<tr><td colspan=\"9\" style=\"padding:14px; color: var(--danger);\">Ошибка загрузки: ${escapeHtml(e.message)}</td></tr>`;
     }
 }
 
@@ -1288,7 +1299,57 @@ document.addEventListener('DOMContentLoaded', () => {
     if (search) search.addEventListener('input', () => { setTimeout(loadServerPlayers, 100); });
     const onlineOnly = document.getElementById('server-online-only');
     if (onlineOnly) onlineOnly.addEventListener('change', loadServerPlayers);
+    const tbody = document.getElementById('server-table-body');
+    if (tbody) tbody.addEventListener('click', (e) => {
+        const el = e.target.closest('[data-action="team"]');
+        if (el) {
+            const steamId = el.getAttribute('data-id');
+            openTeamModal(steamId);
+        }
+    });
+    const teamClose = document.getElementById('server-team-close');
+    if (teamClose) teamClose.addEventListener('click', closeTeamModal);
+    const teamOk = document.getElementById('server-team-ok');
+    if (teamOk) teamOk.addEventListener('click', closeTeamModal);
 });
+
+function openTeamModal(steamId) {
+    const players = window.__serverPlayersCache || [];
+    const p = players.find(x => String(x.steam_id) === String(steamId));
+    if (!p) return;
+    const teamId = p.team_id || null;
+    let members = [];
+    if (teamId) {
+        members = players.filter(x => x.team_id && String(x.team_id) === String(teamId));
+    } else if (Array.isArray(p.team_members)) {
+        members = p.team_members.map(m => {
+            const found = players.find(x => String(x.steam_id) === String(m.steamId || m.steamid || m.id));
+            return found || { name: m.name || '-', steam_id: m.steamId || m.id || '-', online: false };
+        });
+    }
+    if (members.length === 0) members = [p];
+
+    const body = document.getElementById('server-team-body');
+    if (body) {
+        const rows = members.map(m => {
+            const online = m.online ? '🟢' : '⚫';
+            const name = escapeHtml(m.name || '-');
+            const sid = escapeHtml(m.steam_id || m.steamId || '-');
+            return `<div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--border-color);">
+                <div style="display:flex; align-items:center; gap:10px; font-weight:600;">${online}<span>${name}</span></div>
+                <div style="font-family:monospace; color: var(--text-secondary);">${sid}</div>
+            </div>`;
+        });
+        body.innerHTML = `<div style="display:flex; flex-direction:column; gap:4px;">${rows.join('')}</div>`;
+    }
+    const modal = document.getElementById('server-team-modal');
+    if (modal) modal.style.display = 'block';
+}
+
+function closeTeamModal(){
+    const modal = document.getElementById('server-team-modal');
+    if (modal) modal.style.display = 'none';
+}
 
 
 // ============================================
