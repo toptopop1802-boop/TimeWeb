@@ -355,14 +355,24 @@ function generateCSharpCode(node, imageMap) {
   code += `    [Description("Auto-generated UI from Figma")]\n`;
   code += `    class ${className}UI : RustPlugin\n    {\n`;
   code += `        private const string UIName = "${uiName}";\n\n`;
+  code += `        void Init()\n        {\n`;
+  code += `            Puts("[${className}UI] Plugin initialized. Use /${commandName} to toggle UI");\n`;
+  code += `        }\n\n`;
   
   // Chat command для toggle
   code += `        [ChatCommand("${commandName}")]\n`;
   code += `        void CmdToggleUI(BasePlayer player, string command, string[] args)\n        {\n`;
+  code += `            Puts($"[${className}UI] Command /${commandName} called by {player.displayName}");\n`;
   code += `            if (HasUI(player))\n`;
+  code += `            {\n`;
+  code += `                Puts($"[${className}UI] Closing UI for {player.displayName}");\n`;
   code += `                CloseUI(player);\n`;
+  code += `            }\n`;
   code += `            else\n`;
+  code += `            {\n`;
+  code += `                Puts($"[${className}UI] Opening UI for {player.displayName}");\n`;
   code += `                ShowUI(player);\n`;
+  code += `            }\n`;
   code += `        }\n\n`;
   
   // Console commands
@@ -387,8 +397,10 @@ function generateCSharpCode(node, imageMap) {
   
   // ShowUI method
   code += `        private void ShowUI(BasePlayer player)\n        {\n`;
+  code += `            Puts($"[${className}UI] ShowUI called for {player.displayName}");\n`;
   code += `            CloseUI(player);\n            \n`;
-  code += `            var elements = new CuiElementContainer();\n\n`;
+  code += `            var elements = new CuiElementContainer();\n`;
+  code += `            Puts($"[${className}UI] Creating UI elements...");\n\n`;
   code += `            // Main panel\n`;
   code += `            elements.Add(new CuiPanel\n`;
   code += `            {\n`;
@@ -408,7 +420,9 @@ function generateCSharpCode(node, imageMap) {
   code += `                Text = { Text = "✕ Закрыть", FontSize = 16, Align = TextAnchor.MiddleCenter, Color = "1 1 1 1" }\n`;
   code += `            }, UIName);\n\n`;
   
+  code += `            Puts($"[${className}UI] Adding {elements.Count} UI elements to player");\n`;
   code += `            CuiHelper.AddUi(player, elements);\n`;
+  code += `            Puts($"[${className}UI] UI successfully shown to {player.displayName}");\n`;
   code += `        }\n\n`;
   
   // CloseUI method

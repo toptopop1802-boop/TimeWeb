@@ -12,28 +12,55 @@ async function requireAuth(req, res, next, supabase) {
     try {
         const token = req.headers.authorization?.replace('Bearer ', '');
         
+        console.log('🔐 [Auth] Checking token:', token ? token.substring(0, 20) + '...' : 'NO TOKEN');
+        
         if (!token) {
+            console.log('   ❌ No token provided');
             return res.status(401).json({ error: 'Требуется авторизация' });
         }
 
-        // Проверяем токен в БД
-        const { data: session, error } = await supabase
+        // Сначала проверяем как API токен (для Figma плагина и внешних API)
+        const { data: apiToken, error: apiError } = await supabase
+            .from('api_tokens')
+            .select('*, users(*)')
+            .eq('token', token)
+            .eq('is_active', true)
+            .maybeSingle();
+
+        if (apiToken) {
+            console.log('   ✅ Valid API token for user:', apiToken.users.username);
+            req.user = apiToken.users;
+            req.tokenType = 'api';
+            
+            // Обновляем last_used_at
+            await supabase
+                .from('api_tokens')
+                .update({ last_used_at: new Date().toISOString() })
+                .eq('id', apiToken.id);
+            
+            return next();
+        }
+
+        // Если не API токен - проверяем как сессию
+        const { data: session, error: sessionError } = await supabase
             .from('sessions')
             .select('*, users(*)')
             .eq('token', token)
             .gt('expires_at', new Date().toISOString())
-            .single();
+            .maybeSingle();
 
-        if (error || !session) {
-            return res.status(401).json({ error: 'Недействительная сессия' });
+        if (session) {
+            console.log('   ✅ Valid session for user:', session.users.username);
+            req.user = session.users;
+            req.session = session;
+            req.tokenType = 'session';
+            return next();
         }
 
-        // Добавляем пользователя в request
-        req.user = session.users;
-        req.session = session;
-        next();
+        console.log('   ❌ Invalid token - not found in api_tokens or sessions');
+        return res.status(401).json({ error: 'Недействительная сессия' });
     } catch (error) {
-        console.error('Auth middleware error:', error);
+        console.error('❌ Auth middleware error:', error);
         return res.status(401).json({ error: 'Ошибка авторизации' });
     }
 }

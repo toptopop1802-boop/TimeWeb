@@ -55,12 +55,12 @@ namespace Oxide.Plugins
                 CursorEnabled = true
             }, "Overlay", UIName);
 
-            // Panel: Overlay 1
-            elements.Add(new CuiPanel
-            {
-                Image = { Color = "1 1 1 0.5", Png = "https://bublickrust.ru/i/4CWGB31" },
-                RectTransform = { AnchorMin = "0.1667 0.1926", AnchorMax = "0.8333 0.8593" }
-            }, UIName, "frame_19_overlay_1_0");
+                    // Panel: Overlay 1
+                    elements.Add(new CuiPanel
+                    {
+                        Image = { Color = "1 1 1 0.5", Png = "https://bublickrust.ru/i/PG55QY0" },
+                        RectTransform = { AnchorMin = "0.1667 0.1926", AnchorMax = "0.8333 0.8593" }
+                    }, UIName, "frame_19_overlay_1_0");
 
             // Close button
             elements.Add(new CuiButton
