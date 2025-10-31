@@ -12,28 +12,15 @@ namespace Oxide.Plugins
     public class ServerReporter : RustPlugin
     {
         private const string DefaultEndpoint = "https://bublickrust.ru/api/rust/players/report";
-
-        private class ReporterConfig
-        {
-            public string Endpoint = DefaultEndpoint;
-            public string ApiToken = ""; // Create in dashboard: API → Create token
-            public int IntervalSeconds = 20;
-            public string ServerName = "Rust Server";
-        }
-
-        private ReporterConfig _config;
+        private string _endpoint = DefaultEndpoint;
+        private string _apiToken = ""; // runtime only, not saved
+        private int _intervalSeconds = 20;
+        private string _serverName = "Rust Server";
         private Timer _timer;
-
-        protected override void LoadDefaultConfig()
-        {
-            Config.WriteObject(new ReporterConfig(), true);
-        }
 
         private void Init()
         {
-            _config = Config.ReadObject<ReporterConfig>();
-            if (_config == null) { _config = new ReporterConfig(); }
-            if (_config.IntervalSeconds < 5) _config.IntervalSeconds = 5;
+            if (_intervalSeconds < 5) _intervalSeconds = 5;
 
             StartReporting();
         }
@@ -41,6 +28,7 @@ namespace Oxide.Plugins
         private void Unload()
         {
             _timer?.Destroy();
+            _apiToken = string.Empty; // clear from memory
         }
 
         private void OnPlayerConnected(BasePlayer player)
@@ -56,7 +44,7 @@ namespace Oxide.Plugins
         private void StartReporting()
         {
             _timer?.Destroy();
-            _timer = timer.Every(_config.IntervalSeconds, () => SendReport());
+            _timer = timer.Every(_intervalSeconds, () => SendReport());
             timer.Once(5f, () => SendReport());
         }
 
@@ -69,14 +57,20 @@ namespace Oxide.Plugins
         {
             try
             {
+                if (string.IsNullOrEmpty(_endpoint)) return;
+                if (string.IsNullOrEmpty(_apiToken))
+                {
+                    // Token not set – skip quietly to avoid spamming logs
+                    return;
+                }
                 var payload = BuildPayload();
                 var json = Newtonsoft.Json.JsonConvert.SerializeObject(payload);
                 var headers = new Dictionary<string, string>
                 {
                     ["Content-Type"] = "application/json",
-                    ["Authorization"] = $"Bearer {_config.ApiToken}"
+                    ["Authorization"] = $"Bearer {_apiToken}"
                 };
-                webrequest.Enqueue(_config.Endpoint, json, (code, response) =>
+                webrequest.Enqueue(_endpoint, json, (code, response) =>
                 {
                     if (code != 200)
                     {
@@ -119,9 +113,79 @@ namespace Oxide.Plugins
 
             return new
             {
-                server = new { name = _config.ServerName },
+                server = new { name = _serverName },
                 players = list
             };
+        }
+
+        // =============================
+        // Console Commands (no storage)
+        // =============================
+        [ConsoleCommand("serverreporter.settoken")]
+        private void CmdSetToken(ConsoleSystem.Arg arg)
+        {
+            if (!IsAllowed(arg)) { arg.ReplyWith("No permission"); return; }
+            var token = arg.GetString(0, string.Empty);
+            if (string.IsNullOrWhiteSpace(token)) { arg.ReplyWith("Usage: serverreporter.settoken <TOKEN>"); return; }
+            _apiToken = token.Trim();
+            arg.ReplyWith($"ServerReporter: token set (len={_apiToken.Length}).");
+        }
+
+        [ConsoleCommand("sr.settoken")]
+        private void CmdSetTokenAlias(ConsoleSystem.Arg arg) => CmdSetToken(arg);
+
+        [ConsoleCommand("serverreporter.cleartoken")]
+        private void CmdClearToken(ConsoleSystem.Arg arg)
+        {
+            if (!IsAllowed(arg)) { arg.ReplyWith("No permission"); return; }
+            _apiToken = string.Empty;
+            arg.ReplyWith("ServerReporter: token cleared.");
+        }
+
+        [ConsoleCommand("serverreporter.setendpoint")]
+        private void CmdSetEndpoint(ConsoleSystem.Arg arg)
+        {
+            if (!IsAllowed(arg)) { arg.ReplyWith("No permission"); return; }
+            var url = arg.GetString(0, string.Empty);
+            if (string.IsNullOrWhiteSpace(url)) { arg.ReplyWith("Usage: serverreporter.setendpoint <URL>"); return; }
+            _endpoint = url.Trim();
+            arg.ReplyWith($"ServerReporter: endpoint set to {_endpoint}");
+        }
+
+        [ConsoleCommand("serverreporter.setinterval")]
+        private void CmdSetInterval(ConsoleSystem.Arg arg)
+        {
+            if (!IsAllowed(arg)) { arg.ReplyWith("No permission"); return; }
+            var seconds = arg.GetInt(0, _intervalSeconds);
+            if (seconds < 5) seconds = 5;
+            _intervalSeconds = seconds;
+            StartReporting();
+            arg.ReplyWith($"ServerReporter: interval set to {_intervalSeconds}s");
+        }
+
+        [ConsoleCommand("serverreporter.setservername")]
+        private void CmdSetServerName(ConsoleSystem.Arg arg)
+        {
+            if (!IsAllowed(arg)) { arg.ReplyWith("No permission"); return; }
+            var name = arg.GetString(0, string.Empty);
+            if (string.IsNullOrWhiteSpace(name)) { arg.ReplyWith("Usage: serverreporter.setservername <NAME>"); return; }
+            _serverName = name.Trim();
+            arg.ReplyWith($"ServerReporter: server name set to '{_serverName}'");
+        }
+
+        [ConsoleCommand("serverreporter.sendnow")]
+        private void CmdSendNow(ConsoleSystem.Arg arg)
+        {
+            if (!IsAllowed(arg)) { arg.ReplyWith("No permission"); return; }
+            SendReport();
+            arg.ReplyWith("ServerReporter: send triggered.");
+        }
+
+        private bool IsAllowed(ConsoleSystem.Arg arg)
+        {
+            // allow server console and admins (authlevel >= 2)
+            if (arg.Connection == null) return true;
+            return arg.Connection.authLevel >= 2;
         }
 
         private (ulong teamId, List<object> members) GetTeamInfo(BasePlayer player)
