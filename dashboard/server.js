@@ -17,6 +17,20 @@ const IS_SERVERLESS = !!process.env.VERCEL;
 function createApp() {
     const app = express();
 
+    // CORS middleware для всех запросов (в том числе для Figma Plugin)
+    app.use((req, res, next) => {
+        res.header('Access-Control-Allow-Origin', '*');
+        res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+        res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+        
+        // Handle preflight
+        if (req.method === 'OPTIONS') {
+            return res.sendStatus(200);
+        }
+        
+        next();
+    });
+
     // Middleware
     app.use(cookieParser());
 
@@ -46,14 +60,6 @@ function createApp() {
             const ok = ['.png', '.jpg', '.jpeg', '.gif', '.webp'].includes(ext);
             cb(ok ? null : new Error('Допустимы только изображения PNG/JPG/GIF/WebP'), ok);
         }
-    });
-
-    // OPTIONS endpoint для CORS preflight
-    app.options('/api/images/upload', (req, res) => {
-        res.header('Access-Control-Allow-Origin', '*');
-        res.header('Access-Control-Allow-Methods', 'POST, OPTIONS');
-        res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-        res.sendStatus(200);
     });
 
     // GET endpoint for upload info - HTML page
@@ -262,18 +268,25 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
 
     // Authenticated upload, public read
     app.post('/api/images/upload', imageUpload.single('image'), async (req, res) => {
-        // CORS для Figma плагина
-        res.header('Access-Control-Allow-Origin', '*');
-        res.header('Access-Control-Allow-Methods', 'POST, OPTIONS');
-        res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-        
         try {
-            if (!supabase) return res.status(503).json({ error: 'Supabase not configured' });
+            console.log('📤 [Image Upload] Request received');
+            console.log('   Headers:', JSON.stringify(req.headers, null, 2));
+            console.log('   File:', req.file ? `${req.file.originalname} (${req.file.size} bytes)` : 'NO FILE');
+            
+            if (!supabase) {
+                console.log('   ❌ Supabase not configured');
+                return res.status(503).json({ error: 'Supabase not configured' });
+            }
 
             // Require auth
             let currentUser = null;
             await requireAuth(req, res, async () => { currentUser = req.user; }, supabase);
-            if (!currentUser) return;
+            if (!currentUser) {
+                console.log('   ❌ Auth failed');
+                return;
+            }
+            
+            console.log('   ✅ Authenticated as:', currentUser.username || currentUser.id);
 
             if (!req.file) return res.status(400).json({ error: 'Файл не получен' });
 
