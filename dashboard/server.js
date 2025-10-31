@@ -366,6 +366,8 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
             const limit = Math.min(Math.max(parseInt(req.query.limit) || 60, 1), 200);
             const offset = Math.max(parseInt(req.query.offset) || 0, 0);
             const q = (req.query.q || '').trim();
+            const sort = (req.query.sort || 'created_at:desc').toLowerCase();
+            const [sortField, sortDir] = sort.split(':');
 
             const base = process.env.PUBLIC_BASE_URL || (req.headers['x-forwarded-proto'] ? `${req.headers['x-forwarded-proto']}://${req.headers.host}` : `${req.protocol}://${req.get('host')}`);
 
@@ -373,8 +375,13 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
             try {
                 let query = supabase
                     .from('images_metadata')
-                    .select('image_id, user_id, original_name, file_size, mime_type, storage_path, short_code, created_at', { count: 'exact' })
-                    .order('created_at', { ascending: false });
+                    .select('image_id, user_id, original_name, file_size, mime_type, storage_path, short_code, created_at', { count: 'exact' });
+
+                // Сортировка
+                const allowedSort = new Set(['created_at', 'file_size', 'original_name', 'short_code']);
+                const field = allowedSort.has(sortField) ? sortField : 'created_at';
+                const asc = (sortDir === 'asc');
+                query = query.order(field, { ascending: asc });
 
                 if (q) {
                     query = query.or(`original_name.ilike.%${q}%,short_code.ilike.%${q}%`);
@@ -388,8 +395,9 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                         ...row,
                         directUrl: `${base}/i/${row.short_code}`
                     }));
+                    const totalBytes = items.reduce((s, x) => s + (x.file_size || 0), 0);
                     res.setHeader('Cache-Control', 'no-store');
-                    return res.json({ items, count: count ?? items.length, offset, limit });
+                    return res.json({ items, count: count ?? items.length, offset, limit, totalBytes });
                 }
                 // если ошибка — перейдём к резервному способу
                 if (error) console.warn('images/list meta fallback:', error.message);
@@ -411,7 +419,7 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                 return {
                     image_id: id,
                     original_name: f.name,
-                    file_size: parseInt(f?.metadata?.size || '0'),
+                    file_size: parseInt((f?.metadata?.size) || (f?.size) || '0'),
                     mime_type: null,
                     storage_path: f.name.startsWith('images/') ? f.name : `images/${f.name}`,
                     short_code: short,
@@ -419,10 +427,118 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                     directUrl: `${base}/i/${short}`
                 };
             });
+            // Сортировка на стороне сервера для fallback
+            items.sort((a,b)=>{
+                if (sortField === 'file_size') return (a.file_size||0) - (b.file_size||0);
+                if (sortField === 'original_name') return String(a.original_name||'').localeCompare(String(b.original_name||''));
+                if (sortField === 'short_code') return String(a.short_code||'').localeCompare(String(b.short_code||''));
+                // default created_at desc
+                return new Date(a.created_at||0) - new Date(b.created_at||0);
+            });
+            if (sortDir !== 'asc') items.reverse();
+            const totalBytes = items.reduce((s, x) => s + (x.file_size || 0), 0);
             res.setHeader('Cache-Control', 'no-store');
-            return res.json({ items, count: items.length, offset, limit });
+            return res.json({ items, count: items.length, offset, limit, totalBytes });
         } catch (e) {
             console.error('Image list error:', e);
+            res.status(500).json({ error: e.message });
+        }
+    });
+
+    // Daily stats for images (counts and bytes)
+    app.get('/api/images/stats', async (req, res) => {
+        try {
+            if (!supabase) return res.status(503).json({ error: 'Supabase not configured' });
+            const days = Math.min(Math.max(parseInt(req.query.days) || 30, 1), 365);
+            const since = new Date(); since.setDate(since.getDate() - days);
+
+            // Prefer DB
+            let records = [];
+            const { data, error } = await supabase
+                .from('images_metadata')
+                .select('created_at, file_size')
+                .gte('created_at', since.toISOString())
+                .order('created_at', { ascending: true });
+            if (!error && Array.isArray(data)) {
+                records = data.map(r => ({ created_at: r.created_at, file_size: r.file_size || 0 }));
+            } else {
+                // Fallback to storage list (limited)
+                for (let offset = 0; offset < 5000; offset += 1000) {
+                    const { data: files, error: listErr } = await supabase.storage
+                        .from('images')
+                        .list('images', { limit: 1000, offset, sortBy: { column: 'created_at', order: 'asc' } });
+                    if (listErr || !files || files.length === 0) break;
+                    files.forEach(f => {
+                        const ts = f.created_at || f.last_modified;
+                        if (ts && new Date(ts) >= since) {
+                            records.push({ created_at: ts, file_size: parseInt((f?.metadata?.size) || (f?.size) || '0') });
+                        }
+                    });
+                    if (files.length < 1000) break;
+                }
+            }
+
+            // Aggregate per-day
+            const dayMap = new Map();
+            records.forEach(r => {
+                const day = new Date(r.created_at).toISOString().slice(0,10);
+                if (!dayMap.has(day)) dayMap.set(day, { date: day, count: 0, bytes: 0 });
+                const row = dayMap.get(day);
+                row.count += 1;
+                row.bytes += r.file_size || 0;
+            });
+            const timeline = Array.from(dayMap.values()).sort((a,b)=> a.date.localeCompare(b.date));
+            const totalCount = timeline.reduce((s,x)=>s+x.count,0);
+            const totalBytes = timeline.reduce((s,x)=>s+x.bytes,0);
+            res.json({ days, totalCount, totalBytes, timeline });
+        } catch (e) {
+            console.error('Images stats error:', e);
+            res.status(500).json({ error: e.message });
+        }
+    });
+
+    // Delete image by short code (admin only)
+    app.delete('/api/images/:shortCode([A-Z0-9]{7})', async (req, res) => {
+        try {
+            if (!supabase) return res.status(503).json({ error: 'Supabase not configured' });
+            await requireAuth(req, res, async ()=>{}, supabase);
+            if (!req.user || req.user.role !== 'admin') return; // requireAuth already sent response when unauthorized
+            const { shortCode } = req.params;
+
+            // Resolve storage path via DB first
+            let storagePath = null; let metaId = null;
+            try {
+                const { data: row } = await supabase
+                    .from('images_metadata')
+                    .select('id, storage_path')
+                    .eq('short_code', shortCode)
+                    .maybeSingle();
+                if (row) { storagePath = row.storage_path; metaId = row.id; }
+            } catch(_) {}
+            if (!storagePath) {
+                // fallback scan
+                for (let offset = 0; offset < 5000; offset += 500) {
+                    const { data: files } = await supabase.storage.from('images').list('images', { limit: 500, offset });
+                    if (!files || files.length === 0) break;
+                    const found = files.find(f => {
+                        const ext = path.extname(f.name);
+                        const id = path.basename(f.name, ext).replace(/-/g,'');
+                        const code = Math.abs(id.split('').reduce((a,c)=>((a<<5)-a)+c.charCodeAt(0),0)).toString(36).substring(0,7).toUpperCase().padEnd(7,'0');
+                        return code === shortCode;
+                    });
+                    if (found) { storagePath = found.name.startsWith('images/') ? found.name : `images/${found.name}`; break; }
+                    if (files.length < 500) break;
+                }
+            }
+            if (!storagePath) return res.status(404).json({ error: 'Не найдено' });
+
+            // Delete from storage
+            const { error: delErr } = await supabase.storage.from('images').remove([storagePath]);
+            if (delErr) throw delErr;
+            if (metaId) await supabase.from('images_metadata').delete().eq('id', metaId);
+            res.json({ success: true });
+        } catch (e) {
+            console.error('Delete image error:', e);
             res.status(500).json({ error: e.message });
         }
     });
@@ -1685,9 +1801,16 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
         return staticMiddleware(req, res, next);
     });
 
-    // Hidden gallery page (not linked anywhere)
-    app.get(GALLERY_PATH, (req, res) => {
-        res.sendFile(path.join(__dirname, 'public', 'images-gallery.html'));
+    // Hidden gallery page (admin only)
+    app.get(GALLERY_PATH, async (req, res) => {
+        try {
+            if (!supabase) return res.status(503).send('Supabase not configured');
+            await requireAuth(req, res, async ()=>{}, supabase);
+            if (!req.user || req.user.role !== 'admin') return; // requireAuth already handled response
+            res.sendFile(path.join(__dirname, 'public', 'images-gallery.html'));
+        } catch (e) {
+            res.status(401).send('Unauthorized');
+        }
     });
 
     // Avoid 404 spam from browsers requesting site icon

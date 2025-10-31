@@ -322,7 +322,7 @@
       id="api-token" 
       class="token-input" 
       placeholder="Вставьте ваш API токен"
-      value="58076245d1f7985852fc5dc77d2da0294dac4c714f3cdc773029d470ccd10511"
+      value=""
     />
     <div class="token-hint">Токен сохраняется в плагине. Получите токен на сайте в разделе API.</div>
   </div>
@@ -388,6 +388,9 @@
         btn.textContent = '⚡ Генерировать код';
         return;
       }
+
+      // persist token locally (figma client storage)
+      try { parent.postMessage({ pluginMessage: { type: 'save-token', apiToken } }, '*'); } catch(_) {}
       
       document.getElementById('code-output').classList.remove('visible');
       clearLog();

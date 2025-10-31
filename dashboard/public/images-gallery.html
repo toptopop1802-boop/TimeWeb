@@ -5,6 +5,7 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Галерея изображений</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     :root{--bg:#0f1115;--card:#171923;--text:#e2e8f0;--muted:#94a3b8;--primary:#c40552}
     *{box-sizing:border-box}
@@ -15,6 +16,7 @@
     .search{flex:1;min-width:220px}
     input,select{background:#0b0d12;border:1px solid rgba(255,255,255,.08);color:var(--text);border-radius:10px;padding:10px 12px;width:100%;outline:none}
     main{max-width:1200px;margin:20px auto;padding:0 16px}
+    .controls{display:flex;gap:10px;align-items:center;justify-content:space-between;margin:10px 0}
     .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
     .card{background:var(--card);border:1px solid rgba(255,255,255,.06);border-radius:14px;overflow:hidden;box-shadow:0 10px 24px rgba(0,0,0,.25)}
     .thumb{background:#0b0d12;display:flex;align-items:center;justify-content:center;height:160px}
@@ -30,17 +32,19 @@
     .toast.show{opacity:1;transform:translateX(-50%) translateY(-6px)}
   </style>
   <script>
-    let _offset = 0; let _limit = 60; let _loading = false; let _done = false; let _items = [];
+    let _offset = 0; let _limit = 60; let _loading = false; let _done = false; let _items = []; let _sort = 'created_at:desc';
     async function fetchImages(){
       if (_loading || _done) return [];
       _loading = true;
       const q = encodeURIComponent(document.getElementById('q').value||'');
-      const res = await fetch(`/api/images/list?limit=${_limit}&offset=${_offset}&q=${q}`);
+      const res = await fetch(`/api/images/list?limit=${_limit}&offset=${_offset}&q=${q}&sort=${encodeURIComponent(_sort)}`);
       if(!res.ok) throw new Error('Failed to fetch images');
       const data = await res.json();
       _offset += data.items.length;
       if (!data.items.length) _done = true;
       _loading = false;
+      const totalEl = document.getElementById('totals');
+      if (totalEl && data.totalBytes !== undefined) totalEl.textContent = `Всего на странице: ${fmtSize(data.totalBytes)}`;
       return data.items || [];
     }
     function fmtSize(b){ if(!b && b!==0) return '-'; const kb=b/1024, mb=kb/1024; return mb>=1?mb.toFixed(2)+' MB':kb.toFixed(1)+' KB'}
@@ -62,6 +66,7 @@
             <div class="btns">
               <button onclick="window.open('${it.directUrl}','_blank')">Открыть</button>
               <button class="copy" onclick="copyUrl('${it.directUrl}')">Копировать</button>
+              <button class="copy" style="border-color:#ef4444;color:#ef4444" onclick="deleteImage('${it.short_code}', this)">Удалить</button>
             </div>
           </div>`;
         grid.appendChild(card);
@@ -72,6 +77,8 @@
       try{
         _items = await fetchImages();
         append(_items);
+        // Load stats for chart
+        loadStatsChart();
         const sentinel = document.createElement('div');
         sentinel.id = 'sentinel';
         sentinel.style.height = '1px';
@@ -101,6 +108,39 @@
         setTimeout(()=> t.classList.remove('show'), 1200);
       });
     }
+    function authHeader(){
+      const token = localStorage.getItem('auth_token');
+      return token ? { 'Authorization': `Bearer ${token}` } : {};
+    }
+    async function deleteImage(code, btn){
+      if(!confirm(`Удалить изображение ${code}?`)) return;
+      btn.disabled = true;
+      const res = await fetch(`/api/images/${code}`, { method:'DELETE', headers: authHeader() });
+      if (res.ok){
+        const card = btn.closest('.card'); if(card) card.remove();
+        document.getElementById('count').textContent = document.getElementById('grid').children.length;
+      } else {
+        alert('Ошибка удаления');
+        btn.disabled = false;
+      }
+    }
+    async function loadStatsChart(){
+      try{
+        const res = await fetch('/api/images/stats?days=90');
+        if(!res.ok) return;
+        const data = await res.json();
+        const labels = data.timeline.map(x=>x.date);
+        const counts = data.timeline.map(x=>x.count);
+        const bytes = data.timeline.map(x=>Math.round(x.bytes/1024/1024));
+        const ctx = document.getElementById('chart').getContext('2d');
+        new Chart(ctx, { type:'bar', data:{ labels, datasets:[
+          { label:'Изображений', data:counts, backgroundColor:'rgba(196,5,82,.6)' },
+          { label:'MB', data:bytes, type:'line', yAxisID:'y1', borderColor:'#6ac1ff', backgroundColor:'rgba(106,193,255,.3)' }
+        ]}, options:{ responsive:true, scales:{ y:{ beginAtZero:true }, y1:{ position:'right', beginAtZero:true }}} });
+        const totals = document.getElementById('totalsAll');
+        if (totals) totals.textContent = `Всего за период: ${data.totalCount} шт • ${fmtSize(data.totalBytes)}`;
+      }catch(e){/* ignore */}
+    }
   </script>
 </head>
 <body>
@@ -114,6 +154,26 @@
     </div>
   </header>
   <main>
+    <div class="wrap">
+      <div class="controls">
+        <div class="row" style="gap:8px;align-items:center">
+          <div class="search"><input id="q" placeholder="Поиск по имени или коду" onkeypress="if(event.key==='Enter'){onSearch()}" ></div>
+          <select onchange="_sort=this.value; onSearch()">
+            <option value="created_at:desc">Новые сначала</option>
+            <option value="created_at:asc">Старые сначала</option>
+            <option value="file_size:desc">Крупные сначала</option>
+            <option value="file_size:asc">Маленькие сначала</option>
+            <option value="original_name:asc">По имени A→Z</option>
+            <option value="original_name:desc">По имени Z→A</option>
+          </select>
+          <div id="totals" style="color:#94a3b8"></div>
+        </div>
+      </div>
+      <div style="background:#171923;border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:14px;margin:10px 0">
+        <canvas id="chart" height="120"></canvas>
+        <div id="totalsAll" style="color:#94a3b8;margin-top:6px"></div>
+      </div>
+    </div>
     <div id="grid" class="grid"></div>
   </main>
   <footer>Страница скрыта (noindex). Ссылка не публикуется в навигации.</footer>

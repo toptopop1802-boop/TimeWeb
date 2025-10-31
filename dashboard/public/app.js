@@ -1115,7 +1115,11 @@ function setupNavigation() {
     });
 
     // Handle initial page load
-    const initialHash = window.location.hash.substring(1);
+    let initialHash = window.location.hash.substring(1);
+    if (!initialHash || initialHash === 'undefined') {
+        initialHash = 'analytics';
+        window.location.hash = 'analytics';
+    }
     
     // Check if it's a changelog detail page
     const changelogDetailMatch = initialHash.match(/^changelog\/(.+)$/);

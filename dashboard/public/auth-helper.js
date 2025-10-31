@@ -155,6 +155,8 @@ function setupRoleBasedUI(authData) {
         }
         
         // "Хостинг фото" - доступен всем авторизованным пользователям (не скрываем)
+        // Скрыть админ-линки, помеченные data-admin-only
+        document.querySelectorAll('[data-admin-only="true"]').forEach(el=>{ el.style.display='none'; });
         
         // Перенаправить на карты если пытается открыть админ-страницу
         const hash = window.location.hash;
