@@ -1801,16 +1801,9 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
         return staticMiddleware(req, res, next);
     });
 
-    // Hidden gallery page (admin only)
-    app.get(GALLERY_PATH, async (req, res) => {
-        try {
-            if (!supabase) return res.status(503).send('Supabase not configured');
-            await requireAuth(req, res, async ()=>{}, supabase);
-            if (!req.user || req.user.role !== 'admin') return; // requireAuth already handled response
-            res.sendFile(path.join(__dirname, 'public', 'images-gallery.html'));
-        } catch (e) {
-            res.status(401).send('Unauthorized');
-        }
+    // Hidden gallery page (nav скрывает для пользователей; API защищают действия)
+    app.get(GALLERY_PATH, (req, res) => {
+        res.sendFile(path.join(__dirname, 'public', 'images-gallery.html'));
     });
 
     // Avoid 404 spam from browsers requesting site icon
