@@ -487,6 +487,14 @@ function generateCSharpElements(node, parentName, level, imageMap) {
   let code = '';
   const indent = '        ' + '    '.repeat(level);
   
+  // 🔍 ЛОГ: Сканируем элемент
+  if (level <= 3) { // Логируем только верхние уровни, чтобы не захламлять
+    figma.ui.postMessage({
+      type: 'log',
+      message: `${'  '.repeat(level)}🔍 [${node.type}] "${node.name}" (level ${level}, children: ${'children' in node ? node.children.length : 0})`
+    });
+  }
+  
   // Функция для экранирования текста в C# строках
   function escapeCSharpString(text) {
     if (!text) return '';
@@ -520,7 +528,16 @@ function generateCSharpElements(node, parentName, level, imageMap) {
       if (child.type === 'TEXT') {
         const textColor = getRGBAColor(child);
         const textAlign = getTextAlign(child);
-        const escapedText = escapeCSharpString(child.characters || '');
+        const originalText = child.characters || '';
+        const escapedText = escapeCSharpString(originalText);
+        
+        // 📊 ЛОГИ ДЛЯ ОТЛАДКИ ТЕКСТА
+        if (originalText.length > 50) {
+          figma.ui.postMessage({
+            type: 'log',
+            message: `📝 [TEXT] "${child.name}": ${originalText.length} символов (обрезано до ${escapedText.length})`
+          });
+        }
         
         // Определяем шрифт на основе веса текста (как в примерах)
         let fontName = 'robotocondensed-regular.ttf';
