@@ -48,6 +48,22 @@ function createApp() {
         }
     });
 
+    // GET endpoint for upload info
+    app.get('/api/images/upload', (req, res) => {
+        res.json({
+            info: 'Upload images via POST',
+            method: 'POST',
+            endpoint: '/api/images/upload',
+            requirements: {
+                auth: 'Required (Bearer token)',
+                field: 'image',
+                formats: ['png', 'jpg', 'jpeg', 'gif', 'webp'],
+                maxSize: '15 MB'
+            },
+            example: 'POST /api/images/upload with multipart/form-data containing "image" field'
+        });
+    });
+
     // Authenticated upload, public read
     app.post('/api/images/upload', imageUpload.single('image'), async (req, res) => {
         try {
