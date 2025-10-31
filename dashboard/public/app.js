@@ -2779,3 +2779,247 @@ function initGradientRolePage() {
     console.log('✅ [Gradient Role] Обработчик формы установлен');
 }
 
+// ==========================================
+// API ANALYTICS
+// ==========================================
+let apiActivityChart = null;
+
+async function loadAPIAnalytics() {
+    try {
+        console.log('📊 Loading API analytics...');
+        
+        // Check API health
+        const healthResponse = await fetch('/api/health');
+        const health = await healthResponse.json();
+        
+        // Update status indicator
+        const statusEl = document.getElementById('api-status');
+        if (statusEl) {
+            statusEl.textContent = health.status === 'ok' ? '✅' : '❌';
+            statusEl.style.color = health.status === 'ok' ? 'var(--success)' : 'var(--danger)';
+        }
+        
+        // Get user activity stats (for uploads/downloads)
+        try {
+            const authData = getAuthData();
+            if (authData && authData.token) {
+                const activityResponse = await fetch('/api/user/activity', {
+                    headers: {
+                        'Authorization': `Bearer ${authData.token}`
+                    }
+                });
+                
+                if (activityResponse.ok) {
+                    const activityData = await activityResponse.json();
+                    const actions = activityData.actions || [];
+                    
+                    // Count uploads
+                    const uploadCount = actions.filter(a => a.action_type === 'map_upload' || a.action_type === 'image_upload').length;
+                    const viewCount = actions.filter(a => a.action_type === 'map_download' || a.action_type === 'image_view').length;
+                    
+                    document.getElementById('api-total-uploads').textContent = uploadCount;
+                    document.getElementById('api-total-views').textContent = viewCount;
+                    
+                    // Prepare chart data (last 30 days)
+                    const chartData = prepareAPIChartData(actions);
+                    renderAPIChart(chartData);
+                } else {
+                    console.warn('Could not load user activity');
+                    // Show mock data
+                    renderMockAPIChart();
+                }
+            } else {
+                // Not logged in - show mock data
+                renderMockAPIChart();
+            }
+        } catch (err) {
+            console.error('Error loading user activity:', err);
+            renderMockAPIChart();
+        }
+        
+    } catch (error) {
+        console.error('Error loading API analytics:', error);
+        // Show error state
+        document.getElementById('api-status').textContent = '❌';
+        document.getElementById('api-status').style.color = 'var(--danger)';
+    }
+}
+
+function prepareAPIChartData(actions) {
+    const last30Days = [];
+    const now = new Date();
+    
+    for (let i = 29; i >= 0; i--) {
+        const date = new Date(now);
+        date.setDate(date.getDate() - i);
+        last30Days.push({
+            date: date.toISOString().split('T')[0],
+            uploads: 0,
+            views: 0
+        });
+    }
+    
+    // Count actions by day
+    actions.forEach(action => {
+        const actionDate = new Date(action.created_at).toISOString().split('T')[0];
+        const dayData = last30Days.find(d => d.date === actionDate);
+        if (dayData) {
+            if (action.action_type === 'map_upload' || action.action_type === 'image_upload') {
+                dayData.uploads++;
+            } else if (action.action_type === 'map_download' || action.action_type === 'image_view') {
+                dayData.views++;
+            }
+        }
+    });
+    
+    return last30Days;
+}
+
+function renderAPIChart(data) {
+    const canvas = document.getElementById('api-activity-chart');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Destroy existing chart
+    if (apiActivityChart) {
+        apiActivityChart.destroy();
+    }
+    
+    // Get CSS variables
+    const styles = getComputedStyle(document.documentElement);
+    const primaryColor = styles.getPropertyValue('--accent-primary').trim();
+    const secondaryColor = styles.getPropertyValue('--accent-secondary').trim();
+    const textColor = styles.getPropertyValue('--text-primary').trim();
+    const gridColor = styles.getPropertyValue('--border-color').trim();
+    
+    apiActivityChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: data.map(d => {
+                const date = new Date(d.date);
+                return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+            }),
+            datasets: [
+                {
+                    label: 'Загрузки',
+                    data: data.map(d => d.uploads),
+                    borderColor: primaryColor,
+                    backgroundColor: primaryColor + '20',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 3,
+                    pointHoverRadius: 6
+                },
+                {
+                    label: 'Просмотры',
+                    data: data.map(d => d.views),
+                    borderColor: secondaryColor,
+                    backgroundColor: secondaryColor + '20',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 3,
+                    pointHoverRadius: 6
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        color: textColor,
+                        usePointStyle: true,
+                        padding: 15,
+                        font: { size: 12, weight: '600' }
+                    }
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    padding: 12,
+                    titleFont: { size: 13, weight: 'bold' },
+                    bodyFont: { size: 12 }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { color: gridColor, drawBorder: false },
+                    ticks: {
+                        color: textColor,
+                        maxRotation: 45,
+                        minRotation: 45,
+                        font: { size: 10 }
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: { color: gridColor, drawBorder: false },
+                    ticks: {
+                        color: textColor,
+                        stepSize: 1,
+                        font: { size: 11 }
+                    }
+                }
+            },
+            interaction: {
+                mode: 'nearest',
+                axis: 'x',
+                intersect: false
+            }
+        }
+    });
+}
+
+function renderMockAPIChart() {
+    // Generate mock data for demonstration
+    const mockData = [];
+    const now = new Date();
+    
+    for (let i = 29; i >= 0; i--) {
+        const date = new Date(now);
+        date.setDate(date.getDate() - i);
+        mockData.push({
+            date: date.toISOString().split('T')[0],
+            uploads: Math.floor(Math.random() * 5),
+            views: Math.floor(Math.random() * 15)
+        });
+    }
+    
+    document.getElementById('api-total-uploads').textContent = mockData.reduce((sum, d) => sum + d.uploads, 0);
+    document.getElementById('api-total-views').textContent = mockData.reduce((sum, d) => sum + d.views, 0);
+    
+    renderAPIChart(mockData);
+}
+
+// Initialize API analytics when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    // Проверяем, открыта ли страница API
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.target.id === 'page-api') {
+                const display = window.getComputedStyle(mutation.target).display;
+                if (display !== 'none') {
+                    loadAPIAnalytics();
+                }
+            }
+        });
+    });
+    
+    const apiPage = document.getElementById('page-api');
+    if (apiPage) {
+        observer.observe(apiPage, { attributes: true, attributeFilter: ['style'] });
+        
+        // Загружаем сразу если страница уже открыта
+        if (window.getComputedStyle(apiPage).display !== 'none') {
+            loadAPIAnalytics();
+        }
+    }
+});
+

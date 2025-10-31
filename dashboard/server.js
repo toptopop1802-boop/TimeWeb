@@ -60,68 +60,93 @@ function createApp() {
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, rgba(196,5,82,0.1) 0%, rgba(228,115,92,0.1) 100%), #ffffff;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
+            position: relative;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background:
+                linear-gradient(0deg, rgba(0,0,0,0.02) 1px, transparent 1px) repeat-y,
+                linear-gradient(90deg, rgba(0,0,0,0.02) 1px, transparent 1px) repeat-x;
+            background-size: 24px 24px;
+            z-index: 0;
         }
         .container {
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(255, 255, 255, 0.98);
             border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            padding: 40px;
-            max-width: 600px;
+            border: 1px solid rgba(196,5,82,0.1);
+            box-shadow: 0 10px 40px rgba(196,5,82,0.08), 0 2px 8px rgba(0,0,0,0.04);
+            padding: 50px;
+            max-width: 700px;
             width: 100%;
+            position: relative;
+            z-index: 1;
         }
         .status {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
         }
         .status-icon {
-            font-size: 64px;
-            margin-bottom: 10px;
+            font-size: 72px;
+            margin-bottom: 15px;
             animation: pulse 2s infinite;
+            filter: drop-shadow(0 4px 8px rgba(40,167,69,0.3));
         }
         @keyframes pulse {
             0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
+            50% { transform: scale(1.05); }
         }
         h1 {
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 28px;
+            color: #212529;
+            margin-bottom: 12px;
+            font-size: 32px;
+            font-weight: 700;
         }
         .subtitle {
-            color: #666;
-            font-size: 16px;
+            color: #6c757d;
+            font-size: 18px;
             margin-bottom: 20px;
+        }
+        .subtitle strong {
+            color: #28a745;
+            font-weight: 700;
         }
         .info-card {
             background: #f8f9fa;
-            border-left: 4px solid #667eea;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
+            border-left: 4px solid #c40552;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 25px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
         }
         .info-row {
             display: flex;
             justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid #e0e0e0;
+            align-items: center;
+            padding: 14px 0;
+            border-bottom: 1px solid #dee2e6;
         }
         .info-row:last-child {
             border-bottom: none;
         }
         .label {
             font-weight: 600;
-            color: #555;
+            color: #495057;
+            font-size: 15px;
         }
         .value {
-            color: #667eea;
-            font-weight: 500;
+            color: #c40552;
+            font-weight: 600;
+            font-size: 15px;
         }
         .formats {
             display: flex;
@@ -129,38 +154,45 @@ function createApp() {
             flex-wrap: wrap;
         }
         .format-tag {
-            background: #667eea;
+            background: linear-gradient(135deg, #c40552, #e4735c);
             color: white;
-            padding: 4px 12px;
-            border-radius: 12px;
+            padding: 6px 14px;
+            border-radius: 16px;
             font-size: 12px;
-            font-weight: 500;
+            font-weight: 600;
+            box-shadow: 0 2px 6px rgba(196,5,82,0.25);
         }
         .example-code {
             background: #2d3748;
             color: #68d391;
-            padding: 15px;
-            border-radius: 8px;
-            font-family: 'Courier New', monospace;
+            padding: 20px;
+            border-radius: 12px;
+            font-family: 'Courier New', Consolas, monospace;
             font-size: 13px;
+            line-height: 1.6;
             overflow-x: auto;
-            margin-top: 20px;
+            margin-top: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
         .back-btn {
             display: inline-block;
-            margin-top: 20px;
-            padding: 12px 24px;
-            background: #667eea;
+            margin-top: 30px;
+            padding: 14px 28px;
+            background: linear-gradient(135deg, #c40552, #e4735c);
             color: white;
             text-decoration: none;
-            border-radius: 8px;
-            font-weight: 600;
-            transition: all 0.3s;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(196,5,82,0.3);
         }
         .back-btn:hover {
-            background: #764ba2;
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 6px 20px rgba(196,5,82,0.4);
+        }
+        .back-btn:active {
+            transform: translateY(0);
         }
     </style>
 </head>
@@ -169,7 +201,7 @@ function createApp() {
         <div class="status">
             <div class="status-icon">✅</div>
             <h1>Image Upload API</h1>
-            <div class="subtitle">Статус: <strong style="color: #68d391;">РАБОТАЕТ</strong></div>
+            <div class="subtitle">Статус: <strong>РАБОТАЕТ</strong></div>
         </div>
 
         <div class="info-card">

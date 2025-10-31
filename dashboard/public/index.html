@@ -875,6 +875,42 @@ formData.<span style="color: #dcdcaa;">append</span>(<span style="color: #ce9178
 }</pre>
                         </div>
                     </div>
+
+                    <!-- API Analytics -->
+                    <div style="margin-top: 60px; padding-top: 40px; border-top: 2px solid var(--border-color);">
+                        <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 25px;">
+                            📊 Статистика API
+                        </h3>
+
+                        <!-- API Status Cards -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
+                            <div style="background: linear-gradient(135deg, rgba(40,167,69,0.1), rgba(40,167,69,0.05)); border: 2px solid var(--success); border-radius: 12px; padding: 20px; text-align: center;">
+                                <div style="font-size: 32px; font-weight: 700; color: var(--success); margin-bottom: 8px;" id="api-total-uploads">0</div>
+                                <div style="color: var(--text-secondary); font-size: 14px;">Загружено изображений</div>
+                            </div>
+                            <div style="background: linear-gradient(135deg, rgba(59,155,249,0.1), rgba(59,155,249,0.05)); border: 2px solid #3b9bf9; border-radius: 12px; padding: 20px; text-align: center;">
+                                <div style="font-size: 32px; font-weight: 700; color: #3b9bf9; margin-bottom: 8px;" id="api-total-views">0</div>
+                                <div style="color: var(--text-secondary); font-size: 14px;">Просмотров</div>
+                            </div>
+                            <div style="background: linear-gradient(135deg, rgba(196,5,82,0.1), rgba(196,5,82,0.05)); border: 2px solid var(--accent-primary); border-radius: 12px; padding: 20px; text-align: center;">
+                                <div style="font-size: 32px; font-weight: 700; color: var(--accent-primary); margin-bottom: 8px;" id="api-status">●</div>
+                                <div style="color: var(--text-secondary); font-size: 14px;">Статус API</div>
+                            </div>
+                        </div>
+
+                        <!-- API Activity Chart -->
+                        <div style="background: var(--bg-card); border-radius: 16px; padding: 25px; border: 1px solid var(--border-color);">
+                            <h4 style="margin: 0 0 20px 0; display: flex; align-items: center; gap: 10px; color: var(--text-primary);">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                                </svg>
+                                График активности (последние 30 дней)
+                            </h4>
+                            <div style="position: relative; height: 300px;">
+                                <canvas id="api-activity-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
