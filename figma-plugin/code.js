@@ -225,68 +225,51 @@ async function uploadImages(images) {
         message: `   🔑 Authorization: Bearer ${currentApiToken.substring(0, 20)}...`
       });
 
-      // Отправляем на API с timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 секунд timeout
-      
-      try {
-        const response = await fetch(API_URL, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${currentApiToken}`,
-            'Content-Type': `multipart/form-data; boundary=----${boundary}`
-          },
-          body: bodyBytes,
-          signal: controller.signal
+      // Отправляем на API
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${currentApiToken}`,
+          'Content-Type': `multipart/form-data; boundary=----${boundary}`
+        },
+        body: bodyBytes
+      });
+
+      figma.ui.postMessage({
+        type: 'log',
+        message: `   📥 Статус: ${response.status} ${response.statusText}`
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        figma.ui.postMessage({
+          type: 'log',
+          message: `   ❌ Ошибка: ${errorText.substring(0, 200)}`
+        });
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const responseText = await response.text();
+      figma.ui.postMessage({
+        type: 'log',
+        message: `   📄 Ответ (${responseText.length} символов): ${responseText.substring(0, 100)}...`
+      });
+
+      const data = JSON.parse(responseText);
+
+      if (data.success) {
+        uploaded.push({
+          hash: img.hash,
+          url: data.directUrl,
+          node: img.node
         });
         
-        clearTimeout(timeoutId);
-
         figma.ui.postMessage({
           type: 'log',
-          message: `   📥 Статус: ${response.status} ${response.statusText}`
+          message: `   ✅ Успех! URL: ${data.directUrl}`
         });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          figma.ui.postMessage({
-            type: 'log',
-            message: `   ❌ Ошибка: ${errorText.substring(0, 200)}`
-          });
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        const responseText = await response.text();
-        figma.ui.postMessage({
-          type: 'log',
-          message: `   📄 Ответ (${responseText.length} символов): ${responseText.substring(0, 100)}...`
-        });
-
-        const data = JSON.parse(responseText);
-
-        if (data.success) {
-          uploaded.push({
-            hash: img.hash,
-            url: data.directUrl,
-            node: img.node
-          });
-          
-          figma.ui.postMessage({
-            type: 'log',
-            message: `   ✅ Успех! URL: ${data.directUrl}`
-          });
-        } else {
-          throw new Error(data.error || 'Неизвестная ошибка');
-        }
-      } catch (fetchError) {
-        clearTimeout(timeoutId);
-        if (fetchError.name === 'AbortError') {
-          figma.ui.postMessage({
-            type: 'log',
-            message: `   ⏱️ Timeout: загрузка прервана через 30 секунд`
-          });
-        }
-        throw fetchError;
+      } else {
+        throw new Error(data.error || 'Неизвестная ошибка');
       }
 
     } catch (error) {
@@ -497,6 +480,17 @@ function generateCSharpElements(node, parentName, level, imageMap) {
   let code = '';
   const indent = '        ' + '    '.repeat(level);
   
+  // Функция для экранирования текста в C# строках
+  function escapeCSharpString(text) {
+    if (!text) return '';
+    return text
+      .replace(/\\/g, '\\\\')   // Экранируем обратные слеши
+      .replace(/"/g, '\\"')     // Экранируем кавычки
+      .replace(/\n/g, '\\n')    // Экранируем переносы строк
+      .replace(/\r/g, '\\r')    // Экранируем возврат каретки
+      .replace(/\t/g, '\\t');   // Экранируем табы
+  }
+  
   if ('children' in node) {
     for (let i = 0; i < node.children.length; i++) {
       const child = node.children[i];
@@ -505,10 +499,11 @@ function generateCSharpElements(node, parentName, level, imageMap) {
       if (child.type === 'TEXT') {
         const textColor = getRGBAColor(child);
         const textAlign = getTextAlign(child);
+        const escapedText = escapeCSharpString(child.characters || '');
         code += `${indent}// Text: ${child.name}\n`;
         code += `${indent}elements.Add(new CuiLabel\n`;
         code += `${indent}{\n`;
-        code += `${indent}    Text = { Text = "${child.characters || ''}", FontSize = ${child.fontSize || 14}, Align = TextAnchor.${textAlign}, Color = "${textColor}" },\n`;
+        code += `${indent}    Text = { Text = "${escapedText}", FontSize = ${child.fontSize || 14}, Align = TextAnchor.${textAlign}, Color = "${textColor}" },\n`;
         code += `${indent}    RectTransform = { AnchorMin = "${calculateAnchorMin(child)}", AnchorMax = "${calculateAnchorMax(child)}" }\n`;
         code += `${indent}}, ${parentName});\n\n`;
       } else {
