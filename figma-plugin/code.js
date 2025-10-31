@@ -1,6 +1,7 @@
 // Figma Plugin: Frame to Rust CUI Exporter
 const API_URL = 'https://bublickrust.ru/api/images/upload';
 let currentApiToken = '';
+let currentScale = 0.6; // Глобальный масштаб элементов (0.6 = 60% от оригинала, оптимально для игры)
 
 // Показать UI (увеличенный размер для большого количества логов)
 figma.showUI(__html__, { width: 500, height: 800, themeColors: true });
@@ -9,6 +10,8 @@ figma.showUI(__html__, { width: 500, height: 800, themeColors: true });
 figma.ui.onmessage = async (msg) => {
   if (msg.type === 'generate-code') {
     currentApiToken = msg.apiToken || '';
+    const s = parseFloat(msg.scale);
+    currentScale = Number.isFinite(s) && s > 0 ? s : 0.6;
     if (!currentApiToken) {
       figma.ui.postMessage({
         type: 'error',
@@ -402,13 +405,13 @@ function traverseForCUI(node, elements, imageMap, parentName = "root") {
     }];
   }
   
-  // Позиция и размер
+  // Позиция и размер (фиксированные пиксели, якорь по центру)
   element.components.push({
     type: "RectTransform",
-    anchormin: calculateAnchorMin(node),
-    anchormax: calculateAnchorMax(node),
-    offsetmin: "0 0",
-    offsetmax: "0 0"
+    anchormin: calculateAnchorCenter(node),
+    anchormax: calculateAnchorCenter(node),
+    offsetmin: calculateOffsetMin(node),
+    offsetmax: calculateOffsetMax(node)
   });
   
   elements.push(element);
@@ -428,8 +431,9 @@ function generateCSharpCode(node, imageMap) {
   const commandName = className.toLowerCase();
   const rootWidth = Math.round(('width' in node ? node.width : 1104) || 1104);
   const rootHeight = Math.round(('height' in node ? node.height : 738) || 738);
-  const halfW = Math.round(rootWidth / 2);
-  const halfH = Math.round(rootHeight / 2);
+  const scale = (Number.isFinite(currentScale) && currentScale > 0) ? currentScale : 0.6;
+  const halfW = Math.round((rootWidth / 2) * scale);
+  const halfH = Math.round((rootHeight / 2) * scale);
   
   let code = `using Oxide.Core.Plugins;\n`;
   code += `using Oxide.Game.Rust.Cui;\n`;
@@ -554,6 +558,7 @@ function generateCSharpCode(node, imageMap) {
 function generateCSharpElements(node, parentName, level, imageMap) {
   let code = '';
   const indent = '        ' + '    '.repeat(level);
+  const scale = (Number.isFinite(currentScale) && currentScale > 0) ? currentScale : 0.6;
   
   // 🔍 ЛОГ: Сканируем элемент
   if (level <= 3) { // Логируем только верхние уровни, чтобы не захламлять
@@ -648,8 +653,9 @@ function generateCSharpElements(node, parentName, level, imageMap) {
         code += `${indent}// Text: ${commentPreview}\n`;
         code += `${indent}elements.Add(new CuiLabel\n`;
         code += `${indent}{\n`;
-        code += `${indent}    Text = { Text = "${escapedText}", FontSize = ${child.fontSize || 14}, Align = TextAnchor.${textAlign}, Color = "${textColor}", Font = "${fontName}" },\n`;
-        code += `${indent}    RectTransform = { AnchorMin = "${calculateAnchorMin(child)}", AnchorMax = "${calculateAnchorMax(child)}" }\n`;
+        const scaledFontSize = Math.max(1, Math.round((child.fontSize || 14) * scale));
+        code += `${indent}    Text = { Text = "${escapedText}", FontSize = ${scaledFontSize}, Align = TextAnchor.${textAlign}, Color = "${textColor}", Font = "${fontName}" },\n`;
+        code += `${indent}    RectTransform = { AnchorMin = "${calculateAnchorCenter(child)}", AnchorMax = "${calculateAnchorCenter(child)}", OffsetMin = "${calculateOffsetMin(child)}", OffsetMax = "${calculateOffsetMax(child)}" }\n`;
         code += `${indent}}, ${parentName});\n\n`;
       } else {
         // Проверяем, есть ли изображение
@@ -664,7 +670,7 @@ function generateCSharpElements(node, parentName, level, imageMap) {
           code += `${indent}elements.Add(new CuiPanel\n`;
           code += `${indent}{\n`;
           code += `${indent}    Image = { Color = "${color}" },\n`;
-          code += `${indent}    RectTransform = { AnchorMin = "${calculateAnchorMin(child)}", AnchorMax = "${calculateAnchorMax(child)}" }\n`;
+          code += `${indent}    RectTransform = { AnchorMin = "${calculateAnchorCenter(child)}", AnchorMax = "${calculateAnchorCenter(child)}", OffsetMin = "${calculateOffsetMin(child)}", OffsetMax = "${calculateOffsetMax(child)}" }\n`;
           code += `${indent}}, ${parentName}, "${childName}");\n\n`;
           
           // Добавляем RawImage поверх панели для отображения изображения
@@ -682,7 +688,7 @@ function generateCSharpElements(node, parentName, level, imageMap) {
           code += `${indent}elements.Add(new CuiPanel\n`;
           code += `${indent}{\n`;
           code += `${indent}    Image = { Color = "${color}" },\n`;
-          code += `${indent}    RectTransform = { AnchorMin = "${calculateAnchorMin(child)}", AnchorMax = "${calculateAnchorMax(child)}" }\n`;
+          code += `${indent}    RectTransform = { AnchorMin = "${calculateAnchorCenter(child)}", AnchorMax = "${calculateAnchorCenter(child)}", OffsetMin = "${calculateOffsetMin(child)}", OffsetMax = "${calculateOffsetMax(child)}" }\n`;
           code += `${indent}}, ${parentName}, "${childName}");\n\n`;
         }
         
@@ -945,6 +951,32 @@ function calculateAnchorMax(node) {
   const y = 1 - (node.y / parent.height);
   
   return `${clamp01(x).toFixed(4)} ${clamp01(y).toFixed(4)}`;
+}
+
+// Центрированный якорь (для фиксированных размеров без растягивания)
+function calculateAnchorCenter(node) {
+  const parent = node.parent;
+  if (!parent || !('width' in parent) || !('height' in parent) || !('width' in node) || !('height' in node)) {
+    return "0.5 0.5";
+  }
+  const cx = (node.x + node.width / 2) / parent.width;
+  const cy = 1 - ((node.y + node.height / 2) / parent.height);
+  return `${clamp01(cx).toFixed(4)} ${clamp01(cy).toFixed(4)}`;
+}
+
+// Пиксельные оффсеты для фиксированного размера прямоугольника
+function calculateOffsetMin(node) {
+  const scale = (Number.isFinite(currentScale) && currentScale > 0) ? currentScale : 0.6;
+  const w = ('width' in node) ? Math.round((node.width / 2) * scale) : 0;
+  const h = ('height' in node) ? Math.round((node.height / 2) * scale) : 0;
+  return `-${w} -${h}`;
+}
+
+function calculateOffsetMax(node) {
+  const scale = (Number.isFinite(currentScale) && currentScale > 0) ? currentScale : 0.6;
+  const w = ('width' in node) ? Math.round((node.width / 2) * scale) : 0;
+  const h = ('height' in node) ? Math.round((node.height / 2) * scale) : 0;
+  return `${w} ${h}`;
 }
 
 

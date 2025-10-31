@@ -98,133 +98,133 @@ namespace Oxide.Plugins
                     elements.Add(new CuiPanel
                     {
                         Image = { Color = "0 0 0 0" },
-                        RectTransform = { AnchorMin = "0.0000 0.0019", AnchorMax = "1.0000 1.0000" }
+                        RectTransform = { AnchorMin = "0.5000 0.5019", AnchorMax = "0.5000 0.5019", OffsetMin = "-960 -540", OffsetMax = "960 540" }
                     }, UIName + ".Center", "frame_20_image_368_0");
 
                     // Panel: Rectangle 2613
                     elements.Add(new CuiPanel
                     {
                         Image = { Color = "0.365 0.424 0.247 1.000" },
-                        RectTransform = { AnchorMin = "0.2036 0.3769", AnchorMax = "0.3448 0.7102" }
+                        RectTransform = { AnchorMin = "0.2742 0.5435", AnchorMax = "0.2742 0.5435", OffsetMin = "-136 -180", OffsetMax = "136 180" }
                     }, UIName + ".Center", "frame_20_rectangle_2613_1");
 
                     // Panel: Rectangle 2619
                     elements.Add(new CuiPanel
                     {
                         Image = { Color = "0.365 0.424 0.247 1.000" },
-                        RectTransform = { AnchorMin = "0.3521 0.3769", AnchorMax = "0.4932 0.7102" }
+                        RectTransform = { AnchorMin = "0.4227 0.5435", AnchorMax = "0.4227 0.5435", OffsetMin = "-136 -180", OffsetMax = "136 180" }
                     }, UIName + ".Center", "frame_20_rectangle_2619_2");
 
                     // Panel: Rectangle 2620
                     elements.Add(new CuiPanel
                     {
                         Image = { Color = "0.365 0.424 0.247 1.000" },
-                        RectTransform = { AnchorMin = "0.5005 0.3769", AnchorMax = "0.6417 0.7102" }
+                        RectTransform = { AnchorMin = "0.5711 0.5435", AnchorMax = "0.5711 0.5435", OffsetMin = "-136 -180", OffsetMax = "136 180" }
                     }, UIName + ".Center", "frame_20_rectangle_2620_3");
 
                     // Panel: Rectangle 2621
                     elements.Add(new CuiPanel
                     {
                         Image = { Color = "0.365 0.424 0.247 1.000" },
-                        RectTransform = { AnchorMin = "0.6490 0.3769", AnchorMax = "0.7901 0.7102" }
+                        RectTransform = { AnchorMin = "0.7195 0.5435", AnchorMax = "0.7195 0.5435", OffsetMin = "-136 -180", OffsetMax = "136 180" }
                     }, UIName + ".Center", "frame_20_rectangle_2621_4");
 
                     // Panel: Rectangle 2614
                     elements.Add(new CuiPanel
                     {
                         Image = { Color = "0.412 0.494 0.271 1.000" },
-                        RectTransform = { AnchorMin = "0.3599 0.3833", AnchorMax = "0.4849 0.4250" }
+                        RectTransform = { AnchorMin = "0.4224 0.4042", AnchorMax = "0.4224 0.4042", OffsetMin = "-120 -23", OffsetMax = "120 23" }
                     }, UIName + ".Center", "frame_20_rectangle_2614_5");
 
                     // Panel: Rectangle 2616
                     elements.Add(new CuiPanel
                     {
                         Image = { Color = "0.412 0.494 0.271 1.000" },
-                        RectTransform = { AnchorMin = "0.2115 0.3833", AnchorMax = "0.3365 0.4250" }
+                        RectTransform = { AnchorMin = "0.2740 0.4042", AnchorMax = "0.2740 0.4042", OffsetMin = "-120 -23", OffsetMax = "120 23" }
                     }, UIName + ".Center", "frame_20_rectangle_2616_6");
 
                     // Panel: Rectangle 2618
                     elements.Add(new CuiPanel
                     {
                         Image = { Color = "0.412 0.494 0.271 1.000" },
-                        RectTransform = { AnchorMin = "0.2115 0.3833", AnchorMax = "0.3365 0.4250" }
+                        RectTransform = { AnchorMin = "0.2740 0.4042", AnchorMax = "0.2740 0.4042", OffsetMin = "-120 -23", OffsetMax = "120 23" }
                     }, UIName + ".Center", "frame_20_rectangle_2618_7");
 
                     // Panel: Rectangle 2615
                     elements.Add(new CuiPanel
                     {
                         Image = { Color = "0.412 0.494 0.271 1.000" },
-                        RectTransform = { AnchorMin = "0.5083 0.3833", AnchorMax = "0.6333 0.4250" }
+                        RectTransform = { AnchorMin = "0.5708 0.4042", AnchorMax = "0.5708 0.4042", OffsetMin = "-120 -23", OffsetMax = "120 23" }
                     }, UIName + ".Center", "frame_20_rectangle_2615_8");
 
                     // Panel: Rectangle 2617
                     elements.Add(new CuiPanel
                     {
                         Image = { Color = "0.412 0.494 0.271 1.000" },
-                        RectTransform = { AnchorMin = "0.6568 0.3833", AnchorMax = "0.7818 0.4250" }
+                        RectTransform = { AnchorMin = "0.7193 0.4042", AnchorMax = "0.7193 0.4042", OffsetMin = "-120 -23", OffsetMax = "120 23" }
                     }, UIName + ".Center", "frame_20_rectangle_2617_9");
 
                     // Text: взять
                     elements.Add(new CuiLabel
                     {
                         Text = { Text = "взять", FontSize = 24, Align = TextAnchor.MiddleCenter, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-bold.ttf" },
-                        RectTransform = { AnchorMin = "0.2115 0.3833", AnchorMax = "0.3365 0.4250" }
+                        RectTransform = { AnchorMin = "0.2740 0.4042", AnchorMax = "0.2740 0.4042", OffsetMin = "-120 -23", OffsetMax = "120 23" }
                     }, UIName + ".Center");
 
                     // Text: название кита
                     elements.Add(new CuiLabel
                     {
                         Text = { Text = "название кита", FontSize = 24, Align = TextAnchor.MiddleCenter, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-bold.ttf" },
-                        RectTransform = { AnchorMin = "0.2115 0.4917", AnchorMax = "0.3365 0.5333" }
+                        RectTransform = { AnchorMin = "0.2740 0.5125", AnchorMax = "0.2740 0.5125", OffsetMin = "-120 -23", OffsetMax = "120 23" }
                     }, UIName + ".Center");
 
                     // Text: название кита
                     elements.Add(new CuiLabel
                     {
                         Text = { Text = "название кита", FontSize = 24, Align = TextAnchor.MiddleCenter, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-bold.ttf" },
-                        RectTransform = { AnchorMin = "0.3599 0.4917", AnchorMax = "0.4849 0.5333" }
+                        RectTransform = { AnchorMin = "0.4224 0.5125", AnchorMax = "0.4224 0.5125", OffsetMin = "-120 -23", OffsetMax = "120 23" }
                     }, UIName + ".Center");
 
                     // Text: название кита
                     elements.Add(new CuiLabel
                     {
                         Text = { Text = "название кита", FontSize = 24, Align = TextAnchor.MiddleCenter, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-bold.ttf" },
-                        RectTransform = { AnchorMin = "0.5083 0.4917", AnchorMax = "0.6333 0.5333" }
+                        RectTransform = { AnchorMin = "0.5708 0.5125", AnchorMax = "0.5708 0.5125", OffsetMin = "-120 -23", OffsetMax = "120 23" }
                     }, UIName + ".Center");
 
                     // Text: название кита
                     elements.Add(new CuiLabel
                     {
                         Text = { Text = "название кита", FontSize = 24, Align = TextAnchor.MiddleCenter, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-bold.ttf" },
-                        RectTransform = { AnchorMin = "0.6568 0.4917", AnchorMax = "0.7818 0.5333" }
+                        RectTransform = { AnchorMin = "0.7193 0.5125", AnchorMax = "0.7193 0.5125", OffsetMin = "-120 -23", OffsetMax = "120 23" }
                     }, UIName + ".Center");
 
                     // Text: взять
                     elements.Add(new CuiLabel
                     {
                         Text = { Text = "взять", FontSize = 24, Align = TextAnchor.MiddleCenter, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-bold.ttf" },
-                        RectTransform = { AnchorMin = "0.3599 0.3833", AnchorMax = "0.4849 0.4250" }
+                        RectTransform = { AnchorMin = "0.4224 0.4042", AnchorMax = "0.4224 0.4042", OffsetMin = "-120 -23", OffsetMax = "120 23" }
                     }, UIName + ".Center");
 
                     // Text: взять
                     elements.Add(new CuiLabel
                     {
                         Text = { Text = "взять", FontSize = 24, Align = TextAnchor.MiddleCenter, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-bold.ttf" },
-                        RectTransform = { AnchorMin = "0.5083 0.3833", AnchorMax = "0.6333 0.4250" }
+                        RectTransform = { AnchorMin = "0.5708 0.4042", AnchorMax = "0.5708 0.4042", OffsetMin = "-120 -23", OffsetMax = "120 23" }
                     }, UIName + ".Center");
 
                     // Text: взять
                     elements.Add(new CuiLabel
                     {
                         Text = { Text = "взять", FontSize = 24, Align = TextAnchor.MiddleCenter, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-bold.ttf" },
-                        RectTransform = { AnchorMin = "0.6573 0.3833", AnchorMax = "0.7823 0.4250" }
+                        RectTransform = { AnchorMin = "0.7198 0.4042", AnchorMax = "0.7198 0.4042", OffsetMin = "-120 -23", OffsetMax = "120 23" }
                     }, UIName + ".Center");
 
                     // Panel: image 363
                     elements.Add(new CuiPanel
                     {
                         Image = { Color = "0 0 0 0" },
-                        RectTransform = { AnchorMin = "0.5328 0.5333", AnchorMax = "0.6094 0.6694" }
+                        RectTransform = { AnchorMin = "0.5711 0.6014", AnchorMax = "0.5711 0.6014", OffsetMin = "-74 -74", OffsetMax = "74 74" }
                     }, UIName + ".Center", "frame_20_image_363_18");
 
                     // Image for image 363
@@ -233,7 +233,7 @@ namespace Oxide.Plugins
                         Parent = "frame_20_image_363_18",
                         Components =
                         {
-                            new CuiRawImageComponent { Url = "https://bublickrust.ru/i/70TSCQ0" },
+                            new CuiRawImageComponent { Url = "https://bublickrust.ru/i/2NT63OI" },
                             new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
                         }
                     });
@@ -242,7 +242,7 @@ namespace Oxide.Plugins
                     elements.Add(new CuiPanel
                     {
                         Image = { Color = "0 0 0 0" },
-                        RectTransform = { AnchorMin = "0.6813 0.5333", AnchorMax = "0.7578 0.6694" }
+                        RectTransform = { AnchorMin = "0.7195 0.6014", AnchorMax = "0.7195 0.6014", OffsetMin = "-74 -74", OffsetMax = "74 74" }
                     }, UIName + ".Center", "frame_20_image_365_19");
 
                     // Image for image 365
@@ -251,7 +251,7 @@ namespace Oxide.Plugins
                         Parent = "frame_20_image_365_19",
                         Components =
                         {
-                            new CuiRawImageComponent { Url = "https://bublickrust.ru/i/70TSCQ0" },
+                            new CuiRawImageComponent { Url = "https://bublickrust.ru/i/2NT63OI" },
                             new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
                         }
                     });
@@ -260,7 +260,7 @@ namespace Oxide.Plugins
                     elements.Add(new CuiPanel
                     {
                         Image = { Color = "0 0 0 0" },
-                        RectTransform = { AnchorMin = "0.2359 0.5333", AnchorMax = "0.3125 0.6694" }
+                        RectTransform = { AnchorMin = "0.2742 0.6014", AnchorMax = "0.2742 0.6014", OffsetMin = "-74 -74", OffsetMax = "74 74" }
                     }, UIName + ".Center", "frame_20_image_366_20");
 
                     // Image for image 366
@@ -269,7 +269,7 @@ namespace Oxide.Plugins
                         Parent = "frame_20_image_366_20",
                         Components =
                         {
-                            new CuiRawImageComponent { Url = "https://bublickrust.ru/i/70TSCQ0" },
+                            new CuiRawImageComponent { Url = "https://bublickrust.ru/i/2NT63OI" },
                             new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
                         }
                     });
@@ -278,7 +278,7 @@ namespace Oxide.Plugins
                     elements.Add(new CuiPanel
                     {
                         Image = { Color = "0 0 0 0" },
-                        RectTransform = { AnchorMin = "0.3844 0.5333", AnchorMax = "0.4609 0.6694" }
+                        RectTransform = { AnchorMin = "0.4227 0.6014", AnchorMax = "0.4227 0.6014", OffsetMin = "-74 -74", OffsetMax = "74 74" }
                     }, UIName + ".Center", "frame_20_image_367_21");
 
                     // Image for image 367
@@ -287,7 +287,7 @@ namespace Oxide.Plugins
                         Parent = "frame_20_image_367_21",
                         Components =
                         {
-                            new CuiRawImageComponent { Url = "https://bublickrust.ru/i/70TSCQ0" },
+                            new CuiRawImageComponent { Url = "https://bublickrust.ru/i/2NT63OI" },
                             new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
                         }
                     });
@@ -296,63 +296,63 @@ namespace Oxide.Plugins
                     elements.Add(new CuiPanel
                     {
                         Image = { Color = "0.851 0.851 0.851 0.330" },
-                        RectTransform = { AnchorMin = "0.3271 0.6796", AnchorMax = "0.3427 0.7074" }
+                        RectTransform = { AnchorMin = "0.3349 0.6935", AnchorMax = "0.3349 0.6935", OffsetMin = "-15 -15", OffsetMax = "15 15" }
                     }, UIName + ".Center", "frame_20_rectangle_2622_22");
 
                     // Text: ?
                     elements.Add(new CuiLabel
                     {
                         Text = { Text = "?", FontSize = 20, Align = TextAnchor.MiddleCenter, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-bold.ttf" },
-                        RectTransform = { AnchorMin = "0.3302 0.6843", AnchorMax = "0.3401 0.7019" }
+                        RectTransform = { AnchorMin = "0.3352 0.6931", AnchorMax = "0.3352 0.6931", OffsetMin = "-10 -10", OffsetMax = "10 10" }
                     }, UIName + ".Center");
 
                     // Panel: Rectangle 2623
                     elements.Add(new CuiPanel
                     {
                         Image = { Color = "0.851 0.851 0.851 0.330" },
-                        RectTransform = { AnchorMin = "0.4755 0.6796", AnchorMax = "0.4911 0.7074" }
+                        RectTransform = { AnchorMin = "0.4833 0.6935", AnchorMax = "0.4833 0.6935", OffsetMin = "-15 -15", OffsetMax = "15 15" }
                     }, UIName + ".Center", "frame_20_rectangle_2623_24");
 
                     // Text: ?
                     elements.Add(new CuiLabel
                     {
                         Text = { Text = "?", FontSize = 20, Align = TextAnchor.MiddleCenter, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-bold.ttf" },
-                        RectTransform = { AnchorMin = "0.4786 0.6843", AnchorMax = "0.4885 0.7019" }
+                        RectTransform = { AnchorMin = "0.4836 0.6931", AnchorMax = "0.4836 0.6931", OffsetMin = "-10 -10", OffsetMax = "10 10" }
                     }, UIName + ".Center");
 
                     // Panel: Rectangle 2624
                     elements.Add(new CuiPanel
                     {
                         Image = { Color = "0.851 0.851 0.851 0.330" },
-                        RectTransform = { AnchorMin = "0.6240 0.6796", AnchorMax = "0.6396 0.7074" }
+                        RectTransform = { AnchorMin = "0.6318 0.6935", AnchorMax = "0.6318 0.6935", OffsetMin = "-15 -15", OffsetMax = "15 15" }
                     }, UIName + ".Center", "frame_20_rectangle_2624_26");
 
                     // Text: ?
                     elements.Add(new CuiLabel
                     {
                         Text = { Text = "?", FontSize = 20, Align = TextAnchor.MiddleCenter, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-bold.ttf" },
-                        RectTransform = { AnchorMin = "0.6271 0.6843", AnchorMax = "0.6370 0.7019" }
+                        RectTransform = { AnchorMin = "0.6320 0.6931", AnchorMax = "0.6320 0.6931", OffsetMin = "-10 -10", OffsetMax = "10 10" }
                     }, UIName + ".Center");
 
                     // Panel: Rectangle 2625
                     elements.Add(new CuiPanel
                     {
                         Image = { Color = "0.851 0.851 0.851 0.330" },
-                        RectTransform = { AnchorMin = "0.7729 0.6796", AnchorMax = "0.7885 0.7074" }
+                        RectTransform = { AnchorMin = "0.7807 0.6935", AnchorMax = "0.7807 0.6935", OffsetMin = "-15 -15", OffsetMax = "15 15" }
                     }, UIName + ".Center", "frame_20_rectangle_2625_28");
 
                     // Text: ?
                     elements.Add(new CuiLabel
                     {
                         Text = { Text = "?", FontSize = 20, Align = TextAnchor.MiddleCenter, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-bold.ttf" },
-                        RectTransform = { AnchorMin = "0.7760 0.6843", AnchorMax = "0.7859 0.7019" }
+                        RectTransform = { AnchorMin = "0.7810 0.6931", AnchorMax = "0.7810 0.6931", OffsetMin = "-10 -10", OffsetMax = "10 10" }
                     }, UIName + ".Center");
 
                     // Text: Тест плагина Figma
                     elements.Add(new CuiLabel
                     {
                         Text = { Text = "Тест плагина Figma", FontSize = 40, Align = TextAnchor.MiddleCenter, Color = "1.000 1.000 1.000 1.000", Font = "robotocondensed-bold.ttf" },
-                        RectTransform = { AnchorMin = "0.2938 0.8185", AnchorMax = "0.7078 0.9204" }
+                        RectTransform = { AnchorMin = "0.5008 0.8694", AnchorMax = "0.5008 0.8694", OffsetMin = "-398 -55", OffsetMax = "398 55" }
                     }, UIName + ".Center");
 
             Puts($"[Frame20UI] Adding {elements.Count} UI elements to player");
@@ -379,3 +379,4 @@ namespace Oxide.Plugins
         }
     }
 }
+    

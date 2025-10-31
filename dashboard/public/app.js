@@ -1216,8 +1216,80 @@ function navigateToPage(page) {
     } else if (page === 'gradient-role') {
         // Инициализация страницы заявки на градиентную роль
         initGradientRolePage();
+    } else if (page === 'server') {
+        loadServerPlayers();
     }
 }
+
+// ============================================
+// RUST SERVER PAGE
+// ============================================
+
+async function loadServerPlayers() {
+    try {
+        const tbody = document.getElementById('server-table-body');
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="8" style="padding:14px; color: var(--text-secondary);">Загрузка...</td></tr>`;
+        }
+        const onlineOnly = document.getElementById('server-online-only')?.checked;
+        const res = await fetchWithAuth('/api/rust/players');
+        const data = await res.json();
+        const search = (document.getElementById('server-search')?.value || '').trim().toLowerCase();
+
+        let players = Array.isArray(data) ? data : [];
+        if (onlineOnly) players = players.filter(p => p.online);
+        if (search) {
+            players = players.filter(p =>
+                String(p.name || '').toLowerCase().includes(search) ||
+                String(p.steam_id || '').toLowerCase().includes(search) ||
+                String(p.ip || '').toLowerCase().includes(search) ||
+                String(p.grid || '').toLowerCase().includes(search)
+            );
+        }
+
+        const rows = players.map(p => {
+            const teamSize = Array.isArray(p.team_members) ? p.team_members.length : (p.team_members && p.team_members.members ? p.team_members.members.length : 0);
+            const teamLabel = p.team_id ? `${p.team_id} (${teamSize})` : '-';
+            const xyz = [p.x, p.y, p.z].every(v => typeof v === 'number') ? `${p.x.toFixed(1)}, ${p.y.toFixed(1)}, ${p.z.toFixed(1)}` : '-';
+            const status = p.online ? '🟢 Онлайн' : '⚫ Оффлайн';
+            const updated = p.updated_at ? new Date(p.updated_at).toLocaleString() : '';
+            return `<tr>
+                <td style=\"padding:10px; border-bottom:1px solid var(--border-color); font-weight:600;\">${escapeHtml(p.name || '-') }</td>
+                <td style=\"padding:10px; border-bottom:1px solid var(--border-color); font-family: monospace;\">${escapeHtml(p.steam_id || '-') }</td>
+                <td style=\"padding:10px; border-bottom:1px solid var(--border-color);\">${escapeHtml(p.ip || '-') }</td>
+                <td style=\"padding:10px; border-bottom:1px solid var(--border-color);\">${escapeHtml(teamLabel)}</td>
+                <td style=\"padding:10px; border-bottom:1px solid var(--border-color);\">${escapeHtml(p.grid || '-') }</td>
+                <td style=\"padding:10px; border-bottom:1px solid var(--border-color);\">${xyz}</td>
+                <td style=\"padding:10px; border-bottom:1px solid var(--border-color);\">${status}</td>
+                <td style=\"padding:10px; border-bottom:1px solid var(--border-color); color: var(--text-secondary);\">${updated}</td>
+            </tr>`;
+        });
+
+        if (tbody) {
+            tbody.innerHTML = rows.length ? rows.join('') : `<tr><td colspan=\"8\" style=\"padding:14px; color: var(--text-secondary);\">Нет данных</td></tr>`;
+        }
+    } catch (e) {
+        console.error('Failed to load players:', e);
+        const tbody = document.getElementById('server-table-body');
+        if (tbody) tbody.innerHTML = `<tr><td colspan=\"8\" style=\"padding:14px; color: var(--danger);\">Ошибка загрузки: ${escapeHtml(e.message)}</td></tr>`;
+    }
+}
+
+// helpers
+function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[s]));
+}
+
+// Wire controls
+document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('server-refresh-btn');
+    if (btn) btn.addEventListener('click', loadServerPlayers);
+    const search = document.getElementById('server-search');
+    if (search) search.addEventListener('input', () => { setTimeout(loadServerPlayers, 100); });
+    const onlineOnly = document.getElementById('server-online-only');
+    if (onlineOnly) onlineOnly.addEventListener('change', loadServerPlayers);
+});
+
 
 // ============================================
 // EVENT LISTENERS

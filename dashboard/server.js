@@ -928,6 +928,81 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
         }
     });
 
+    // ============================================
+    // RUST SERVER REPORTING API
+    // ============================================
+
+    // Report current players from Rust plugin
+    app.post('/api/rust/players/report', async (req, res) => {
+        try {
+            if (!supabase) return res.status(503).json({ error: 'Supabase not configured' });
+            // Require auth (API token or session)
+            let currentUser = null;
+            await requireAuth(req, res, async () => { currentUser = req.user; }, supabase);
+            if (!currentUser) return; // middleware already replied
+
+            const body = req.body || {};
+            const serverName = (body.server && body.server.name) || null;
+            const players = Array.isArray(body.players) ? body.players : [];
+
+            if (players.length === 0) {
+                return res.json({ success: true, updated: 0 });
+            }
+
+            // Upsert players
+            const rows = players.map(p => ({
+                steam_id: String(p.steamId || p.userId || ''),
+                name: p.name || null,
+                ip: p.ip || null,
+                team_id: p.teamId ? String(p.teamId) : null,
+                team_members: p.teamMembers ? p.teamMembers : null,
+                grid: p.grid || null,
+                x: typeof p.x === 'number' ? p.x : null,
+                y: typeof p.y === 'number' ? p.y : null,
+                z: typeof p.z === 'number' ? p.z : null,
+                online: p.online !== false, // default true
+                server_name: serverName,
+                last_seen: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            })).filter(r => r.steam_id);
+
+            const { error: upErr } = await supabase
+                .from('rust_players')
+                .upsert(rows, { onConflict: 'steam_id' });
+
+            if (upErr) throw upErr;
+
+            // Optionally mark others offline from previous session (skip: requires server identity)
+
+            res.json({ success: true, updated: rows.length });
+        } catch (error) {
+            console.error('Rust report error:', error);
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // List last known players (admin only)
+    app.get('/api/rust/players', async (req, res) => {
+        try {
+            if (!supabase) return res.status(503).json({ error: 'Supabase not configured' });
+            await requireAuth(req, res, async () => {}, supabase);
+            if (!req.user || req.user.role !== 'admin') return; // only admins
+
+            const limit = Math.min(Math.max(parseInt(req.query.limit) || 200, 1), 1000);
+            const { data, error } = await supabase
+                .from('rust_players')
+                .select('*')
+                .order('online', { ascending: false })
+                .order('updated_at', { ascending: false })
+                .limit(limit);
+            if (error) throw error;
+            res.json(data || []);
+        } catch (error) {
+            console.error('Rust players list error:', error);
+            res.status(500).json({ error: error.message });
+        }
+    });
+
     // Получить список серверов
     app.get('/api/guilds', async (req, res) => {
         try {

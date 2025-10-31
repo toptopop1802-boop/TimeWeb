@@ -67,6 +67,15 @@
                     <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polyline points="16 18 22 12 16 6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"></polyline><polyline points="8 6 2 12 8 18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"></polyline></svg>
                     <span class="nav-text">API</span>
                 </a>
+                <a href="#server" class="nav-link" data-page="server">
+                    <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="3" y="4" width="18" height="6" rx="2" ry="2" stroke-width="2" fill="none"/>
+                        <rect x="3" y="14" width="18" height="6" rx="2" ry="2" stroke-width="2" fill="none"/>
+                        <circle cx="8" cy="7" r="1"/>
+                        <circle cx="8" cy="17" r="1"/>
+                    </svg>
+                    <span class="nav-text">Сервер</span>
+                </a>
                 <a href="/gallery-images-bublick" class="nav-link" data-admin-only="true" target="_blank">
                     <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 4h16v16H4z" fill="none" stroke-width="2"/><path d="M8 14l3-3 4 4 3-3" stroke-width="2" fill="none"/></svg>
                     <span class="nav-text">Галерея фото</span>
@@ -906,6 +915,51 @@ formData.<span style="color: #dcdcaa;">append</span>(<span style="color: #ce9178
                                 <canvas id="api-activity-chart"></canvas>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rust Server Page -->
+            <div id="page-server" class="page" style="display:none;">
+                <header class="page-header">
+                    <h2>
+                        <svg class="h2-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:28px;height:28px;vertical-align:-6px;margin-right:8px;">
+                            <rect x="3" y="4" width="18" height="6" rx="2" ry="2" stroke-width="2" fill="none"/>
+                            <rect x="3" y="14" width="18" height="6" rx="2" ry="2" stroke-width="2" fill="none"/>
+                        </svg>
+                        Сервер (Rust)
+                    </h2>
+                    <div class="header-controls">
+                        <button id="server-refresh-btn" class="btn btn-primary">🔄 Обновить</button>
+                    </div>
+                </header>
+
+                <div class="card" style="padding: 0; overflow: hidden;">
+                    <div style="padding: 12px; border-bottom: 1px solid var(--border-color); display:flex; gap:10px; align-items:center;">
+                        <input id="server-search" type="text" placeholder="Поиск по нику / SteamID / IP / квадрат" style="flex:1; padding:10px; background: var(--bg-secondary); border:1px solid var(--border-color); border-radius:8px;">
+                        <label style="display:flex; align-items:center; gap:6px; font-size:13px; color: var(--text-secondary);">
+                            <input id="server-online-only" type="checkbox"> Только онлайн
+                        </label>
+                    </div>
+
+                    <div style="overflow:auto;">
+                        <table style="width:100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: var(--bg-secondary); text-align:left;">
+                                    <th style="padding:10px; border-bottom:1px solid var(--border-color);">Ник</th>
+                                    <th style="padding:10px; border-bottom:1px solid var(--border-color);">SteamID</th>
+                                    <th style="padding:10px; border-bottom:1px solid var(--border-color);">IP</th>
+                                    <th style="padding:10px; border-bottom:1px solid var(--border-color);">Команда</th>
+                                    <th style="padding:10px; border-bottom:1px solid var(--border-color);">Квадрат</th>
+                                    <th style="padding:10px; border-bottom:1px solid var(--border-color);">XYZ</th>
+                                    <th style="padding:10px; border-bottom:1px solid var(--border-color);">Статус</th>
+                                    <th style="padding:10px; border-bottom:1px solid var(--border-color);">Обновлено</th>
+                                </tr>
+                            </thead>
+                            <tbody id="server-table-body">
+                                <tr><td colspan="8" style="padding:14px; color: var(--text-secondary);">Загрузка...</td></tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
