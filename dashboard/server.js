@@ -450,22 +450,29 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                 // игнорируем и используем резервный путь
             }
 
-            // 2) Резервный путь — сканируем bucket и вычисляем код (дорого, но рабочий)
+            // 2) Резервный путь — сканируем bucket постранично и вычисляем код (дороже, но надёжно)
             if (!storagePath) {
-                let files = null;
-                const r1 = await supabase.storage.from('images').list('images');
-                files = (!r1.error && r1.data) ? r1.data : (await supabase.storage.from('images').list('')).data;
+                const PAGE = 500; // до 500 файлов за запрос
+                for (let offset = 0; offset < 5000; offset += PAGE) { // ограничим до ~5000 файлов на поиск
+                    const { data: files, error: listErr } = await supabase.storage
+                        .from('images')
+                        .list('images', { limit: PAGE, offset, sortBy: { column: 'created_at', order: 'desc' } });
+                    if (listErr) break;
+                    if (!files || files.length === 0) break;
 
-                const file = files?.find(f => {
-                    const ext = path.extname(f.name);
-                    const fileId = path.basename(f.name, ext);
-                    const cleaned = fileId.replace(/-/g, '');
-                    const hash = cleaned.split('').reduce((acc, c) => ((acc << 5) - acc) + c.charCodeAt(0), 0);
-                    const code = Math.abs(hash).toString(36).substring(0, 7).toUpperCase().padEnd(7, '0');
-                    return code === shortCode;
-                });
-                if (file) {
-                    storagePath = file.name.startsWith('images/') ? file.name : `images/${file.name}`;
+                    const found = files.find(f => {
+                        const ext = path.extname(f.name);
+                        const fileId = path.basename(f.name, ext);
+                        const cleaned = fileId.replace(/-/g, '');
+                        const hash = cleaned.split('').reduce((acc, c) => ((acc << 5) - acc) + c.charCodeAt(0), 0);
+                        const code = Math.abs(hash).toString(36).substring(0, 7).toUpperCase().padEnd(7, '0');
+                        return code === shortCode;
+                    });
+                    if (found) {
+                        storagePath = found.name.startsWith('images/') ? found.name : `images/${found.name}`;
+                        break;
+                    }
+                    if (files.length < PAGE) break; // достигли конца
                 }
             }
 
