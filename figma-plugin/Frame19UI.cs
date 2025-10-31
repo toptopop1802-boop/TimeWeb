@@ -71,12 +71,23 @@ namespace Oxide.Plugins
                 CursorEnabled = true
             }, "Overlay", UIName);
 
-                    // Panel: Overlay 1
-                    elements.Add(new CuiPanel
-                    {
-                        Image = { Color = "1 1 1 0.5", Png = "https://bublickrust.ru/i/41RL4ZE" },
-                        RectTransform = { AnchorMin = "0.1667 0.1926", AnchorMax = "0.8333 0.8593" }
-                    }, UIName, "frame_19_overlay_1_0");
+            // Panel: Overlay 1
+            elements.Add(new CuiPanel
+            {
+                Image = { Color = "1 1 1 0.5" },
+                RectTransform = { AnchorMin = "0.1667 0.1926", AnchorMax = "0.8333 0.8593" }
+            }, UIName, "frame_19_overlay_1_0");
+
+            // Image for Overlay 1
+            elements.Add(new CuiElement
+            {
+                Parent = "frame_19_overlay_1_0",
+                Components =
+                {
+                    new CuiRawImageComponent { Url = "https://bublickrust.ru/i/Q0NKJ50" },
+                    new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
+                }
+            });
 
             // Close button
             elements.Add(new CuiButton

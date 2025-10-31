@@ -483,18 +483,33 @@ function generateCSharpElements(node, parentName, level, imageMap) {
         const color = getRGBAColor(child);
         
         code += `${indent}// Panel: ${child.name}\n`;
-        code += `${indent}elements.Add(new CuiPanel\n`;
-        code += `${indent}{\n`;
         
         if (hasImage && imageUrl) {
-          // Используем RawImage для загрузки изображения
-          code += `${indent}    Image = { Color = "${color}", Png = "${imageUrl}" },\n`;
-        } else {
+          // Создаём контейнер панель
+          code += `${indent}elements.Add(new CuiPanel\n`;
+          code += `${indent}{\n`;
           code += `${indent}    Image = { Color = "${color}" },\n`;
+          code += `${indent}    RectTransform = { AnchorMin = "${calculateAnchorMin(child)}", AnchorMax = "${calculateAnchorMax(child)}" }\n`;
+          code += `${indent}}, ${parentName}, "${childName}");\n\n`;
+          
+          // Добавляем RawImage поверх панели для отображения изображения
+          code += `${indent}// Image for ${child.name}\n`;
+          code += `${indent}elements.Add(new CuiElement\n`;
+          code += `${indent}{\n`;
+          code += `${indent}    Parent = "${childName}",\n`;
+          code += `${indent}    Components =\n`;
+          code += `${indent}    {\n`;
+          code += `${indent}        new CuiRawImageComponent { Url = "${imageUrl}" },\n`;
+          code += `${indent}        new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }\n`;
+          code += `${indent}    }\n`;
+          code += `${indent}});\n\n`;
+        } else {
+          code += `${indent}elements.Add(new CuiPanel\n`;
+          code += `${indent}{\n`;
+          code += `${indent}    Image = { Color = "${color}" },\n`;
+          code += `${indent}    RectTransform = { AnchorMin = "${calculateAnchorMin(child)}", AnchorMax = "${calculateAnchorMax(child)}" }\n`;
+          code += `${indent}}, ${parentName}, "${childName}");\n\n`;
         }
-        
-        code += `${indent}    RectTransform = { AnchorMin = "${calculateAnchorMin(child)}", AnchorMax = "${calculateAnchorMax(child)}" }\n`;
-        code += `${indent}}, ${parentName}, "${childName}");\n\n`;
         
         code += generateCSharpElements(child, `"${childName}"`, level + 1, imageMap);
       }
