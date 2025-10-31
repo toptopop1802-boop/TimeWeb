@@ -386,7 +386,7 @@ function updateChart(timeline, view = 'all') {
             borderColor: getAccentRgba(1),
             backgroundColor: buildGradient(ctx, getAccentRgba(1)),
             fill: true,
-            tension: 0.4,
+            tension: 0.5,
             borderWidth: 3,
             pointRadius: 0,
             pointHoverRadius: 6,
@@ -408,7 +408,7 @@ function updateChart(timeline, view = 'all') {
             borderColor: getAccentRgba(1),
             backgroundColor: buildGradient(ctx, getAccentRgba(1)),
             fill: true,
-            tension: 0.4,
+            tension: 0.5,
             borderWidth: 3,
             pointRadius: 0,
             pointHoverRadius: 6,
@@ -426,7 +426,7 @@ function updateChart(timeline, view = 'all') {
             borderColor: getAccentRgba(1),
             backgroundColor: buildGradient(ctx, getAccentRgba(1)),
             fill: true,
-            tension: 0.4,
+            tension: 0.5,
             borderWidth: 3,
             pointRadius: 0,
             pointHoverRadius: 6,
@@ -444,7 +444,7 @@ function updateChart(timeline, view = 'all') {
             borderColor: getAccentRgba(1),
             backgroundColor: buildGradient(ctx, getAccentRgba(1)),
             fill: true,
-            tension: 0.4,
+            tension: 0.5,
             borderWidth: 3,
             pointRadius: 0,
             pointHoverRadius: 6,
@@ -462,7 +462,7 @@ function updateChart(timeline, view = 'all') {
             borderColor: getAccentRgba(1),
             backgroundColor: buildGradient(ctx, getAccentRgba(1)),
             fill: true,
-            tension: 0.4,
+            tension: 0.5,
             borderWidth: 3,
             pointRadius: 0,
             pointHoverRadius: 6,
@@ -480,7 +480,7 @@ function updateChart(timeline, view = 'all') {
             borderColor: getAccentRgba(1),
             backgroundColor: buildGradient(ctx, getAccentRgba(1)),
             fill: true,
-            tension: 0.4,
+            tension: 0.5,
             borderWidth: 3,
             pointRadius: 0,
             pointHoverRadius: 6,
@@ -500,7 +500,7 @@ function updateChart(timeline, view = 'all') {
                 borderColor: '#3b9bf9',
                 backgroundColor: buildGradient(ctx, 'rgba(59, 155, 249, 1)'),
                 fill: true,
-                tension: 0.4,
+                tension: 0.5,
                 borderWidth: 3,
                 pointRadius: 0,
                 pointHoverRadius: 6,
@@ -517,7 +517,7 @@ function updateChart(timeline, view = 'all') {
                 borderColor: '#57F287',
                 backgroundColor: buildSecondaryGradient(ctx, 'rgba(87, 242, 135, 1)'),
                 fill: true,
-                tension: 0.4,
+                tension: 0.5,
                 borderWidth: 2,
                 pointRadius: 0,
                 pointHoverRadius: 5,
@@ -534,7 +534,7 @@ function updateChart(timeline, view = 'all') {
                 borderColor: '#ED4245',
                 backgroundColor: buildSecondaryGradient(ctx, 'rgba(237, 66, 69, 1)'),
                 fill: true,
-                tension: 0.4,
+                tension: 0.5,
                 borderWidth: 2,
                 pointRadius: 0,
                 pointHoverRadius: 5,
@@ -968,7 +968,7 @@ function renderDemoChart(days, type) {
             borderColor: getAccentRgba(1),
             backgroundColor: buildGradient(ctx, getAccentRgba(1)),
             fill: true,
-            tension: 0.4,
+            tension: 0.5,
             borderWidth: 3,
             pointRadius: 0,
             pointHoverRadius: 6,
@@ -987,7 +987,7 @@ function renderDemoChart(days, type) {
             borderColor: getAccentRgba(1),
             backgroundColor: buildGradient(ctx, getAccentRgba(1)),
             fill: true,
-            tension: 0.4,
+            tension: 0.5,
             borderWidth: 3,
             pointRadius: 0,
             pointHoverRadius: 6,
@@ -1229,7 +1229,7 @@ async function loadServerPlayers() {
     try {
         const tbody = document.getElementById('server-table-body');
         if (tbody) {
-            tbody.innerHTML = `<tr><td colspan="8" style="padding:14px; color: var(--text-secondary);">Загрузка...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="9" style="padding:40px; text-align:center; color: var(--text-secondary); font-size:15px;">Загрузка...</td></tr>`;
         }
         const onlineOnly = document.getElementById('server-online-only')?.checked;
         const res = await fetchWithAuth(`/api/rust/players?cb=${Date.now()}`);
@@ -1252,26 +1252,41 @@ async function loadServerPlayers() {
         try {
             const totalOnline = (window.__serverPlayersCache || []).filter(p => p.online).length;
             const badge = document.getElementById('server-online-count');
-            if (badge) badge.textContent = `Онлайн: ${totalOnline}`;
+            if (badge) {
+                const onlineText = badge.querySelector('span:last-child') || badge;
+                if (onlineText === badge) {
+                    badge.textContent = `Онлайн: ${totalOnline}`;
+                } else {
+                    onlineText.textContent = `Онлайн: ${totalOnline}`;
+                }
+            }
         } catch(_) {}
 
-        const rows = players.map(p => {
+        const rows = players.map((p, idx) => {
             const teamSize = Array.isArray(p.team_members) ? p.team_members.length : (p.team_members && p.team_members.members ? p.team_members.members.length : 0);
             const teamLabel = p.team_id ? `${p.team_id} (${teamSize})` : '-';
-            const xyz = [p.x, p.y, p.z].every(v => typeof v === 'number') ? `${p.x.toFixed(1)}, ${p.y.toFixed(1)}, ${p.z.toFixed(1)}` : '-';
-            const status = p.online ? '🟢 Онлайн' : '⚫ Оффлайн';
-            const updated = p.updated_at ? new Date(p.updated_at).toLocaleString() : '';
-            return `<tr data-steamid="${p.steam_id}">
-                <td style=\"padding:10px; border-bottom:1px solid var(--border-color); font-weight:600;\">${escapeHtml(p.name || '-') }</td>
-                <td style=\"padding:10px; border-bottom:1px solid var(--border-color); font-family: monospace;\">${escapeHtml(p.steam_id || '-') }</td>
-                <td style=\"padding:10px; border-bottom:1px solid var(--border-color);\">${escapeHtml(p.ip || '-') }</td>
-                <td style=\"padding:10px; border-bottom:1px solid var(--border-color);\">${escapeHtml(teamLabel)}</td>
-                <td style=\"padding:10px; border-bottom:1px solid var(--border-color);\">${escapeHtml(p.grid || '-') }</td>
-                <td style=\"padding:10px; border-bottom:1px solid var(--border-color);\">${xyz}</td>
-                <td style=\"padding:10px; border-bottom:1px solid var(--border-color);\">${status}</td>
-                <td style=\"padding:10px; border-bottom:1px solid var(--border-color); color: var(--text-secondary);\">${updated}</td>
-                <td style=\"padding:10px; border-bottom:1px solid var(--border-color); text-align:right;\">
-                    <button class=\"btn btn-sm\" data-action=\"team\" data-id=\"${escapeHtml(p.steam_id || '')}\" style=\"padding:6px 10px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; cursor:pointer;\">👥 Состав</button>
+            const xyz = [p.x, p.y, p.z].every(v => typeof v === 'number') ? `${p.x.toFixed(0)}, ${p.y.toFixed(0)}, ${p.z.toFixed(0)}` : '-';
+            const statusColor = p.online ? '#4ade80' : '#94a3b8';
+            const statusBg = p.online ? 'rgba(74,222,128,0.1)' : 'rgba(148,163,184,0.1)';
+            const statusText = p.online ? 'Онлайн' : 'Оффлайн';
+            const updated = p.updated_at ? new Date(p.updated_at).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+            const rowBg = idx % 2 === 0 ? 'var(--bg-primary)' : 'var(--bg-secondary)';
+            return `<tr data-steamid="${p.steam_id}" style="background:${rowBg}; transition:background 0.2s;" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background='${rowBg}'">
+                <td style=\"padding:16px; border-bottom:1px solid var(--border-color); font-weight:600; color:var(--text-primary);\">${escapeHtml(p.name || '-') }</td>
+                <td style=\"padding:16px; border-bottom:1px solid var(--border-color); font-family: monospace; font-size:13px; color:var(--text-secondary);\">${escapeHtml(p.steam_id || '-') }</td>
+                <td style=\"padding:16px; border-bottom:1px solid var(--border-color); font-size:13px; color:var(--text-secondary);\">${escapeHtml(p.ip || '-') }</td>
+                <td style=\"padding:16px; border-bottom:1px solid var(--border-color); font-size:13px; color:var(--text-primary);\">${escapeHtml(teamLabel)}</td>
+                <td style=\"padding:16px; border-bottom:1px solid var(--border-color); font-size:13px; color:var(--text-primary); font-weight:600;\">${escapeHtml(p.grid || '-') }</td>
+                <td style=\"padding:16px; border-bottom:1px solid var(--border-color); font-family:monospace; font-size:12px; color:var(--text-secondary);\">${xyz}</td>
+                <td style=\"padding:16px; border-bottom:1px solid var(--border-color);\">
+                    <span style=\"display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:8px; background:${statusBg}; color:${statusColor}; font-weight:600; font-size:12px;\">
+                        <span style=\"width:8px;height:8px;background:${statusColor};border-radius:50%;display:inline-block;\"></span>
+                        ${statusText}
+                    </span>
+                </td>
+                <td style=\"padding:16px; border-bottom:1px solid var(--border-color); color: var(--text-secondary); font-size:12px;\">${updated}</td>
+                <td style=\"padding:16px; border-bottom:1px solid var(--border-color); text-align:right;\">
+                    ${p.team_id || Array.isArray(p.team_members) ? `<button class=\"btn btn-sm\" data-action=\"team\" data-id=\"${escapeHtml(p.steam_id || '')}\" style=\"padding:8px 14px; background:linear-gradient(135deg,var(--accent-primary),var(--accent-secondary)); color:#fff; border:none; border-radius:10px; cursor:pointer; font-weight:600; font-size:13px; transition:transform 0.2s, box-shadow 0.2s; box-shadow:0 2px 8px rgba(59,155,249,0.2);\" onmouseover=\"this.style.transform='scale(1.05)';this.style.boxShadow='0 4px 12px rgba(59,155,249,0.3)'\" onmouseout=\"this.style.transform='scale(1)';this.style.boxShadow='0 2px 8px rgba(59,155,249,0.2)'\">👥 Состав</button>` : '-'}
                 </td>
             </tr>`;
         });
@@ -1318,31 +1333,85 @@ function openTeamModal(steamId) {
     const p = players.find(x => String(x.steam_id) === String(steamId));
     if (!p) return;
     const teamId = p.team_id || null;
-    let members = [];
+    let allMembers = [];
+    
+    // Собираем всех участников команды
     if (teamId) {
-        members = players.filter(x => x.team_id && String(x.team_id) === String(teamId));
+        // Если есть team_id, ищем всех игроков с таким же team_id
+        const teamPlayers = players.filter(x => x.team_id && String(x.team_id) === String(teamId));
+        allMembers = teamPlayers;
+        
+        // Также добавляем участников из team_members если они есть
+        if (Array.isArray(p.team_members)) {
+            p.team_members.forEach(m => {
+                const memberSteamId = String(m.steamId || m.steamid || m.id || '');
+                const foundInCache = allMembers.find(x => String(x.steam_id) === memberSteamId);
+                if (!foundInCache) {
+                    // Добавляем участника из team_members даже если его нет в списке онлайн игроков
+                    allMembers.push({
+                        name: m.name || '-',
+                        steam_id: memberSteamId || '-',
+                        online: false // по умолчанию офлайн, если не найден в кеше
+                    });
+                }
+            });
+        }
     } else if (Array.isArray(p.team_members)) {
-        members = p.team_members.map(m => {
-            const found = players.find(x => String(x.steam_id) === String(m.steamId || m.steamid || m.id));
-            return found || { name: m.name || '-', steam_id: m.steamId || m.id || '-', online: false };
+        // Если нет team_id, но есть team_members, показываем всех из team_members
+        allMembers = p.team_members.map(m => {
+            const memberSteamId = String(m.steamId || m.steamid || m.id || '');
+            const found = players.find(x => String(x.steam_id) === memberSteamId);
+            if (found) {
+                return found; // Используем данные из кеша
+            }
+            // Возвращаем участника из team_members даже если его нет в кеше
+            return { 
+                name: m.name || '-', 
+                steam_id: memberSteamId || '-', 
+                online: false 
+            };
         });
     }
-    if (members.length === 0) members = [p];
+    
+    // Если нет команды вообще, показываем только этого игрока
+    if (allMembers.length === 0) allMembers = [p];
+    
+    // Убираем дубликаты по steam_id
+    const uniqueMembers = [];
+    const seenIds = new Set();
+    allMembers.forEach(m => {
+        const id = String(m.steam_id || m.steamId || '-');
+        if (!seenIds.has(id)) {
+            seenIds.add(id);
+            uniqueMembers.push(m);
+        }
+    });
 
     const body = document.getElementById('server-team-body');
     if (body) {
-        const rows = members.map(m => {
-            const online = m.online ? '🟢' : '⚫';
+        const rows = uniqueMembers.map(m => {
+            const isOnline = m.online === true;
+            const statusColor = isOnline ? '#4ade80' : '#94a3b8';
+            const statusBg = isOnline ? 'rgba(74,222,128,0.1)' : 'rgba(148,163,184,0.1)';
+            const statusText = isOnline ? 'Онлайн' : 'Оффлайн';
             const name = escapeHtml(m.name || '-');
             const sid = escapeHtml(m.steam_id || m.steamId || '-');
-            return `<div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--border-color);">
-                <div style="display:flex; align-items:center; gap:10px; font-weight:600;">${online}<span>${name}</span></div>
-                <div style="font-family:monospace; color: var(--text-secondary);">${sid}</div>
+            return `<div style="display:flex; justify-content:space-between; align-items:center; padding:14px 16px; border-bottom:1px solid var(--border-color); transition:background 0.2s;" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background='transparent'">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span style="width:10px;height:10px;background:${statusColor};border-radius:50%;display:inline-block;box-shadow:0 0 8px ${statusColor}80;"></span>
+                    <span style="font-weight:600; color:var(--text-primary); font-size:15px;">${name}</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <span style="padding:6px 12px; border-radius:8px; background:${statusBg}; color:${statusColor}; font-weight:600; font-size:12px;">${statusText}</span>
+                    <span style="font-family:monospace; color: var(--text-secondary); font-size:12px;">${sid}</span>
+                </div>
             </div>`;
         });
-        body.innerHTML = `<div style="display:flex; flex-direction:column; gap:4px;">${rows.join('')}</div>`;
+        body.innerHTML = `<div style="display:flex; flex-direction:column; max-height:400px; overflow-y:auto;">${rows.join('')}</div>`;
     }
     const modal = document.getElementById('server-team-modal');
+    const title = document.getElementById('server-team-title');
+    if (title) title.textContent = `Состав команды: ${escapeHtml(p.name || 'Неизвестно')}`;
     if (modal) modal.style.display = 'block';
 }
 
@@ -3154,7 +3223,7 @@ function renderAPIChart(data) {
                     backgroundColor: primaryColor + '20',
                     borderWidth: 2,
                     fill: true,
-                    tension: 0.4,
+                    tension: 0.5,
                     pointRadius: 3,
                     pointHoverRadius: 6
                 },
@@ -3165,7 +3234,7 @@ function renderAPIChart(data) {
                     backgroundColor: secondaryColor + '20',
                     borderWidth: 2,
                     fill: true,
-                    tension: 0.4,
+                    tension: 0.5,
                     pointRadius: 3,
                     pointHoverRadius: 6
                 }

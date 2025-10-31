@@ -26,8 +26,8 @@
     .meta{padding:14px;border-top:2px solid var(--border)}
     .meta .name{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text);margin-bottom:8px}
     .meta .row{justify-content:space-between;color:var(--muted);font-size:12px;margin-top:6px}
-    .btns{display:flex;gap:8px;margin-top:12px}
-    button{background:linear-gradient(135deg,var(--primary),var(--accent));border:none;color:#fff;border-radius:10px;padding:10px 14px;cursor:pointer;font-weight:600;transition:opacity .2s,transform .1s;font-size:13px}
+    .btns{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+    button{background:linear-gradient(135deg,var(--primary),var(--accent));border:none;color:#fff;border-radius:10px;padding:10px 14px;cursor:pointer;font-weight:600;transition:opacity .2s,transform .1s;font-size:13px;white-space:nowrap;flex:1;min-width:80px}
     button:hover{opacity:.85;transform:scale(1.02)}
     .copy{background:#fff;color:var(--primary);border:2px solid var(--primary)}
     .copy:hover{background:var(--primary);color:#fff}
@@ -52,7 +52,7 @@
         return false;
       }
     }
-    let _offset = 0; let _limit = 60; let _loading = false; let _done = false; let _items = []; let _sort = 'created_at:desc';
+    let _offset = 0; let _limit = 60; let _loading = false; let _done = false; let _items = []; let _sort = 'created_at:desc'; let _totalCount = 0;
     function authHeader(){
       const token = localStorage.getItem('auth_token');
       return token ? { 'Authorization': `Bearer ${token}` } : {};
@@ -66,6 +66,7 @@
       });
       if(!res.ok) throw new Error('Failed to fetch images');
       const data = await res.json();
+      if (data.count !== undefined) _totalCount = data.count;
       _offset += data.items.length;
       if (!data.items.length) _done = true;
       _loading = false;
@@ -97,7 +98,8 @@
           </div>`;
         grid.appendChild(card);
       }
-      document.getElementById('count').textContent = document.getElementById('grid').children.length;
+      const countEl = document.getElementById('count');
+      if (countEl) countEl.textContent = _totalCount > 0 ? _totalCount : document.getElementById('grid').children.length;
     }
     async function init(){
       const ok = await ensureAdmin();
@@ -157,10 +159,10 @@
         const counts = data.timeline.map(x=>x.count);
         const bytes = data.timeline.map(x=>Math.round(x.bytes/1024/1024));
         const ctx = document.getElementById('chart').getContext('2d');
-        new Chart(ctx, { type:'bar', data:{ labels, datasets:[
-          { label:'Изображений', data:counts, backgroundColor:'rgba(196,5,82,.6)' },
-          { label:'MB', data:bytes, type:'line', yAxisID:'y1', borderColor:'#6ac1ff', backgroundColor:'rgba(106,193,255,.3)' }
-        ]}, options:{ responsive:true, scales:{ y:{ beginAtZero:true }, y1:{ position:'right', beginAtZero:true }}} });
+        new Chart(ctx, { type:'line', data:{ labels, datasets:[
+          { label:'Изображений', data:counts, borderColor:'rgba(196,5,82,1)', backgroundColor:'rgba(196,5,82,.15)', fill:true, tension:0.4, pointRadius:3, pointHoverRadius:5 },
+          { label:'MB', data:bytes, yAxisID:'y1', borderColor:'#6ac1ff', backgroundColor:'rgba(106,193,255,.15)', fill:true, tension:0.4, pointRadius:3, pointHoverRadius:5 }
+        ]}, options:{ responsive:true, plugins:{ legend:{ display:true }}, elements:{ line:{ tension:0.4 }}, scales:{ y:{ beginAtZero:true }, y1:{ position:'right', beginAtZero:true }}} });
         const totals = document.getElementById('totalsAll');
         if (totals) totals.textContent = `Всего за период: ${data.totalCount} шт • ${fmtSize(data.totalBytes)}`;
       }catch(e){/* ignore */}

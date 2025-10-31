@@ -67,7 +67,7 @@
                     <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polyline points="16 18 22 12 16 6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"></polyline><polyline points="8 6 2 12 8 18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"></polyline></svg>
                     <span class="nav-text">API</span>
                 </a>
-                <a href="#server" class="nav-link" data-page="server">
+                <a href="#server" class="nav-link" data-page="server" data-admin-only="true">
                     <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <rect x="3" y="4" width="18" height="6" rx="2" ry="2" stroke-width="2" fill="none"/>
                         <rect x="3" y="14" width="18" height="6" rx="2" ry="2" stroke-width="2" fill="none"/>
@@ -921,45 +921,53 @@ formData.<span style="color: #dcdcaa;">append</span>(<span style="color: #ce9178
 
             <!-- Rust Server Page -->
             <div id="page-server" class="page" style="display:none;">
-                <header class="page-header">
-                    <h2>
-                        <svg class="h2-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:28px;height:28px;vertical-align:-6px;margin-right:8px;">
-                            <rect x="3" y="4" width="18" height="6" rx="2" ry="2" stroke-width="2" fill="none"/>
-                            <rect x="3" y="14" width="18" height="6" rx="2" ry="2" stroke-width="2" fill="none"/>
-                        </svg>
-                        Сервер (Rust)
-                    </h2>
-                    <div class="header-controls" style="display:flex; align-items:center; gap:10px;">
-                        <span id="server-online-count" style="padding:6px 10px; background: var(--bg-secondary); border:1px solid var(--border-color); border-radius: 8px; font-weight:700; color: var(--text-primary);">Онлайн: 0</span>
-                        <button id="server-refresh-btn" class="btn btn-primary">🔄 Обновить</button>
+                <header class="page-header" style="margin-bottom:24px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+                        <h2 style="margin:0; display:flex; align-items:center; gap:12px;">
+                            <svg class="h2-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:32px;height:32px;color:var(--accent-primary);">
+                                <rect x="3" y="4" width="18" height="6" rx="2" ry="2" stroke-width="2" fill="none"/>
+                                <rect x="3" y="14" width="18" height="6" rx="2" ry="2" stroke-width="2" fill="none"/>
+                                <circle cx="8" cy="7" r="1.5" fill="currentColor"/>
+                                <circle cx="8" cy="17" r="1.5" fill="currentColor"/>
+                            </svg>
+                            <span>Сервер Rust</span>
+                        </h2>
+                        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                            <div id="server-online-count" style="padding:10px 18px; background:linear-gradient(135deg,var(--accent-primary),var(--accent-secondary)); border-radius:12px; font-weight:700; color:#fff; box-shadow:0 4px 12px rgba(59,155,249,0.3); display:flex; align-items:center; gap:8px;">
+                                <span style="width:10px;height:10px;background:#4ade80;border-radius:50%;display:inline-block;box-shadow:0 0 8px rgba(74,222,128,0.6);"></span>
+                                Онлайн: 0
+                            </div>
+                            <button id="server-refresh-btn" class="btn btn-primary" style="box-shadow:0 4px 12px rgba(59,155,249,0.2);">🔄 Обновить</button>
+                        </div>
                     </div>
                 </header>
 
-                <div class="card" style="padding: 0; overflow: hidden;">
-                    <div style="padding: 12px; border-bottom: 1px solid var(--border-color); display:flex; gap:10px; align-items:center;">
-                        <input id="server-search" type="text" placeholder="Поиск по нику / SteamID / IP / квадрат" style="flex:1; padding:10px; background: var(--bg-secondary); border:1px solid var(--border-color); border-radius:8px;">
-                        <label style="display:flex; align-items:center; gap:6px; font-size:13px; color: var(--text-secondary);">
-                            <input id="server-online-only" type="checkbox"> Только онлайн
+                <div class="card" style="padding:0; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,0.08); border:2px solid var(--border-color);">
+                    <div style="padding:20px; background:var(--bg-secondary); border-bottom:2px solid var(--border-color); display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
+                        <input id="server-search" type="text" placeholder="🔍 Поиск по нику, SteamID, IP или квадрату..." style="flex:1; min-width:250px; padding:14px 18px; background:#fff; border:2px solid var(--border-color); border-radius:12px; font-size:14px; transition:border-color 0.2s, box-shadow 0.2s; outline:none;" onfocus="this.style.borderColor='var(--accent-primary)';this.style.boxShadow='0 0 0 4px rgba(59,155,249,0.1)'" onblur="this.style.borderColor='var(--border-color)';this.style.boxShadow='none'">
+                        <label style="display:flex; align-items:center; gap:10px; padding:12px 18px; background:#fff; border:2px solid var(--border-color); border-radius:12px; cursor:pointer; transition:all 0.2s; font-size:14px; font-weight:600; color:var(--text-primary);" onmouseover="this.style.borderColor='var(--accent-primary)';this.style.boxShadow='0 0 0 4px rgba(59,155,249,0.1)'" onmouseout="this.style.borderColor='var(--border-color)';this.style.boxShadow='none'">
+                            <input id="server-online-only" type="checkbox" style="width:18px;height:18px;cursor:pointer;"> 
+                            <span>Только онлайн</span>
                         </label>
                     </div>
 
-                    <div style="overflow:auto;">
-                        <table style="width:100%; border-collapse: collapse;">
+                    <div style="overflow-x:auto; max-height:70vh;">
+                        <table style="width:100%; border-collapse:separate; border-spacing:0;">
                             <thead>
-                                <tr style="background: var(--bg-secondary); text-align:left;">
-                                    <th style="padding:10px; border-bottom:1px solid var(--border-color);">Ник</th>
-                                    <th style="padding:10px; border-bottom:1px solid var(--border-color);">SteamID</th>
-                                    <th style="padding:10px; border-bottom:1px solid var(--border-color);">IP</th>
-                                    <th style="padding:10px; border-bottom:1px solid var(--border-color);">Команда</th>
-                                    <th style="padding:10px; border-bottom:1px solid var(--border-color);">Квадрат</th>
-                                    <th style="padding:10px; border-bottom:1px solid var(--border-color);">XYZ</th>
-                                    <th style="padding:10px; border-bottom:1px solid var(--border-color);">Статус</th>
-                                    <th style="padding:10px; border-bottom:1px solid var(--border-color);">Обновлено</th>
-                                    <th style="padding:10px; border-bottom:1px solid var(--border-color); text-align:right;">Действия</th>
+                                <tr style="background:linear-gradient(135deg,var(--bg-secondary),var(--bg-primary)); position:sticky; top:0; z-index:2;">
+                                    <th style="padding:16px; border-bottom:2px solid var(--border-color); text-align:left; font-weight:700; color:var(--text-primary); font-size:13px; text-transform:uppercase; letter-spacing:0.5px;">Ник</th>
+                                    <th style="padding:16px; border-bottom:2px solid var(--border-color); text-align:left; font-weight:700; color:var(--text-primary); font-size:13px; text-transform:uppercase; letter-spacing:0.5px;">SteamID</th>
+                                    <th style="padding:16px; border-bottom:2px solid var(--border-color); text-align:left; font-weight:700; color:var(--text-primary); font-size:13px; text-transform:uppercase; letter-spacing:0.5px;">IP</th>
+                                    <th style="padding:16px; border-bottom:2px solid var(--border-color); text-align:left; font-weight:700; color:var(--text-primary); font-size:13px; text-transform:uppercase; letter-spacing:0.5px;">Команда</th>
+                                    <th style="padding:16px; border-bottom:2px solid var(--border-color); text-align:left; font-weight:700; color:var(--text-primary); font-size:13px; text-transform:uppercase; letter-spacing:0.5px;">Квадрат</th>
+                                    <th style="padding:16px; border-bottom:2px solid var(--border-color); text-align:left; font-weight:700; color:var(--text-primary); font-size:13px; text-transform:uppercase; letter-spacing:0.5px;">Координаты</th>
+                                    <th style="padding:16px; border-bottom:2px solid var(--border-color); text-align:left; font-weight:700; color:var(--text-primary); font-size:13px; text-transform:uppercase; letter-spacing:0.5px;">Статус</th>
+                                    <th style="padding:16px; border-bottom:2px solid var(--border-color); text-align:left; font-weight:700; color:var(--text-primary); font-size:13px; text-transform:uppercase; letter-spacing:0.5px;">Обновлено</th>
+                                    <th style="padding:16px; border-bottom:2px solid var(--border-color); text-align:right; font-weight:700; color:var(--text-primary); font-size:13px; text-transform:uppercase; letter-spacing:0.5px;">Действия</th>
                                 </tr>
                             </thead>
                             <tbody id="server-table-body">
-                                <tr><td colspan="8" style="padding:14px; color: var(--text-secondary);">Загрузка...</td></tr>
+                                <tr><td colspan="9" style="padding:40px; text-align:center; color:var(--text-secondary); font-size:15px;">Загрузка...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -1010,7 +1018,7 @@ formData.<span style="color: #dcdcaa;">append</span>(<span style="color: #ce9178
     <div id="server-team-modal" class="modal">
         <div class="modal-content" style="max-width: 560px;">
             <div class="modal-header">
-                <h3>👥 Состав команды</h3>
+                <h3 id="server-team-title">👥 Состав команды</h3>
                 <button class="modal-close" id="server-team-close">&times;</button>
             </div>
             <div id="server-team-body" class="confirm-modal-body" style="display:block;">

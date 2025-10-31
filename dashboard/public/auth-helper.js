@@ -160,7 +160,7 @@ function setupRoleBasedUI(authData) {
         
         // Перенаправить на карты если пытается открыть админ-страницу
         const hash = window.location.hash;
-        if (hash === '#analytics' || hash === '#messages' || hash === '#channels' || hash === '#admin' || hash === '#members') {
+        if (hash === '#analytics' || hash === '#messages' || hash === '#channels' || hash === '#admin' || hash === '#members' || hash === '#server') {
             console.warn('⛔ Доступ запрещен. Требуются права администратора.');
             window.location.hash = '#maps';
         }
@@ -170,7 +170,7 @@ function setupRoleBasedUI(authData) {
     window.addEventListener('hashchange', () => {
         if (!isAdmin(authData)) {
             const hash = window.location.hash;
-            if (hash === '#analytics' || hash === '#messages' || hash === '#channels' || hash === '#admin' || hash === '#members') {
+            if (hash === '#analytics' || hash === '#messages' || hash === '#channels' || hash === '#admin' || hash === '#members' || hash === '#server') {
                 console.warn('⛔ Доступ запрещен. Требуются права администратора.');
                 alert('Доступ запрещен. Требуются права администратора.');
                 window.location.hash = '#maps';
