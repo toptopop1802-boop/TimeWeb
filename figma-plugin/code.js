@@ -156,15 +156,27 @@ async function uploadImages(images) {
     });
 
     try {
-      // Создаем FormData
       figma.ui.postMessage({
         type: 'log',
-        message: `   🔨 Создаю FormData...`
+        message: `   🔨 Создаю multipart/form-data...`
       });
       
-      const formData = new FormData();
-      const blob = new Blob([img.bytes], { type: 'image/png' });
-      formData.append('image', blob, imageName);
+      // Создаем multipart/form-data вручную (FormData недоступен в Figma Plugin)
+      const boundary = '----FigmaBoundary' + Date.now();
+      
+      // Формируем тело запроса
+      const header = `------${boundary}\r\nContent-Disposition: form-data; name="image"; filename="${imageName}"\r\nContent-Type: image/png\r\n\r\n`;
+      const footer = `\r\n------${boundary}--\r\n`;
+      
+      // Конвертируем строки в Uint8Array
+      const headerBytes = new TextEncoder().encode(header);
+      const footerBytes = new TextEncoder().encode(footer);
+      
+      // Объединяем все части
+      const bodyBytes = new Uint8Array(headerBytes.length + img.bytes.length + footerBytes.length);
+      bodyBytes.set(headerBytes, 0);
+      bodyBytes.set(img.bytes, headerBytes.length);
+      bodyBytes.set(footerBytes, headerBytes.length + img.bytes.length);
 
       figma.ui.postMessage({
         type: 'log',
@@ -180,9 +192,10 @@ async function uploadImages(images) {
       const response = await fetch(API_URL, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${API_TOKEN}`
+          'Authorization': `Bearer ${API_TOKEN}`,
+          'Content-Type': `multipart/form-data; boundary=----${boundary}`
         },
-        body: formData
+        body: bodyBytes
       });
 
       figma.ui.postMessage({
