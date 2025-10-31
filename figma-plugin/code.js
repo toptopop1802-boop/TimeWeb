@@ -1,10 +1,10 @@
-// Figma Plugin: Frame to HTML/CSS Exporter
+// Figma Plugin: Frame to Rust CUI Exporter
 // API Token встроен
 const API_TOKEN = '58076245d1f7985852fc5dc77d2da0294dac4c714f3cdc773029d470ccd10511';
 const API_URL = 'https://bublickrust.ru/api/images/upload';
 
 // Показать UI
-figma.showUI(__html__, { width: 400, height: 600, themeColors: true });
+figma.showUI(__html__, { width: 450, height: 650, themeColors: true });
 
 // Обработка сообщений от UI
 figma.ui.onmessage = async (msg) => {
@@ -44,35 +44,56 @@ async function generateCode() {
 
   try {
     // Обрабатываем изображения
+    figma.ui.postMessage({
+      type: 'log',
+      message: '🔍 Поиск изображений в фрейме...'
+    });
+    
     const images = await processImages(node);
     
     figma.ui.postMessage({
-      type: 'status',
-      message: `Найдено изображений: ${images.length}`
+      type: 'log',
+      message: `📸 Найдено изображений: ${images.length}`
     });
 
     // Загружаем изображения на сервер
     const uploadedImages = await uploadImages(images);
     
     figma.ui.postMessage({
-      type: 'status',
-      message: `Загружено изображений: ${uploadedImages.length}`
+      type: 'log',
+      message: `✅ Загружено изображений: ${uploadedImages.length}/${images.length}`
     });
 
-    // Генерируем HTML/CSS
-    const { html, css } = generateHTMLCSS(node, uploadedImages);
+    // Генерируем Rust CUI код
+    figma.ui.postMessage({
+      type: 'log',
+      message: '⚙️ Генерация CUI кода...'
+    });
+    
+    const cuiCode = generateRustCUI(node, uploadedImages);
+    const csharpCode = generateCSharpCode(node);
 
     // Отправляем результат в UI
     figma.ui.postMessage({
       type: 'code-generated',
-      html: html,
-      css: css
+      cui: cuiCode,
+      csharp: csharpCode
+    });
+
+    figma.ui.postMessage({
+      type: 'log',
+      message: '🎉 Генерация завершена!'
     });
 
   } catch (error) {
     figma.ui.postMessage({
       type: 'error',
-      message: `Ошибка: ${error.message}`
+      message: `❌ Ошибка: ${error.message}`
+    });
+    
+    figma.ui.postMessage({
+      type: 'log',
+      message: `❌ Детали ошибки: ${error.stack || error.message}`
     });
   }
 }
@@ -115,19 +136,45 @@ async function processImages(node) {
 async function uploadImages(images) {
   const uploaded = [];
 
+  figma.ui.postMessage({
+    type: 'log',
+    message: `📤 Начинаю загрузку ${images.length} изображений...`
+  });
+
   for (let i = 0; i < images.length; i++) {
     const img = images[i];
+    const imageName = `figma-image-${img.hash.substring(0, 8)}.png`;
     
     figma.ui.postMessage({
-      type: 'status',
-      message: `Загружаю изображение ${i + 1}/${images.length}...`
+      type: 'log',
+      message: `📤 [${i + 1}/${images.length}] Загружаю: ${imageName}`
+    });
+
+    figma.ui.postMessage({
+      type: 'log',
+      message: `   📊 Размер: ${(img.bytes.length / 1024).toFixed(2)} KB`
     });
 
     try {
       // Создаем FormData
+      figma.ui.postMessage({
+        type: 'log',
+        message: `   🔨 Создаю FormData...`
+      });
+      
       const formData = new FormData();
       const blob = new Blob([img.bytes], { type: 'image/png' });
-      formData.append('image', blob, `figma-image-${img.hash}.png`);
+      formData.append('image', blob, imageName);
+
+      figma.ui.postMessage({
+        type: 'log',
+        message: `   🌐 Отправка POST на: ${API_URL}`
+      });
+
+      figma.ui.postMessage({
+        type: 'log',
+        message: `   🔑 Authorization: Bearer ${API_TOKEN.substring(0, 20)}...`
+      });
 
       // Отправляем на API
       const response = await fetch(API_URL, {
@@ -138,11 +185,27 @@ async function uploadImages(images) {
         body: formData
       });
 
+      figma.ui.postMessage({
+        type: 'log',
+        message: `   📥 Статус: ${response.status} ${response.statusText}`
+      });
+
       if (!response.ok) {
+        const errorText = await response.text();
+        figma.ui.postMessage({
+          type: 'log',
+          message: `   ❌ Ошибка: ${errorText.substring(0, 200)}`
+        });
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const responseText = await response.text();
+      figma.ui.postMessage({
+        type: 'log',
+        message: `   📄 Ответ (${responseText.length} символов): ${responseText.substring(0, 100)}...`
+      });
+
+      const data = JSON.parse(responseText);
 
       if (data.success) {
         uploaded.push({
@@ -152,8 +215,8 @@ async function uploadImages(images) {
         });
         
         figma.ui.postMessage({
-          type: 'status',
-          message: `✅ Загружено: ${data.directUrl}`
+          type: 'log',
+          message: `   ✅ Успех! URL: ${data.directUrl}`
         });
       } else {
         throw new Error(data.error || 'Неизвестная ошибка');
@@ -161,29 +224,148 @@ async function uploadImages(images) {
 
     } catch (error) {
       figma.ui.postMessage({
+        type: 'log',
+        message: `   ❌ Ошибка: ${error.message}`
+      });
+      
+      figma.ui.postMessage({
         type: 'error',
-        message: `Ошибка загрузки изображения: ${error.message}`
+        message: `Не удалось загрузить изображение ${i + 1}: ${error.message}`
       });
     }
   }
 
+  figma.ui.postMessage({
+    type: 'log',
+    message: `📦 Итого загружено: ${uploaded.length}/${images.length} изображений`
+  });
+
   return uploaded;
 }
 
-// Генерация HTML/CSS кода
-function generateHTMLCSS(node, uploadedImages) {
-  let html = '';
-  let css = '';
+// Генерация Rust CUI (JSON)
+function generateRustCUI(node, uploadedImages) {
   const imageMap = new Map(uploadedImages.map(img => [img.hash, img.url]));
+  const cuiElements = [];
+  
+  // Рекурсивно обходим элементы
+  traverseForCUI(node, cuiElements, imageMap);
+  
+  const cui = {
+    name: sanitizeClassName(node.name),
+    parent: "Overlay",
+    components: cuiElements
+  };
+  
+  return JSON.stringify(cui, null, 2);
+}
 
-  // Генерируем CSS для корневого фрейма
-  const frameClass = sanitizeClassName(node.name);
-  css += generateCSS(node, frameClass, true);
+function traverseForCUI(node, elements, imageMap, parentName = "root") {
+  const element = {
+    name: sanitizeClassName(`${parentName}_${node.name}`),
+    parent: parentName
+  };
+  
+  // Определяем тип элемента
+  if (node.type === 'TEXT') {
+    element.components = [{
+      type: "UnityEngine.UI.Text",
+      text: node.characters || "",
+      fontSize: node.fontSize || 14,
+      color: getFillColor(node),
+      align: getTextAlign(node)
+    }];
+  } else if (hasImageFill(node, imageMap)) {
+    const imageUrl = getImageUrl(node, imageMap);
+    element.components = [{
+      type: "UnityEngine.UI.RawImage",
+      url: imageUrl,
+      color: "1 1 1 1"
+    }];
+  } else {
+    element.components = [{
+      type: "UnityEngine.UI.Image",
+      color: getFillColor(node) || "1 1 1 0.5"
+    }];
+  }
+  
+  // Позиция и размер
+  element.components.push({
+    type: "RectTransform",
+    anchormin: calculateAnchorMin(node),
+    anchormax: calculateAnchorMax(node),
+    offsetmin: "0 0",
+    offsetmax: "0 0"
+  });
+  
+  elements.push(element);
+  
+  // Обрабатываем детей
+  if ('children' in node) {
+    for (const child of node.children) {
+      traverseForCUI(child, elements, imageMap, element.name);
+    }
+  }
+}
 
-  // Генерируем HTML
-  html += generateHTML(node, frameClass, imageMap);
+// Генерация C# кода для Rust
+function generateCSharpCode(node) {
+  const className = toPascalCase(sanitizeClassName(node.name));
+  let code = `using Oxide.Game.Rust.Cui;\nusing System.Collections.Generic;\nusing UnityEngine;\n\n`;
+  code += `public class ${className}UI\n{\n`;
+  code += `    public static void Show(BasePlayer player)\n    {\n`;
+  code += `        var elements = new CuiElementContainer();\n\n`;
+  code += `        // Main panel\n`;
+  code += `        elements.Add(new CuiPanel\n`;
+  code += `        {\n`;
+  code += `            Image = { Color = "0 0 0 0.8" },\n`;
+  code += `            RectTransform = { AnchorMin = "0 0", AnchorMax = "1 1" },\n`;
+  code += `            CursorEnabled = true\n`;
+  code += `        }, "Overlay", "${className}");\n\n`;
+  
+  code += generateCSharpElements(node, `"${className}"`, 1);
+  
+  code += `        CuiHelper.AddUi(player, elements);\n`;
+  code += `    }\n\n`;
+  code += `    public static void Close(BasePlayer player)\n    {\n`;
+  code += `        CuiHelper.DestroyUi(player, "${className}");\n`;
+  code += `    }\n`;
+  code += `}\n`;
+  
+  return code;
+}
 
-  return { html, css };
+function generateCSharpElements(node, parentName, level) {
+  let code = '';
+  const indent = '        ' + '    '.repeat(level);
+  
+  if ('children' in node) {
+    for (let i = 0; i < node.children.length; i++) {
+      const child = node.children[i];
+      const childName = sanitizeClassName(`${node.name}_${child.name}_${i}`);
+      
+      if (child.type === 'TEXT') {
+        code += `${indent}// Text: ${child.name}\n`;
+        code += `${indent}elements.Add(new CuiLabel\n`;
+        code += `${indent}{\n`;
+        code += `${indent}    Text = { Text = "${child.characters || ''}", FontSize = ${child.fontSize || 14}, Align = TextAnchor.MiddleCenter },\n`;
+        code += `${indent}    RectTransform = { AnchorMin = "${calculateAnchorMin(child)}", AnchorMax = "${calculateAnchorMax(child)}" }\n`;
+        code += `${indent}}, ${parentName});\n\n`;
+      } else {
+        const color = getRGBAColor(child);
+        code += `${indent}// Panel: ${child.name}\n`;
+        code += `${indent}elements.Add(new CuiPanel\n`;
+        code += `${indent}{\n`;
+        code += `${indent}    Image = { Color = "${color}" },\n`;
+        code += `${indent}    RectTransform = { AnchorMin = "${calculateAnchorMin(child)}", AnchorMax = "${calculateAnchorMax(child)}" }\n`;
+        code += `${indent}}, ${parentName}, "${childName}");\n\n`;
+        
+        code += generateCSharpElements(child, `"${childName}"`, level + 1);
+      }
+    }
+  }
+  
+  return code;
 }
 
 // Генерация HTML элемента
@@ -330,19 +512,104 @@ function generateCSS(node, className, isRoot = false) {
   return css;
 }
 
-// Утилиты
-function rgbToHex(rgb) {
-  const r = Math.round(rgb.r * 255);
-  const g = Math.round(rgb.g * 255);
-  const b = Math.round(rgb.b * 255);
-  return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
-}
+// ===== UTILITY FUNCTIONS FOR RUST CUI =====
 
 function sanitizeClassName(name) {
   return name
     .toLowerCase()
-    .replace(/[^a-z0-9-]/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .replace(/-+/g, '-');
+    .replace(/[^a-z0-9_]/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .replace(/_+/g, '_');
+}
+
+function toPascalCase(str) {
+  return str
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join('');
+}
+
+function getFillColor(node) {
+  if ('fills' in node && Array.isArray(node.fills) && node.fills.length > 0) {
+    const fill = node.fills[0];
+    if (fill.type === 'SOLID') {
+      const r = fill.color.r;
+      const g = fill.color.g;
+      const b = fill.color.b;
+      const a = fill.opacity !== undefined ? fill.opacity : 1;
+      return `${r.toFixed(2)} ${g.toFixed(2)} ${b.toFixed(2)} ${a.toFixed(2)}`;
+    }
+  }
+  return "1 1 1 1";
+}
+
+function getRGBAColor(node) {
+  if ('fills' in node && Array.isArray(node.fills) && node.fills.length > 0) {
+    const fill = node.fills[0];
+    if (fill.type === 'SOLID') {
+      const r = fill.color.r.toFixed(3);
+      const g = fill.color.g.toFixed(3);
+      const b = fill.color.b.toFixed(3);
+      const a = (fill.opacity !== undefined ? fill.opacity : 1).toFixed(3);
+      return `${r} ${g} ${b} ${a}`;
+    }
+  }
+  return "1 1 1 0.5";
+}
+
+function getTextAlign(node) {
+  if ('textAlignHorizontal' in node) {
+    const align = node.textAlignHorizontal;
+    if (align === 'CENTER') return "MiddleCenter";
+    if (align === 'LEFT') return "MiddleLeft";
+    if (align === 'RIGHT') return "MiddleRight";
+  }
+  return "MiddleCenter";
+}
+
+function hasImageFill(node, imageMap) {
+  if ('fills' in node && Array.isArray(node.fills)) {
+    for (const fill of node.fills) {
+      if (fill.type === 'IMAGE' && fill.imageHash && imageMap.has(fill.imageHash)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+function getImageUrl(node, imageMap) {
+  if ('fills' in node && Array.isArray(node.fills)) {
+    for (const fill of node.fills) {
+      if (fill.type === 'IMAGE' && fill.imageHash && imageMap.has(fill.imageHash)) {
+        return imageMap.get(fill.imageHash);
+      }
+    }
+  }
+  return "";
+}
+
+function calculateAnchorMin(node) {
+  const parent = node.parent;
+  if (!parent || !('width' in parent) || !('height' in parent)) {
+    return "0 0";
+  }
+  
+  const x = node.x / parent.width;
+  const y = 1 - ((node.y + node.height) / parent.height);
+  
+  return `${x.toFixed(4)} ${y.toFixed(4)}`;
+}
+
+function calculateAnchorMax(node) {
+  const parent = node.parent;
+  if (!parent || !('width' in parent) || !('height' in parent)) {
+    return "1 1";
+  }
+  
+  const x = (node.x + node.width) / parent.width;
+  const y = 1 - (node.y / parent.height);
+  
+  return `${x.toFixed(4)} ${y.toFixed(4)}`;
 }
 

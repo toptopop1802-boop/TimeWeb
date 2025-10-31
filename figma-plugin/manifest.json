@@ -1,6 +1,6 @@
 {
-  "name": "Frame to HTML/CSS Exporter",
-  "id": "bublickrust-frame-exporter",
+  "name": "Figma to Rust CUI Exporter",
+  "id": "bublickrust-rust-cui-exporter",
   "api": "1.0.0",
   "main": "code.js",
   "ui": "ui.html",

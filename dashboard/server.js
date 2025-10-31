@@ -48,6 +48,14 @@ function createApp() {
         }
     });
 
+    // OPTIONS endpoint для CORS preflight
+    app.options('/api/images/upload', (req, res) => {
+        res.header('Access-Control-Allow-Origin', '*');
+        res.header('Access-Control-Allow-Methods', 'POST, OPTIONS');
+        res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        res.sendStatus(200);
+    });
+
     // GET endpoint for upload info - HTML page
     app.get('/api/images/upload', (req, res) => {
         res.send(`
@@ -254,6 +262,11 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
 
     // Authenticated upload, public read
     app.post('/api/images/upload', imageUpload.single('image'), async (req, res) => {
+        // CORS для Figma плагина
+        res.header('Access-Control-Allow-Origin', '*');
+        res.header('Access-Control-Allow-Methods', 'POST, OPTIONS');
+        res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        
         try {
             if (!supabase) return res.status(503).json({ error: 'Supabase not configured' });
 

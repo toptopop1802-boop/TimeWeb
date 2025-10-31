@@ -11,49 +11,60 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      padding: 20px;
+      padding: 15px;
       background: #ffffff;
       color: #333;
+      font-size: 12px;
     }
 
     .header {
-      margin-bottom: 20px;
-      padding-bottom: 15px;
+      margin-bottom: 15px;
+      padding-bottom: 12px;
       border-bottom: 2px solid #c40552;
     }
 
     h1 {
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 700;
       color: #c40552;
-      margin-bottom: 5px;
+      margin-bottom: 4px;
     }
 
     .subtitle {
-      font-size: 12px;
+      font-size: 11px;
       color: #6c757d;
     }
 
     .section {
-      margin-bottom: 20px;
+      margin-bottom: 15px;
     }
 
-    .section-title {
-      font-size: 13px;
-      font-weight: 600;
-      margin-bottom: 10px;
+    .info-box {
+      background: rgba(59, 155, 249, 0.1);
+      border-left: 3px solid #3b9bf9;
+      border-radius: 6px;
+      padding: 10px;
+      font-size: 10px;
       color: #495057;
+      line-height: 1.4;
+      margin-bottom: 15px;
+    }
+
+    .info-box strong {
+      color: #3b9bf9;
+      display: block;
+      margin-bottom: 4px;
     }
 
     .status {
-      padding: 12px;
+      padding: 10px;
       background: #f8f9fa;
-      border-left: 4px solid #3b9bf9;
+      border-left: 3px solid #3b9bf9;
       border-radius: 6px;
-      font-size: 12px;
+      font-size: 11px;
       color: #495057;
-      margin-bottom: 15px;
-      min-height: 40px;
+      margin-bottom: 12px;
+      min-height: 35px;
       display: flex;
       align-items: center;
     }
@@ -70,23 +81,68 @@
       color: #28a745;
     }
 
+    /* LOG WINDOW */
+    .log-window {
+      background: #1e1e1e;
+      border-radius: 8px;
+      padding: 12px;
+      max-height: 200px;
+      overflow-y: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 10px;
+      line-height: 1.5;
+      color: #d4d4d4;
+      margin-bottom: 15px;
+      border: 1px solid #333;
+    }
+
+    .log-window::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .log-window::-webkit-scrollbar-track {
+      background: #2d2d2d;
+    }
+
+    .log-window::-webkit-scrollbar-thumb {
+      background: #555;
+      border-radius: 3px;
+    }
+
+    .log-entry {
+      margin-bottom: 4px;
+      word-wrap: break-word;
+    }
+
+    .log-entry.success {
+      color: #68d391;
+    }
+
+    .log-entry.error {
+      color: #ff6b6b;
+    }
+
+    .log-entry.info {
+      color: #4ec9b0;
+    }
+
     .button {
       width: 100%;
-      padding: 12px;
+      padding: 10px;
       background: linear-gradient(135deg, #c40552, #e4735c);
       color: white;
       border: none;
       border-radius: 8px;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.3s;
       box-shadow: 0 2px 8px rgba(196, 5, 82, 0.3);
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
 
     .button:hover {
-      transform: translateY(-2px);
+      transform: translateY(-1px);
       box-shadow: 0 4px 12px rgba(196, 5, 82, 0.4);
     }
 
@@ -107,26 +163,32 @@
 
     .code-output {
       display: none;
-      margin-top: 20px;
     }
 
     .code-output.visible {
       display: block;
     }
 
+    .section-title {
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #495057;
+    }
+
     .code-tabs {
       display: flex;
-      gap: 10px;
-      margin-bottom: 10px;
+      gap: 6px;
+      margin-bottom: 8px;
     }
 
     .code-tab {
       flex: 1;
-      padding: 8px;
+      padding: 6px;
       background: #f8f9fa;
       border: 2px solid transparent;
       border-radius: 6px;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 600;
       cursor: pointer;
       text-align: center;
@@ -151,15 +213,16 @@
       display: none;
       background: #1e1e1e;
       border-radius: 8px;
-      padding: 15px;
-      max-height: 300px;
+      padding: 12px;
+      max-height: 250px;
       overflow-y: auto;
       font-family: 'Courier New', monospace;
-      font-size: 11px;
-      line-height: 1.5;
+      font-size: 10px;
+      line-height: 1.4;
       color: #d4d4d4;
       white-space: pre-wrap;
       word-break: break-all;
+      border: 1px solid #333;
     }
 
     .code-box.visible {
@@ -167,7 +230,7 @@
     }
 
     .code-box::-webkit-scrollbar {
-      width: 8px;
+      width: 6px;
     }
 
     .code-box::-webkit-scrollbar-track {
@@ -176,19 +239,19 @@
 
     .code-box::-webkit-scrollbar-thumb {
       background: #555;
-      border-radius: 4px;
+      border-radius: 3px;
     }
 
     .copy-btn {
       position: absolute;
-      top: 10px;
-      right: 10px;
-      padding: 6px 12px;
+      top: 8px;
+      right: 8px;
+      padding: 5px 10px;
       background: #c40552;
       color: white;
       border: none;
       border-radius: 6px;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 600;
       cursor: pointer;
       z-index: 10;
@@ -197,28 +260,12 @@
     .copy-btn:hover {
       background: #a00442;
     }
-
-    .info-box {
-      background: rgba(59, 155, 249, 0.1);
-      border-left: 4px solid #3b9bf9;
-      border-radius: 6px;
-      padding: 12px;
-      font-size: 11px;
-      color: #495057;
-      margin-bottom: 15px;
-    }
-
-    .info-box strong {
-      color: #3b9bf9;
-      display: block;
-      margin-bottom: 5px;
-    }
   </style>
 </head>
 <body>
   <div class="header">
-    <h1>🎨 Frame to HTML/CSS</h1>
-    <p class="subtitle">Экспорт Figma фреймов в код с автозагрузкой изображений</p>
+    <h1>🎮 Figma → Rust CUI</h1>
+    <p class="subtitle">Экспорт в C# код для игры Rust</p>
   </div>
 
   <div class="section">
@@ -226,14 +273,22 @@
       <strong>📋 Инструкция:</strong>
       1. Выберите Frame в Figma<br>
       2. Нажмите "Генерировать код"<br>
-      3. Изображения загрузятся на сервер автоматически<br>
-      4. Скопируйте HTML/CSS код
+      3. Изображения загрузятся автоматически<br>
+      4. Скопируйте CUI JSON или C# код
     </div>
   </div>
 
   <div class="section">
     <div class="status" id="status">
-      Ожидание... Выберите фрейм и нажмите кнопку
+      Ожидание... Выберите фрейм
+    </div>
+  </div>
+
+  <!-- LOG WINDOW -->
+  <div class="section">
+    <div class="section-title">📊 Лог операций:</div>
+    <div class="log-window" id="log-window">
+      <div class="log-entry info">Готов к работе...</div>
     </div>
   </div>
 
@@ -250,21 +305,21 @@
     <div class="section-title">📄 Результат:</div>
     
     <div class="code-tabs">
-      <div class="code-tab active" data-tab="html" onclick="switchTab('html')">HTML</div>
-      <div class="code-tab" data-tab="css" onclick="switchTab('css')">CSS</div>
+      <div class="code-tab active" data-tab="cui" onclick="switchTab('cui')">CUI JSON</div>
+      <div class="code-tab" data-tab="csharp" onclick="switchTab('csharp')">C# Code</div>
     </div>
 
     <div class="code-container">
       <button class="copy-btn" onclick="copyCode()">📋 Копировать</button>
-      <div class="code-box visible" id="code-html"></div>
-      <div class="code-box" id="code-css"></div>
+      <div class="code-box visible" id="code-cui"></div>
+      <div class="code-box" id="code-csharp"></div>
     </div>
   </div>
 
   <script>
-    let currentTab = 'html';
-    let generatedHTML = '';
-    let generatedCSS = '';
+    let currentTab = 'cui';
+    let generatedCUI = '';
+    let generatedCSharp = '';
 
     function generateCode() {
       const btn = document.getElementById('generate');
@@ -272,6 +327,8 @@
       btn.textContent = '⏳ Генерация...';
       
       document.getElementById('code-output').classList.remove('visible');
+      clearLog();
+      addLog('🚀 Начинаю генерацию...', 'info');
       
       parent.postMessage({ pluginMessage: { type: 'generate-code' } }, '*');
     }
@@ -296,7 +353,7 @@
     }
 
     function copyCode() {
-      const code = currentTab === 'html' ? generatedHTML : generatedCSS;
+      const code = currentTab === 'cui' ? generatedCUI : generatedCSharp;
       
       // Copy to clipboard
       const textarea = document.createElement('textarea');
@@ -310,9 +367,23 @@
       const btn = event.target;
       const originalText = btn.textContent;
       btn.textContent = '✅ Скопировано!';
+      addLog('📋 Код скопирован в буфер обмена', 'success');
       setTimeout(() => {
         btn.textContent = originalText;
       }, 2000);
+    }
+
+    function clearLog() {
+      document.getElementById('log-window').innerHTML = '';
+    }
+
+    function addLog(message, type = 'info') {
+      const logWindow = document.getElementById('log-window');
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      entry.textContent = message;
+      logWindow.appendChild(entry);
+      logWindow.scrollTop = logWindow.scrollHeight;
     }
 
     // Handle messages from plugin
@@ -324,26 +395,40 @@
         status.className = 'status';
         status.textContent = msg.message;
       } 
+      else if (msg.type === 'log') {
+        // Определяем тип лога по символам
+        let logType = 'info';
+        if (msg.message.includes('✅') || msg.message.includes('🎉')) {
+          logType = 'success';
+        } else if (msg.message.includes('❌')) {
+          logType = 'error';
+        }
+        addLog(msg.message, logType);
+      }
       else if (msg.type === 'error') {
         const status = document.getElementById('status');
         status.className = 'status error';
-        status.textContent = '❌ ' + msg.message;
+        status.textContent = msg.message;
+        
+        addLog(msg.message, 'error');
         
         const btn = document.getElementById('generate');
         btn.disabled = false;
         btn.textContent = '⚡ Генерировать код';
       } 
       else if (msg.type === 'code-generated') {
-        generatedHTML = msg.html;
-        generatedCSS = msg.css;
+        generatedCUI = msg.cui;
+        generatedCSharp = msg.csharp;
         
-        document.getElementById('code-html').textContent = msg.html;
-        document.getElementById('code-css').textContent = msg.css;
+        document.getElementById('code-cui').textContent = msg.cui;
+        document.getElementById('code-csharp').textContent = msg.csharp;
         document.getElementById('code-output').classList.add('visible');
         
         const status = document.getElementById('status');
         status.className = 'status success';
         status.textContent = '✅ Код успешно сгенерирован!';
+        
+        addLog('✅ Готово! Код доступен для копирования', 'success');
         
         const btn = document.getElementById('generate');
         btn.disabled = false;
@@ -353,4 +438,3 @@
   </script>
 </body>
 </html>
-
