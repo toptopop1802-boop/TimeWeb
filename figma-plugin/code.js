@@ -161,16 +161,29 @@ async function uploadImages(images) {
         message: `   🔨 Создаю multipart/form-data...`
       });
       
-      // Создаем multipart/form-data вручную (FormData недоступен в Figma Plugin)
+      // Создаем multipart/form-data вручную (FormData и TextEncoder недоступны в Figma Plugin)
       const boundary = '----FigmaBoundary' + Date.now();
       
       // Формируем тело запроса
       const header = `------${boundary}\r\nContent-Disposition: form-data; name="image"; filename="${imageName}"\r\nContent-Type: image/png\r\n\r\n`;
       const footer = `\r\n------${boundary}--\r\n`;
       
-      // Конвертируем строки в Uint8Array
-      const headerBytes = new TextEncoder().encode(header);
-      const footerBytes = new TextEncoder().encode(footer);
+      // Конвертируем строки в байты вручную (без TextEncoder)
+      function stringToBytes(str) {
+        const bytes = new Uint8Array(str.length);
+        for (let i = 0; i < str.length; i++) {
+          bytes[i] = str.charCodeAt(i) & 0xFF;
+        }
+        return bytes;
+      }
+      
+      const headerBytes = stringToBytes(header);
+      const footerBytes = stringToBytes(footer);
+      
+      figma.ui.postMessage({
+        type: 'log',
+        message: `   📦 Размер запроса: ${((headerBytes.length + img.bytes.length + footerBytes.length) / 1024).toFixed(2)} KB`
+      });
       
       // Объединяем все части
       const bodyBytes = new Uint8Array(headerBytes.length + img.bytes.length + footerBytes.length);
