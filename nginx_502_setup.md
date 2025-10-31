@@ -5,16 +5,18 @@
 ### 1. Скопировать файл 502.html на сервер
 
 ```bash
-# Скопировать файл в директорию nginx
-sudo cp dashboard/public/502.html /var/www/bublickrust/502.html
-
-# Или создать директорию, если её нет
+# Сначала создать директорию, если её нет
 sudo mkdir -p /var/www/bublickrust
+
+# Скопировать файл из проекта в директорию nginx (ВАЖНО: выполнить эту команду!)
 sudo cp dashboard/public/502.html /var/www/bublickrust/502.html
 
 # Установить правильные права
 sudo chown www-data:www-data /var/www/bublickrust/502.html
 sudo chmod 644 /var/www/bublickrust/502.html
+
+# Проверить, что файл создан
+ls -la /var/www/bublickrust/502.html
 ```
 
 ### 2. Обновить конфигурацию nginx
