@@ -343,24 +343,85 @@ function traverseForCUI(node, elements, imageMap, parentName = "root") {
 // Генерация C# кода для Rust
 function generateCSharpCode(node, imageMap) {
   const className = toPascalCase(sanitizeClassName(node.name));
-  let code = `using Oxide.Game.Rust.Cui;\nusing System.Collections.Generic;\nusing UnityEngine;\n\n`;
-  code += `public class ${className}UI\n{\n`;
-  code += `    public static void Show(BasePlayer player)\n    {\n`;
-  code += `        var elements = new CuiElementContainer();\n\n`;
-  code += `        // Main panel\n`;
-  code += `        elements.Add(new CuiPanel\n`;
-  code += `        {\n`;
-  code += `            Image = { Color = "0 0 0 0.8" },\n`;
-  code += `            RectTransform = { AnchorMin = "0 0", AnchorMax = "1 1" },\n`;
-  code += `            CursorEnabled = true\n`;
-  code += `        }, "Overlay", "${className}");\n\n`;
+  const uiName = className;
+  const commandName = className.toLowerCase();
   
-  code += generateCSharpElements(node, `"${className}"`, 1, imageMap);
+  let code = `using Oxide.Core.Plugins;\n`;
+  code += `using Oxide.Game.Rust.Cui;\n`;
+  code += `using System.Collections.Generic;\n`;
+  code += `using UnityEngine;\n\n`;
+  code += `namespace Oxide.Plugins\n{\n`;
+  code += `    [Info("${className}UI", "BublickRust", "1.0.0")]\n`;
+  code += `    [Description("Auto-generated UI from Figma")]\n`;
+  code += `    class ${className}UI : RustPlugin\n    {\n`;
+  code += `        private const string UIName = "${uiName}";\n\n`;
   
-  code += `        CuiHelper.AddUi(player, elements);\n`;
-  code += `    }\n\n`;
-  code += `    public static void Close(BasePlayer player)\n    {\n`;
-  code += `        CuiHelper.DestroyUi(player, "${className}");\n`;
+  // Chat command для toggle
+  code += `        [ChatCommand("${commandName}")]\n`;
+  code += `        void CmdToggleUI(BasePlayer player, string command, string[] args)\n        {\n`;
+  code += `            if (HasUI(player))\n`;
+  code += `                CloseUI(player);\n`;
+  code += `            else\n`;
+  code += `                ShowUI(player);\n`;
+  code += `        }\n\n`;
+  
+  // Console commands
+  code += `        [ConsoleCommand("${commandName}.show")]\n`;
+  code += `        void ConsoleShowUI(ConsoleSystem.Arg arg)\n        {\n`;
+  code += `            var player = arg.Player();\n`;
+  code += `            if (player == null) return;\n`;
+  code += `            ShowUI(player);\n`;
+  code += `        }\n\n`;
+  
+  code += `        [ConsoleCommand("${commandName}.close")]\n`;
+  code += `        void ConsoleCloseUI(ConsoleSystem.Arg arg)\n        {\n`;
+  code += `            var player = arg.Player();\n`;
+  code += `            if (player == null) return;\n`;
+  code += `            CloseUI(player);\n`;
+  code += `        }\n\n`;
+  
+  // HasUI check
+  code += `        private bool HasUI(BasePlayer player)\n        {\n`;
+  code += `            return CuiHelper.DestroyUi(player, UIName);\n`;
+  code += `        }\n\n`;
+  
+  // ShowUI method
+  code += `        private void ShowUI(BasePlayer player)\n        {\n`;
+  code += `            CloseUI(player);\n            \n`;
+  code += `            var elements = new CuiElementContainer();\n\n`;
+  code += `            // Main panel\n`;
+  code += `            elements.Add(new CuiPanel\n`;
+  code += `            {\n`;
+  code += `                Image = { Color = "0 0 0 0.8" },\n`;
+  code += `                RectTransform = { AnchorMin = "0 0", AnchorMax = "1 1" },\n`;
+  code += `                CursorEnabled = true\n`;
+  code += `            }, "Overlay", UIName);\n\n`;
+  
+  code += generateCSharpElements(node, `UIName`, 3, imageMap);
+  
+  // Close button
+  code += `            // Close button\n`;
+  code += `            elements.Add(new CuiButton\n`;
+  code += `            {\n`;
+  code += `                Button = { Command = "${commandName}.close", Color = "0.8 0.2 0.2 0.9" },\n`;
+  code += `                RectTransform = { AnchorMin = "0.85 0.92", AnchorMax = "0.98 0.97" },\n`;
+  code += `                Text = { Text = "✕ Закрыть", FontSize = 16, Align = TextAnchor.MiddleCenter, Color = "1 1 1 1" }\n`;
+  code += `            }, UIName);\n\n`;
+  
+  code += `            CuiHelper.AddUi(player, elements);\n`;
+  code += `        }\n\n`;
+  
+  // CloseUI method
+  code += `        private void CloseUI(BasePlayer player)\n        {\n`;
+  code += `            CuiHelper.DestroyUi(player, UIName);\n`;
+  code += `        }\n\n`;
+  
+  // Unload
+  code += `        void Unload()\n        {\n`;
+  code += `            foreach (var player in BasePlayer.activePlayerList)\n`;
+  code += `                CloseUI(player);\n`;
+  code += `        }\n`;
+  
   code += `    }\n`;
   code += `}\n`;
   

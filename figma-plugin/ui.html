@@ -260,6 +260,26 @@
     .copy-btn:hover {
       background: #a00442;
     }
+
+    .toggle-log-btn {
+      padding: 4px 10px;
+      background: #6c757d;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .toggle-log-btn:hover {
+      background: #5a6268;
+    }
+
+    .log-window.collapsed {
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -286,7 +306,12 @@
 
   <!-- LOG WINDOW -->
   <div class="section">
-    <div class="section-title">📊 Лог операций:</div>
+    <div class="section-title" style="display: flex; justify-content: space-between; align-items: center;">
+      <span>📊 Лог операций:</span>
+      <button class="toggle-log-btn" onclick="toggleLogs()" id="toggle-log-btn">
+        ▼ Скрыть
+      </button>
+    </div>
     <div class="log-window" id="log-window">
       <div class="log-entry info">Готов к работе...</div>
     </div>
@@ -384,6 +409,19 @@
       entry.textContent = message;
       logWindow.appendChild(entry);
       logWindow.scrollTop = logWindow.scrollHeight;
+    }
+
+    function toggleLogs() {
+      const logWindow = document.getElementById('log-window');
+      const toggleBtn = document.getElementById('toggle-log-btn');
+      
+      if (logWindow.classList.contains('collapsed')) {
+        logWindow.classList.remove('collapsed');
+        toggleBtn.textContent = '▼ Скрыть';
+      } else {
+        logWindow.classList.add('collapsed');
+        toggleBtn.textContent = '▶ Показать';
+      }
     }
 
     // Handle messages from plugin
