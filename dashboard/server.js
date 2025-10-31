@@ -1871,18 +1871,29 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
             if (error) throw error;
 
             // Get usage counts
-            let usage = [];
-            try {
-                const { data: u } = await supabase
-                    .from('api_usage_logs')
-                    .select('token_id, count:token_id')
-                    .in('token_id', (tokens || []).map(t => t.id))
-                    .group('token_id');
-                usage = u || [];
-            } catch (_) {}
+            const tokenIds = (tokens || []).map(t => t.id);
+            const usageMap = new Map();
+            
+            if (tokenIds.length > 0) {
+                try {
+                    const { data: logs, error: logError } = await supabase
+                        .from('api_usage_logs')
+                        .select('token_id')
+                        .in('token_id', tokenIds);
+                    
+                    if (!logError && logs) {
+                        // Count manually
+                        logs.forEach(log => {
+                            const current = usageMap.get(log.token_id) || 0;
+                            usageMap.set(log.token_id, current + 1);
+                        });
+                    }
+                } catch (e) {
+                    console.warn('Failed to load usage counts:', e.message);
+                }
+            }
 
-            const map = new Map(usage.map(r => [r.token_id, r.count]));
-            const result = (tokens || []).map(t => ({ ...t, calls: map.get(t.id) || 0 }));
+            const result = (tokens || []).map(t => ({ ...t, calls: usageMap.get(t.id) || 0 }));
             res.json({ items: result });
         } catch (e) {
             console.error('List tokens error:', e);

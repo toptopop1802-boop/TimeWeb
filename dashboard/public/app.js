@@ -2795,6 +2795,27 @@ function initGradientRolePage() {
 }
 
 // ================= API TOKENS (USER) =================
+// Локальное хранилище токенов (key -> token value)
+function getStoredTokens(){
+    try {
+        const stored = localStorage.getItem('api_tokens_store');
+        return stored ? JSON.parse(stored) : {};
+    } catch(e) { return {}; }
+}
+
+function saveTokenToStorage(tokenId, tokenValue){
+    try {
+        const store = getStoredTokens();
+        store[tokenId] = tokenValue;
+        localStorage.setItem('api_tokens_store', JSON.stringify(store));
+    } catch(e) { console.error('Failed to save token:', e); }
+}
+
+function getTokenFromStorage(tokenId){
+    const store = getStoredTokens();
+    return store[tokenId] || null;
+}
+
 async function loadApiTokens(){
     try{
         const auth = getAuthData();
@@ -2806,17 +2827,22 @@ async function loadApiTokens(){
         const items = listData.items || [];
         if(items.length === 0){ container.innerHTML = `<div style="color:var(--text-secondary)">Токенов нет. Создайте первый токен.</div>`; }
         else {
-            container.innerHTML = items.map(t => `
+            container.innerHTML = items.map(t => {
+                const storedToken = getTokenFromStorage(t.id);
+                const hasStoredToken = !!storedToken;
+                return `
                 <div style=\"display:flex;align-items:center;justify-content:space-between;border:1px solid var(--border-color);border-radius:8px;padding:10px;margin:8px 0;background:var(--bg-card)\">
                   <div style=\"display:flex;flex-direction:column;gap:4px\">
-                    <div style=\"font-weight:700\">${t.name}</div>
+                    <div style=\"font-weight:700\">${escapeHtml(t.name)}</div>
                     <div style=\"color:var(--text-secondary);font-size:12px\">Создан: ${new Date(t.created_at).toLocaleString()} • Вызовов: ${t.calls}</div>
                   </div>
                   <div style=\"display:flex;gap:8px;align-items:center\">
                     <span style=\"font-family:monospace;color:var(--text-secondary)\">••••••••••••••••••••</span>
+                    ${hasStoredToken ? `<button class=\"btn btn-sm\" onclick=\"copyStoredToken('${t.id}')\" title=\"Скопировать токен\">📋 Копировать</button>` : ''}
                     <button class=\"btn btn-danger btn-sm\" onclick=\"revokeToken('${t.id}')\">Отозвать</button>
                   </div>
-                </div>`).join('');
+                </div>`;
+            }).join('');
         }
         const createBtn = document.getElementById('api-create-btn');
         if(createBtn){
@@ -2826,6 +2852,8 @@ async function loadApiTokens(){
                 createBtn.disabled = false;
                 if(!r.ok){ alert('Не удалось создать токен'); return; }
                 const d = await r.json();
+                // Сохраняем токен локально
+                saveTokenToStorage(d.id, d.token);
                 const box = document.getElementById('api-new-token');
                 const inp = document.getElementById('api-new-token-input');
                 inp.value = d.token;
@@ -2836,12 +2864,31 @@ async function loadApiTokens(){
     }catch(e){ console.error(e); }
 }
 
-async function revokeToken(id){
+window.copyStoredToken = function(tokenId){
+    const token = getTokenFromStorage(tokenId);
+    if(!token){
+        alert('Токен не найден в локальном хранилище. Создайте новый токен.');
+        return;
+    }
+    navigator.clipboard.writeText(token).then(() => {
+        showToast('Токен скопирован!', 'success');
+    }).catch(() => {
+        alert('Не удалось скопировать токен');
+    });
+}
+
+window.revokeToken = async function(id){
     const auth = getAuthData();
     if(!auth) return;
     if(!confirm('Отозвать токен?')) return;
     const r = await fetch(`/api/api-tokens/${id}`, { method:'DELETE', headers: { 'Authorization': `Bearer ${auth.token}` }});
     if(!r.ok){ alert('Ошибка'); return; }
+    // Удаляем токен из локального хранилища
+    try {
+        const store = getStoredTokens();
+        delete store[id];
+        localStorage.setItem('api_tokens_store', JSON.stringify(store));
+    } catch(e) {}
     loadApiTokens();
 }
 
