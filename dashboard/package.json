@@ -22,7 +22,8 @@
     "cookie-parser": "^1.4.6",
     "imap": "^0.8.19",
     "mailparser": "^3.6.5",
-    "nodemailer": "^6.9.7"
+    "nodemailer": "^6.9.7",
+    "sharp": "^0.33.4"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"

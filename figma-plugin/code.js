@@ -155,8 +155,8 @@ async function processImages(node) {
 // Загрузка изображений через API с батчингом
 async function uploadImages(images) {
   const uploaded = [];
-  const BATCH_SIZE = 5; // Загружаем по 5 изображений за раз
-  const DELAY_MS = 500; // Задержка между батчами
+  const BATCH_SIZE = 8; // Больше параллелизма
+  const DELAY_MS = 200; // Меньше задержка между батчами
   const RETRY_ATTEMPTS = 6; // Повторные проверки доступности URL
   const RETRY_DELAY = 400; // мс между проверками
 

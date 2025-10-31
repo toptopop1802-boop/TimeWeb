@@ -6,6 +6,7 @@ const multer = require('multer');
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 const cookieParser = require('cookie-parser');
+let sharp = null; try { sharp = require('sharp'); } catch (_) { /* optional */ }
 require('dotenv').config();
 
 const { setupAuthRoutes } = require('./auth-routes');
@@ -362,12 +363,23 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
     app.get('/api/images/list', async (req, res) => {
         try {
             if (!supabase) return res.status(503).json({ error: 'Supabase not configured' });
-            const limit = Math.min(parseInt(req.query.limit) || 500, 1000);
-            const { data, error } = await supabase
+            const limit = Math.min(Math.max(parseInt(req.query.limit) || 60, 1), 200);
+            const offset = Math.max(parseInt(req.query.offset) || 0, 0);
+            const q = (req.query.q || '').trim();
+
+            let query = supabase
                 .from('images_metadata')
-                .select('image_id, user_id, original_name, file_size, mime_type, storage_path, short_code, created_at')
-                .order('created_at', { ascending: false })
-                .limit(limit);
+                .select('image_id, user_id, original_name, file_size, mime_type, storage_path, short_code, created_at', { count: 'exact' })
+                .order('created_at', { ascending: false });
+
+            if (q) {
+                // Поиск по имени или коду
+                query = query.or(`original_name.ilike.%${q}%,short_code.ilike.%${q}%`);
+            }
+
+            query = query.range(offset, offset + limit - 1);
+
+            const { data, error, count } = await query;
             if (error) throw error;
 
             const base = process.env.PUBLIC_BASE_URL || (req.headers['x-forwarded-proto'] ? `${req.headers['x-forwarded-proto']}://${req.headers.host}` : `${req.protocol}://${req.get('host')}`);
@@ -375,7 +387,8 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                 ...row,
                 directUrl: `${base}/i/${row.short_code}`
             }));
-            res.json({ items, count: items.length });
+            res.setHeader('Cache-Control', 'no-store');
+            res.json({ items, count: count ?? items.length, offset, limit });
         } catch (e) {
             console.error('Image list error:', e);
             res.status(500).json({ error: e.message });
@@ -430,12 +443,33 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
             if (error || !data) return res.status(404).send('Not found');
 
             const arrayBuffer = await data.arrayBuffer();
-            const buffer = Buffer.from(arrayBuffer);
+            const original = Buffer.from(arrayBuffer);
+
+            // Optional resizing for thumbnails
+            const w = parseInt(req.query.w);
+            const h = parseInt(req.query.h);
+            const q = Math.min(Math.max(parseInt(req.query.q) || 75, 10), 95);
+            const wantResize = sharp && ((w && w > 0) || (h && h > 0));
+            if (wantResize) {
+                try {
+                    const s = sharp(original, { failOn: 'none' });
+                    if (w || h) s.resize({ width: w || null, height: h || null, fit: 'inside' });
+                    const webp = await s.webp({ quality: q }).toBuffer();
+                    res.setHeader('Content-Type', 'image/webp');
+                    res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
+                    res.setHeader('Content-Length', webp.length);
+                    return res.send(webp);
+                } catch (e) {
+                    console.warn('Resize failed, sending original:', e.message);
+                }
+            }
+
             const ext = path.extname(storagePath).toLowerCase();
             const type = ext === '.png' ? 'image/png' : ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : ext === '.gif' ? 'image/gif' : ext === '.webp' ? 'image/webp' : 'application/octet-stream';
             res.setHeader('Content-Type', type);
-            res.setHeader('Content-Length', buffer.length);
-            res.send(buffer);
+            res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
+            res.setHeader('Content-Length', original.length);
+            res.send(original);
         } catch (error) {
             console.error('Public image error:', error);
             res.status(500).send('Internal error');

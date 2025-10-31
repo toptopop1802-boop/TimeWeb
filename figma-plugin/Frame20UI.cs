@@ -115,34 +115,12 @@ namespace Oxide.Plugins
                                 RectTransform = { AnchorMin = "0.1519 0.1462", AnchorMax = "1.0000 0.9089" }
                             }, "batle_pass_fifnsih_ebani_batlepass_0", "batlepass_image_101_0");
 
-                            // Image for image 101
-                            elements.Add(new CuiElement
-                            {
-                                Parent = "batlepass_image_101_0",
-                                Components =
-                                {
-                                    new CuiRawImageComponent { Url = "https://bublickrust.ru/i/2JISV55" },
-                                    new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
-                                }
-                            });
-
                             // Panel: image-Photoroom 5
                             elements.Add(new CuiPanel
                             {
                                 Image = { Color = "0 0 0 0" },
                                 RectTransform = { AnchorMin = "0.8578 0.1315", AnchorMax = "0.9555 0.2727" }
                             }, "batle_pass_fifnsih_ebani_batlepass_0", "batlepass_image_photoroom_5_1");
-
-                            // Image for image-Photoroom 5
-                            elements.Add(new CuiElement
-                            {
-                                Parent = "batlepass_image_photoroom_5_1",
-                                Components =
-                                {
-                                    new CuiRawImageComponent { Url = "https://bublickrust.ru/i/3SOBSBX" },
-                                    new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
-                                }
-                            });
 
                             // Panel: image-Photoroom 1
                             elements.Add(new CuiPanel
@@ -151,34 +129,12 @@ namespace Oxide.Plugins
                                 RectTransform = { AnchorMin = "0.8578 0.1315", AnchorMax = "0.9555 0.2727" }
                             }, "batle_pass_fifnsih_ebani_batlepass_0", "batlepass_image_photoroom_1_2");
 
-                            // Image for image-Photoroom 1
-                            elements.Add(new CuiElement
-                            {
-                                Parent = "batlepass_image_photoroom_1_2",
-                                Components =
-                                {
-                                    new CuiRawImageComponent { Url = "https://bublickrust.ru/i/3SOBSBX" },
-                                    new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
-                                }
-                            });
-
                             // Panel: image-Photoroom 4 1
                             elements.Add(new CuiPanel
                             {
                                 Image = { Color = "0 0 0 0" },
                                 RectTransform = { AnchorMin = "0.0894 0.0155", AnchorMax = "0.3604 0.4075" }
                             }, "batle_pass_fifnsih_ebani_batlepass_0", "batlepass_image_photoroom_4_1_3");
-
-                            // Image for image-Photoroom 4 1
-                            elements.Add(new CuiElement
-                            {
-                                Parent = "batlepass_image_photoroom_4_1_3",
-                                Components =
-                                {
-                                    new CuiRawImageComponent { Url = "https://bublickrust.ru/i/YDYGK70" },
-                                    new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
-                                }
-                            });
 
                             // Panel: image-Photoroom 2
                             elements.Add(new CuiPanel
@@ -187,17 +143,6 @@ namespace Oxide.Plugins
                                 RectTransform = { AnchorMin = "0.1948 0.1348", AnchorMax = "0.3616 0.3762" }
                             }, "batle_pass_fifnsih_ebani_batlepass_0", "batlepass_image_photoroom_2_4");
 
-                            // Image for image-Photoroom 2
-                            elements.Add(new CuiElement
-                            {
-                                Parent = "batlepass_image_photoroom_2_4",
-                                Components =
-                                {
-                                    new CuiRawImageComponent { Url = "https://bublickrust.ru/i/3SOBSBX" },
-                                    new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
-                                }
-                            });
-
                             // Panel: image-Photoroom 3
                             elements.Add(new CuiPanel
                             {
@@ -205,34 +150,12 @@ namespace Oxide.Plugins
                                 RectTransform = { AnchorMin = "0.4039 0.7438", AnchorMax = "0.5291 0.9250" }
                             }, "batle_pass_fifnsih_ebani_batlepass_0", "batlepass_image_photoroom_3_5");
 
-                            // Image for image-Photoroom 3
-                            elements.Add(new CuiElement
-                            {
-                                Parent = "batlepass_image_photoroom_3_5",
-                                Components =
-                                {
-                                    new CuiRawImageComponent { Url = "https://bublickrust.ru/i/3SOBSBX" },
-                                    new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
-                                }
-                            });
-
                             // Panel: image-Photoroom 6
                             elements.Add(new CuiPanel
                             {
                                 Image = { Color = "0 0 0 0" },
                                 RectTransform = { AnchorMin = "0.4039 0.7438", AnchorMax = "0.5291 0.9250" }
                             }, "batle_pass_fifnsih_ebani_batlepass_0", "batlepass_image_photoroom_6_6");
-
-                            // Image for image-Photoroom 6
-                            elements.Add(new CuiElement
-                            {
-                                Parent = "batlepass_image_photoroom_6_6",
-                                Components =
-                                {
-                                    new CuiRawImageComponent { Url = "https://bublickrust.ru/i/3SOBSBX" },
-                                    new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
-                                }
-                            });
 
                             // Text: Куда ложить твой лут?
                             elements.Add(new CuiLabel
@@ -339,17 +262,6 @@ namespace Oxide.Plugins
                                 RectTransform = { AnchorMin = "0.4033 0.1956", AnchorMax = "0.4282 0.2182" }
                             }, "batle_pass_fifnsih_ebani_batlepass_0", "batlepass_group_27_1_21");
 
-                            // Image for Group 27 1
-                            elements.Add(new CuiElement
-                            {
-                                Parent = "batlepass_group_27_1_21",
-                                Components =
-                                {
-                                    new CuiRawImageComponent { Url = "https://bublickrust.ru/i/D3Z5980" },
-                                    new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
-                                }
-                            });
-
                             // Text: НАГРАДЫ
                             elements.Add(new CuiLabel
                             {
@@ -363,17 +275,6 @@ namespace Oxide.Plugins
                                 Image = { Color = "0 0 0 0" },
                                 RectTransform = { AnchorMin = "0.2036 0.3771", AnchorMax = "0.3081 0.6003" }
                             }, "batle_pass_fifnsih_ebani_batlepass_0", "batlepass_group_37_1_23");
-
-                            // Image for Group 37 1
-                            elements.Add(new CuiElement
-                            {
-                                Parent = "batlepass_group_37_1_23",
-                                Components =
-                                {
-                                    new CuiRawImageComponent { Url = "https://bublickrust.ru/i/1NVUXXF" },
-                                    new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
-                                }
-                            });
 
                             // Text: ИНВЕНТАРЬ
                             elements.Add(new CuiLabel
@@ -417,34 +318,12 @@ namespace Oxide.Plugins
                                 RectTransform = { AnchorMin = "0.3219 0.3764", AnchorMax = "0.4283 0.6003" }
                             }, "batle_pass_fifnsih_ebani_batlepass_0", "batlepass_group_34_1_29");
 
-                            // Image for Group 34 1
-                            elements.Add(new CuiElement
-                            {
-                                Parent = "batlepass_group_34_1_29",
-                                Components =
-                                {
-                                    new CuiRawImageComponent { Url = "https://bublickrust.ru/i/HOIY290" },
-                                    new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
-                                }
-                            });
-
                             // Panel: Group 34 2
                             elements.Add(new CuiPanel
                             {
                                 Image = { Color = "0 0 0 0" },
                                 RectTransform = { AnchorMin = "0.4406 0.3764", AnchorMax = "0.5470 0.6003" }
                             }, "batle_pass_fifnsih_ebani_batlepass_0", "batlepass_group_34_2_30");
-
-                            // Image for Group 34 2
-                            elements.Add(new CuiElement
-                            {
-                                Parent = "batlepass_group_34_2_30",
-                                Components =
-                                {
-                                    new CuiRawImageComponent { Url = "https://bublickrust.ru/i/HOIY290" },
-                                    new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
-                                }
-                            });
 
                             // Panel: Group 34 3
                             elements.Add(new CuiPanel
@@ -453,34 +332,12 @@ namespace Oxide.Plugins
                                 RectTransform = { AnchorMin = "0.6787 0.3764", AnchorMax = "0.7852 0.6003" }
                             }, "batle_pass_fifnsih_ebani_batlepass_0", "batlepass_group_34_3_31");
 
-                            // Image for Group 34 3
-                            elements.Add(new CuiElement
-                            {
-                                Parent = "batlepass_group_34_3_31",
-                                Components =
-                                {
-                                    new CuiRawImageComponent { Url = "https://bublickrust.ru/i/HOIY290" },
-                                    new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
-                                }
-                            });
-
                             // Panel: Group 34 4
                             elements.Add(new CuiPanel
                             {
                                 Image = { Color = "0 0 0 0" },
                                 RectTransform = { AnchorMin = "0.7998 0.3764", AnchorMax = "0.9063 0.6003" }
                             }, "batle_pass_fifnsih_ebani_batlepass_0", "batlepass_group_34_4_32");
-
-                            // Image for Group 34 4
-                            elements.Add(new CuiElement
-                            {
-                                Parent = "batlepass_group_34_4_32",
-                                Components =
-                                {
-                                    new CuiRawImageComponent { Url = "https://bublickrust.ru/i/HOIY290" },
-                                    new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
-                                }
-                            });
 
                             // Text: Внутри хуйняочень вкусное
                             elements.Add(new CuiLabel
@@ -502,7 +359,7 @@ namespace Oxide.Plugins
                                 Parent = "batlepass_image_107_34",
                                 Components =
                                 {
-                                    new CuiRawImageComponent { Url = "https://bublickrust.ru/i/1VCSSWH" },
+                                    new CuiRawImageComponent { Url = "https://bublickrust.ru/i/4OF1S4V" },
                                     new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
                                 }
                             });
@@ -520,7 +377,7 @@ namespace Oxide.Plugins
                                 Parent = "batlepass_image_106_35",
                                 Components =
                                 {
-                                    new CuiRawImageComponent { Url = "https://bublickrust.ru/i/1VCSSWH" },
+                                    new CuiRawImageComponent { Url = "https://bublickrust.ru/i/4OF1S4V" },
                                     new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
                                 }
                             });
@@ -545,7 +402,7 @@ namespace Oxide.Plugins
                                 Parent = "batlepass_image_105_37",
                                 Components =
                                 {
-                                    new CuiRawImageComponent { Url = "https://bublickrust.ru/i/1VCSSWH" },
+                                    new CuiRawImageComponent { Url = "https://bublickrust.ru/i/4OF1S4V" },
                                     new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
                                 }
                             });
@@ -605,7 +462,7 @@ namespace Oxide.Plugins
                                 Parent = "batlepass_group_35_1_44",
                                 Components =
                                 {
-                                    new CuiRawImageComponent { Url = "https://bublickrust.ru/i/20X5T4L" },
+                                    new CuiRawImageComponent { Url = "https://bublickrust.ru/i/PHD9YD0" },
                                     new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
                                 }
                             });
@@ -623,7 +480,7 @@ namespace Oxide.Plugins
                                 Parent = "batlepass_group_36_1_45",
                                 Components =
                                 {
-                                    new CuiRawImageComponent { Url = "https://bublickrust.ru/i/CA0E9B0" },
+                                    new CuiRawImageComponent { Url = "https://bublickrust.ru/i/30042VK" },
                                     new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
                                 }
                             });
@@ -669,7 +526,7 @@ namespace Oxide.Plugins
                                     Parent = "group_29_group_28_5_1",
                                     Components =
                                     {
-                                        new CuiRawImageComponent { Url = "https://bublickrust.ru/i/17H0LCD" },
+                                        new CuiRawImageComponent { Url = "https://bublickrust.ru/i/2QKIV97" },
                                         new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
                                     }
                                 });
@@ -722,7 +579,7 @@ namespace Oxide.Plugins
                                         Parent = "group_30_image_104_2",
                                         Components =
                                         {
-                                            new CuiRawImageComponent { Url = "https://bublickrust.ru/i/1VCSSWH" },
+                                            new CuiRawImageComponent { Url = "https://bublickrust.ru/i/4OF1S4V" },
                                             new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
                                         }
                                     });
@@ -740,7 +597,7 @@ namespace Oxide.Plugins
                                         Parent = "group_30_image_105_3",
                                         Components =
                                         {
-                                            new CuiRawImageComponent { Url = "https://bublickrust.ru/i/1VCSSWH" },
+                                            new CuiRawImageComponent { Url = "https://bublickrust.ru/i/4OF1S4V" },
                                             new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
                                         }
                                     });
@@ -758,7 +615,7 @@ namespace Oxide.Plugins
                                 Parent = "batlepass_rifle_l96_1_50",
                                 Components =
                                 {
-                                    new CuiRawImageComponent { Url = "https://bublickrust.ru/i/5QNYVPO" },
+                                    new CuiRawImageComponent { Url = "https://bublickrust.ru/i/LUSMTL0" },
                                     new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
                                 }
                             });
@@ -770,34 +627,12 @@ namespace Oxide.Plugins
                                 RectTransform = { AnchorMin = "0.9370 0.4632", AnchorMax = "0.9995 0.5536" }
                             }, "batle_pass_fifnsih_ebani_batlepass_0", "batlepass_lmg_m249_1_51");
 
-                            // Image for lmg.m249 1
-                            elements.Add(new CuiElement
-                            {
-                                Parent = "batlepass_lmg_m249_1_51",
-                                Components =
-                                {
-                                    new CuiRawImageComponent { Url = "https://bublickrust.ru/i/R7UMTH0" },
-                                    new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
-                                }
-                            });
-
                             // Panel: metal.plate.torso 1
                             elements.Add(new CuiPanel
                             {
                                 Image = { Color = "0 0 0 0" },
                                 RectTransform = { AnchorMin = "0.6997 0.4610", AnchorMax = "0.7622 0.5514" }
                             }, "batle_pass_fifnsih_ebani_batlepass_0", "batlepass_metal_plate_torso_1_52");
-
-                            // Image for metal.plate.torso 1
-                            elements.Add(new CuiElement
-                            {
-                                Parent = "batlepass_metal_plate_torso_1_52",
-                                Components =
-                                {
-                                    new CuiRawImageComponent { Url = "https://bublickrust.ru/i/59MKIBP" },
-                                    new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
-                                }
-                            });
 
                             // Panel: workbench3 1
                             elements.Add(new CuiPanel
@@ -812,7 +647,7 @@ namespace Oxide.Plugins
                                 Parent = "batlepass_workbench3_1_53",
                                 Components =
                                 {
-                                    new CuiRawImageComponent { Url = "https://bublickrust.ru/i/5KPAEDD" },
+                                    new CuiRawImageComponent { Url = "https://bublickrust.ru/i/245OFQE" },
                                     new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
                                 }
                             });
@@ -823,17 +658,6 @@ namespace Oxide.Plugins
                             Image = { Color = "0 0 0 0" },
                             RectTransform = { AnchorMin = "0.2246 0.4632", AnchorMax = "0.2871 0.5536" }
                         }, "frame_20_batle_pass_fifnsih_ebani_1", "batle_pass_fifnsih_ebani_rifle_ak_ice_3_1");
-
-                        // Image for rifle.ak.ice 3
-                        elements.Add(new CuiElement
-                        {
-                            Parent = "batle_pass_fifnsih_ebani_rifle_ak_ice_3_1",
-                            Components =
-                            {
-                                new CuiRawImageComponent { Url = "https://bublickrust.ru/i/6W0JB6S" },
-                                new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
-                            }
-                        });
 
                         // Panel: rifle.ak 1
                         elements.Add(new CuiPanel
@@ -848,7 +672,7 @@ namespace Oxide.Plugins
                             Parent = "batle_pass_fifnsih_ebani_rifle_ak_1_2",
                             Components =
                             {
-                                new CuiRawImageComponent { Url = "https://bublickrust.ru/i/14T5P50" },
+                                new CuiRawImageComponent { Url = "https://bublickrust.ru/i/69VHR60" },
                                 new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
                             }
                         });
@@ -860,34 +684,12 @@ namespace Oxide.Plugins
                             RectTransform = { AnchorMin = "0.6953 0.6921", AnchorMax = "0.8428 0.7444" }
                         }, "frame_20_batle_pass_fifnsih_ebani_1", "batle_pass_fifnsih_ebani_vector_21_1_3");
 
-                        // Image for Vector 21 1
-                        elements.Add(new CuiElement
-                        {
-                            Parent = "batle_pass_fifnsih_ebani_vector_21_1_3",
-                            Components =
-                            {
-                                new CuiRawImageComponent { Url = "https://bublickrust.ru/i/6JR1VU0" },
-                                new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
-                            }
-                        });
-
                         // Panel: Vector 22 1
                         elements.Add(new CuiPanel
                         {
                             Image = { Color = "0 0 0 0" },
                             RectTransform = { AnchorMin = "0.4883 0.2684", AnchorMax = "1.0000 0.7613" }
                         }, "frame_20_batle_pass_fifnsih_ebani_1", "batle_pass_fifnsih_ebani_vector_22_1_4");
-
-                        // Image for Vector 22 1
-                        elements.Add(new CuiElement
-                        {
-                            Parent = "batle_pass_fifnsih_ebani_vector_22_1_4",
-                            Components =
-                            {
-                                new CuiRawImageComponent { Url = "https://bublickrust.ru/i/YZ7QMZ0" },
-                                new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
-                            }
-                        });
 
                         // Panel: Vector 20 1
                         elements.Add(new CuiPanel
@@ -902,7 +704,7 @@ namespace Oxide.Plugins
                             Parent = "batle_pass_fifnsih_ebani_vector_20_1_5",
                             Components =
                             {
-                                new CuiRawImageComponent { Url = "https://bublickrust.ru/i/2P6EGSV" },
+                                new CuiRawImageComponent { Url = "https://bublickrust.ru/i/3M0AHA0" },
                                 new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
                             }
                         });
@@ -920,7 +722,7 @@ namespace Oxide.Plugins
                             Parent = "batle_pass_fifnsih_ebani_sulfur_1_6",
                             Components =
                             {
-                                new CuiRawImageComponent { Url = "https://bublickrust.ru/i/23KLSGB" },
+                                new CuiRawImageComponent { Url = "https://bublickrust.ru/i/24XT2L9" },
                                 new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
                             }
                         });

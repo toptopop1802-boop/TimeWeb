@@ -28,25 +28,29 @@
     footer{color:var(--muted);text-align:center;margin:26px 0}
   </style>
   <script>
+    let _offset = 0; let _limit = 60; let _loading = false; let _done = false; let _items = [];
     async function fetchImages(){
-      const res = await fetch('/api/images/list?limit=1000');
+      if (_loading || _done) return [];
+      _loading = true;
+      const q = encodeURIComponent(document.getElementById('q').value||'');
+      const res = await fetch(`/api/images/list?limit=${_limit}&offset=${_offset}&q=${q}`);
       if(!res.ok) throw new Error('Failed to fetch images');
       const data = await res.json();
+      _offset += data.items.length;
+      if (!data.items.length) _done = true;
+      _loading = false;
       return data.items || [];
     }
     function fmtSize(b){ if(!b && b!==0) return '-'; const kb=b/1024, mb=kb/1024; return mb>=1?mb.toFixed(2)+' MB':kb.toFixed(1)+' KB'}
     function fmtDate(s){ try{ return new Date(s).toLocaleString() }catch(e){ return s||'-' } }
-    function render(items){
-      const q = (document.getElementById('q').value||'').toLowerCase().trim();
+    function append(items){
       const grid = document.getElementById('grid');
-      grid.innerHTML = '';
-      const filtered = items.filter(x=> x.original_name?.toLowerCase().includes(q) || x.short_code?.toLowerCase().includes(q));
-      for(const it of filtered){
+      for(const it of items){
         const card = document.createElement('div');
         card.className='card';
         card.innerHTML = `
           <div class="thumb">
-            <img loading="lazy" src="${it.directUrl}" alt="${it.original_name||it.short_code}">
+            <img loading="lazy" src="${it.directUrl}?w=480&q=70" alt="${it.original_name||it.short_code}">
           </div>
           <div class="meta">
             <div class="name" title="${it.original_name||''}">${it.original_name||'image'}</div>
@@ -60,18 +64,32 @@
           </div>`;
         grid.appendChild(card);
       }
-      document.getElementById('count').textContent = filtered.length;
+      document.getElementById('count').textContent = document.getElementById('grid').children.length;
     }
-    let _items = [];
     async function init(){
       try{
         _items = await fetchImages();
-        render(_items);
+        append(_items);
+        const sentinel = document.createElement('div');
+        sentinel.id = 'sentinel';
+        sentinel.style.height = '1px';
+        document.body.appendChild(sentinel);
+        const io = new IntersectionObserver(async (entries)=>{
+          if(entries[0].isIntersecting){
+            const more = await fetchImages();
+            append(more);
+          }
+        });
+        io.observe(sentinel);
       }catch(e){
         document.getElementById('grid').innerHTML = `<div style="color:#ef4444">Ошибка загрузки: ${e.message}</div>`
       }
     }
     addEventListener('DOMContentLoaded', init);
+    function onSearch(){
+      _offset=0; _done=false; document.getElementById('grid').innerHTML='';
+      fetchImages().then(items=>{append(items)}).catch(e=>{document.getElementById('grid').innerHTML = `<div style=\"color:#ef4444\">Ошибка загрузки: ${e.message}</div>`});
+    }
   </script>
 </head>
 <body>
@@ -79,7 +97,7 @@
     <div class="wrap">
       <div class="row">
         <div style="font-weight:800;letter-spacing:.5px">Галерея изображений</div>
-        <div class="search"><input id="q" placeholder="Поиск по имени или коду" oninput="render(_items)"></div>
+        <div class="search"><input id="q" placeholder="Поиск по имени или коду" onkeypress="if(event.key==='Enter'){onSearch()}" ></div>
         <div id="count" style="color:#94a3b8">0</div>
       </div>
     </div>
