@@ -63,39 +63,78 @@ namespace Oxide.Plugins
             var elements = new CuiElementContainer();
             Puts($"[Frame19UI] Creating UI elements...");
 
-            // Main panel
+            // Main background panel with blur
             elements.Add(new CuiPanel
             {
-                Image = { Color = "0 0 0 0.8" },
+                Image = { Color = "0 0 0 0.8", Material = "assets/content/ui/uibackgroundblur-ingamemenu.mat" },
                 RectTransform = { AnchorMin = "0 0", AnchorMax = "1 1" },
                 CursorEnabled = true
             }, "Overlay", UIName);
 
-            // Panel: Overlay 1
-            elements.Add(new CuiPanel
-            {
-                Image = { Color = "1 1 1 0.5" },
-                RectTransform = { AnchorMin = "0.1667 0.1926", AnchorMax = "0.8333 0.8593" }
-            }, UIName, "frame_19_overlay_1_0");
-
-            // Image for Overlay 1
-            elements.Add(new CuiElement
-            {
-                Parent = "frame_19_overlay_1_0",
-                Components =
-                {
-                    new CuiRawImageComponent { Url = "https://bublickrust.ru/i/Q0NKJ50" },
-                    new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" }
-                }
-            });
-
-            // Close button
+            // Invisible button for closing on background click
             elements.Add(new CuiButton
             {
-                Button = { Command = "frame19.close", Color = "0.8 0.2 0.2 0.9" },
-                RectTransform = { AnchorMin = "0.85 0.92", AnchorMax = "0.98 0.97" },
-                Text = { Text = "✕ Закрыть", FontSize = 16, Align = TextAnchor.MiddleCenter, Color = "1 1 1 1" }
-            }, UIName);
+                Button = { Color = "0 0 0 0", Command = "frame19.close" },
+                RectTransform = { AnchorMin = "0 0", AnchorMax = "1 1" },
+                Text = { Text = "", Color = "0 0 0 0" }
+            }, UIName, UIName + ".CloseBackground");
+
+            // Content container (on top of close button)
+            elements.Add(new CuiPanel
+            {
+                Image = { Color = "0 0 0 0" },
+                RectTransform = { AnchorMin = "0 0", AnchorMax = "1 1" },
+                CursorEnabled = false
+            }, UIName, UIName + ".Content");
+
+            // Panel: Rectangle 141
+            elements.Add(new CuiPanel
+            {
+                Image = { Color = "0.851 0.851 0.851 1.000" },
+                RectTransform = { AnchorMin = "0.0000 0.0000", AnchorMax = "0.1557 0.2343" }
+            }, UIName + ".Content", "frame_19_rectangle_141_0");
+
+            // Panel: Rectangle 142
+            elements.Add(new CuiPanel
+            {
+                Image = { Color = "0.851 0.851 0.851 1.000" },
+                RectTransform = { AnchorMin = "0.8531 0.0000", AnchorMax = "1.0000 0.2407" }
+            }, UIName + ".Content", "frame_19_rectangle_142_1");
+
+            // Panel: Rectangle 143
+            elements.Add(new CuiPanel
+            {
+                Image = { Color = "0.851 0.851 0.851 1.000" },
+                RectTransform = { AnchorMin = "0.8984 0.8250", AnchorMax = "1.0135 1.0000" }
+            }, UIName + ".Content", "frame_19_rectangle_143_2");
+
+            // Panel: Rectangle 144
+            elements.Add(new CuiPanel
+            {
+                Image = { Color = "0.851 0.851 0.851 1.000" },
+                RectTransform = { AnchorMin = "-0.0073 0.8546", AnchorMax = "0.1625 1.0000" }
+            }, UIName + ".Content", "frame_19_rectangle_144_3");
+
+            // Panel: Rectangle 145
+            elements.Add(new CuiPanel
+            {
+                Image = { Color = "0.851 0.851 0.851 1.000" },
+                RectTransform = { AnchorMin = "0.3922 0.4074", AnchorMax = "0.6078 0.7019" }
+            }, UIName + ".Content", "frame_19_rectangle_145_4");
+
+            // Text: ТЕКСТ
+            elements.Add(new CuiLabel
+            {
+                Text = { Text = "ТЕКСТ", FontSize = 96, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000" },
+                RectTransform = { AnchorMin = "0.3521 0.6176", AnchorMax = "0.6391 0.7250" }
+            }, UIName + ".Content");
+
+            // Text: ТЕКСТ
+            elements.Add(new CuiLabel
+            {
+                Text = { Text = "ТЕКСТ", FontSize = 96, Align = TextAnchor.MiddleLeft, Color = "1.000 1.000 1.000 1.000" },
+                RectTransform = { AnchorMin = "0.3521 0.5102", AnchorMax = "0.6391 0.6176" }
+            }, UIName + ".Content");
 
             Puts($"[Frame19UI] Adding {elements.Count} UI elements to player");
             CuiHelper.AddUi(player, elements);

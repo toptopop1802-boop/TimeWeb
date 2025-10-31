@@ -410,24 +410,31 @@ function generateCSharpCode(node, imageMap) {
   code += `            playersWithUI.Add(player.userID);\n            \n`;
   code += `            var elements = new CuiElementContainer();\n`;
   code += `            Puts($"[${className}UI] Creating UI elements...");\n\n`;
-  code += `            // Main panel\n`;
+  code += `            // Main background panel with blur\n`;
   code += `            elements.Add(new CuiPanel\n`;
   code += `            {\n`;
-  code += `                Image = { Color = "0 0 0 0.8" },\n`;
+  code += `                Image = { Color = "0 0 0 0.8", Material = "assets/content/ui/uibackgroundblur-ingamemenu.mat" },\n`;
   code += `                RectTransform = { AnchorMin = "0 0", AnchorMax = "1 1" },\n`;
   code += `                CursorEnabled = true\n`;
   code += `            }, "Overlay", UIName);\n\n`;
   
-  code += generateCSharpElements(node, `UIName`, 3, imageMap);
-  
-  // Close button
-  code += `            // Close button\n`;
+  code += `            // Invisible button for closing on background click\n`;
   code += `            elements.Add(new CuiButton\n`;
   code += `            {\n`;
-  code += `                Button = { Command = "${commandName}.close", Color = "0.8 0.2 0.2 0.9" },\n`;
-  code += `                RectTransform = { AnchorMin = "0.85 0.92", AnchorMax = "0.98 0.97" },\n`;
-  code += `                Text = { Text = "✕ Закрыть", FontSize = 16, Align = TextAnchor.MiddleCenter, Color = "1 1 1 1" }\n`;
-  code += `            }, UIName);\n\n`;
+  code += `                Button = { Color = "0 0 0 0", Command = "${commandName}.close" },\n`;
+  code += `                RectTransform = { AnchorMin = "0 0", AnchorMax = "1 1" },\n`;
+  code += `                Text = { Text = "", Color = "0 0 0 0" }\n`;
+  code += `            }, UIName, UIName + ".CloseBackground");\n\n`;
+  
+  code += `            // Content container (on top of close button)\n`;
+  code += `            elements.Add(new CuiPanel\n`;
+  code += `            {\n`;
+  code += `                Image = { Color = "0 0 0 0" },\n`;
+  code += `                RectTransform = { AnchorMin = "0 0", AnchorMax = "1 1" },\n`;
+  code += `                CursorEnabled = false\n`;
+  code += `            }, UIName, UIName + ".Content");\n\n`;
+  
+  code += generateCSharpElements(node, `UIName + ".Content"`, 3, imageMap);
   
   code += `            Puts($"[${className}UI] Adding {elements.Count} UI elements to player");\n`;
   code += `            CuiHelper.AddUi(player, elements);\n`;
@@ -763,4 +770,5 @@ function calculateAnchorMax(node) {
   
   return `${x.toFixed(4)} ${y.toFixed(4)}`;
 }
+
 
