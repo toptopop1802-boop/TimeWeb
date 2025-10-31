@@ -1086,9 +1086,15 @@ function setupNavigation() {
     // Handle navigation clicks
     document.querySelectorAll('.nav-link').forEach(link => {
         link.addEventListener('click', (e) => {
-            e.preventDefault();
-            
             const page = link.dataset.page;
+            const href = link.getAttribute('href') || '';
+            const isExternal = link.target === '_blank' || href.startsWith('/') || href.startsWith('http');
+            if (!page) {
+                // Нет внутренней страницы — позволяем обычную навигацию (для внешних ссылок)
+                if (!isExternal) return; // ни страница, ни внешняя — ничего не делаем
+                return; // браузер сам перейдёт
+            }
+            e.preventDefault();
             navigateToPage(page);
         });
     });
