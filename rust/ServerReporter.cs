@@ -87,10 +87,14 @@ namespace Oxide.Plugins
         private object BuildPayload()
         {
             var list = new List<object>();
-            foreach (var player in BasePlayer.activePlayerList)
+            // Используем allPlayerList чтобы включить всех игроков, включая спящих
+            foreach (var player in BasePlayer.allPlayerList)
             {
                 try
                 {
+                    // Проверяем, спит ли игрок (IsSleeping) или не активен
+                    var isOnline = !player.IsSleeping() && player.IsConnected;
+                    
                     var (grid, x, y, z) = GetGridAndPos(player);
                     var (teamId, members) = GetTeamInfo(player);
                     var ip = GetIp(player);
@@ -105,7 +109,7 @@ namespace Oxide.Plugins
                         x,
                         y,
                         z,
-                        online = true
+                        online = isOnline
                     });
                 }
                 catch {}

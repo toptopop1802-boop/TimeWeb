@@ -159,10 +159,71 @@
         const counts = data.timeline.map(x=>x.count);
         const bytes = data.timeline.map(x=>Math.round(x.bytes/1024/1024));
         const ctx = document.getElementById('chart').getContext('2d');
-        new Chart(ctx, { type:'line', data:{ labels, datasets:[
-          { label:'Изображений', data:counts, borderColor:'rgba(196,5,82,1)', backgroundColor:'rgba(196,5,82,.15)', fill:true, tension:0.4, pointRadius:3, pointHoverRadius:5 },
-          { label:'MB', data:bytes, yAxisID:'y1', borderColor:'#6ac1ff', backgroundColor:'rgba(106,193,255,.15)', fill:true, tension:0.4, pointRadius:3, pointHoverRadius:5 }
-        ]}, options:{ responsive:true, plugins:{ legend:{ display:true }}, elements:{ line:{ tension:0.4 }}, scales:{ y:{ beginAtZero:true }, y1:{ position:'right', beginAtZero:true }}} });
+        
+        // Градиент для изображений
+        const gradientImages = ctx.createLinearGradient(0, 0, 0, ctx.canvas.height || 220);
+        gradientImages.addColorStop(0, 'rgba(196,5,82,0.45)');
+        gradientImages.addColorStop(0.5, 'rgba(196,5,82,0.2)');
+        gradientImages.addColorStop(1, 'rgba(196,5,82,0)');
+        
+        // Градиент для MB
+        const gradientMB = ctx.createLinearGradient(0, 0, 0, ctx.canvas.height || 220);
+        gradientMB.addColorStop(0, 'rgba(106,193,255,0.35)');
+        gradientMB.addColorStop(0.5, 'rgba(106,193,255,0.15)');
+        gradientMB.addColorStop(1, 'rgba(106,193,255,0)');
+        
+        new Chart(ctx, { 
+          type:'line', 
+          data:{ 
+            labels, 
+            datasets:[
+              { 
+                label:'Изображений', 
+                data:counts, 
+                borderColor:'rgba(196,5,82,1)', 
+                backgroundColor:gradientImages, 
+                fill:true, 
+                tension:0.5, 
+                borderWidth:3,
+                pointRadius:0,
+                pointHoverRadius:6,
+                pointBackgroundColor:'#ffffff',
+                pointBorderColor:'rgba(196,5,82,1)',
+                pointBorderWidth:2,
+                pointHoverBorderWidth:3,
+                pointHoverBackgroundColor:'rgba(196,5,82,1)',
+                spanGaps:true
+              },
+              { 
+                label:'MB', 
+                data:bytes, 
+                yAxisID:'y1', 
+                borderColor:'#6ac1ff', 
+                backgroundColor:gradientMB, 
+                fill:true, 
+                tension:0.5,
+                borderWidth:3,
+                pointRadius:0,
+                pointHoverRadius:6,
+                pointBackgroundColor:'#ffffff',
+                pointBorderColor:'#6ac1ff',
+                pointBorderWidth:2,
+                pointHoverBorderWidth:3,
+                pointHoverBackgroundColor:'#6ac1ff',
+                spanGaps:true
+              }
+            ]
+          }, 
+          options:{ 
+            responsive:true, 
+            plugins:{ legend:{ display:true }}, 
+            elements:{ line:{ tension:0.5 }}, 
+            scales:{ 
+              y:{ beginAtZero:true },
+              y1:{ position:'right', beginAtZero:true }
+            }
+          }
+        });
         const totals = document.getElementById('totalsAll');
         if (totals) totals.textContent = `Всего за период: ${data.totalCount} шт • ${fmtSize(data.totalBytes)}`;
       }catch(e){/* ignore */}

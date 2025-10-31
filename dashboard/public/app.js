@@ -1145,6 +1145,17 @@ function setupNavigation() {
 }
 
 function navigateToPage(page) {
+    // Check admin-only pages
+    const adminPages = ['server', 'analytics', 'messages', 'channels', 'admin', 'members'];
+    if (adminPages.includes(page)) {
+        const authData = getAuthData();
+        if (!authData || !isAdmin(authData)) {
+            console.warn('⛔ Доступ запрещен. Требуются права администратора.');
+            window.location.hash = '#maps';
+            return;
+        }
+    }
+
     // Update active link
     document.querySelectorAll('.nav-link').forEach(l => {
         l.classList.remove('active');
@@ -1411,7 +1422,7 @@ function openTeamModal(steamId) {
     }
     const modal = document.getElementById('server-team-modal');
     const title = document.getElementById('server-team-title');
-    if (title) title.textContent = `Состав команды: ${escapeHtml(p.name || 'Неизвестно')}`;
+    if (title) title.textContent = `👥 Состав команды: ${escapeHtml(p.name || 'Неизвестно')}`;
     if (modal) modal.style.display = 'block';
 }
 
