@@ -1,14 +1,21 @@
 // Figma Plugin: Frame to Rust CUI Exporter
-// API Token встроен
-const API_TOKEN = '58076245d1f7985852fc5dc77d2da0294dac4c714f3cdc773029d470ccd10511';
 const API_URL = 'https://bublickrust.ru/api/images/upload';
+let currentApiToken = '';
 
 // Показать UI
-figma.showUI(__html__, { width: 450, height: 650, themeColors: true });
+figma.showUI(__html__, { width: 450, height: 700, themeColors: true });
 
 // Обработка сообщений от UI
 figma.ui.onmessage = async (msg) => {
   if (msg.type === 'generate-code') {
+    currentApiToken = msg.apiToken || '';
+    if (!currentApiToken) {
+      figma.ui.postMessage({
+        type: 'error',
+        message: 'Не указан API токен'
+      });
+      return;
+    }
     await generateCode();
   } else if (msg.type === 'cancel') {
     figma.closePlugin();
@@ -204,14 +211,14 @@ async function uploadImages(images) {
 
       figma.ui.postMessage({
         type: 'log',
-        message: `   🔑 Authorization: Bearer ${API_TOKEN.substring(0, 20)}...`
+        message: `   🔑 Authorization: Bearer ${currentApiToken.substring(0, 20)}...`
       });
 
       // Отправляем на API
       const response = await fetch(API_URL, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${API_TOKEN}`,
+          'Authorization': `Bearer ${currentApiToken}`,
           'Content-Type': `multipart/form-data; boundary=----${boundary}`
         },
         body: bodyBytes

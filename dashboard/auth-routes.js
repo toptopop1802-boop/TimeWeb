@@ -34,9 +34,18 @@ function setupAuthRoutes(app, supabase) {
                 .eq('username', cleanUsername)
                 .maybeSingle(); // maybeSingle не выдаёт ошибку если не найдено
 
-            if (checkError && checkError.code !== 'PGRST116') {
+            // PGRST116 = not found - это норма
+            if (checkError) {
                 console.error('❌ Database check error:', checkError);
-                return res.status(500).json({ error: 'Ошибка базы данных' });
+                console.error('   Code:', checkError.code);
+                console.error('   Message:', checkError.message);
+                
+                // Если это не "not found" ошибка - возвращаем 500
+                if (checkError.code && checkError.code !== 'PGRST116') {
+                    return res.status(500).json({ 
+                        error: 'Ошибка базы данных: ' + (checkError.message || 'Неизвестная ошибка')
+                    });
+                }
             }
 
             let user;

@@ -280,6 +280,31 @@
     .log-window.collapsed {
       display: none;
     }
+
+    .token-input {
+      width: 100%;
+      padding: 10px;
+      border: 2px solid #dee2e6;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      background: #f8f9fa;
+      color: #495057;
+      transition: all 0.2s;
+    }
+
+    .token-input:focus {
+      outline: none;
+      border-color: #c40552;
+      background: white;
+    }
+
+    .token-hint {
+      font-size: 10px;
+      color: #6c757d;
+      margin-top: 6px;
+      font-style: italic;
+    }
   </style>
 </head>
 <body>
@@ -291,11 +316,24 @@
   <div class="section">
     <div class="info-box">
       <strong>📋 Инструкция:</strong>
-      1. Выберите Frame в Figma<br>
-      2. Нажмите "Генерировать код"<br>
-      3. Изображения загрузятся автоматически<br>
+      1. Вставьте API токен (если нужно)<br>
+      2. Выберите Frame в Figma<br>
+      3. Нажмите "Генерировать код"<br>
       4. Скопируйте CUI JSON или C# код
     </div>
+  </div>
+
+  <!-- API Token Input -->
+  <div class="section">
+    <div class="section-title">🔑 API Токен:</div>
+    <input 
+      type="text" 
+      id="api-token" 
+      class="token-input" 
+      placeholder="Вставьте ваш API токен"
+      value="58076245d1f7985852fc5dc77d2da0294dac4c714f3cdc773029d470ccd10511"
+    />
+    <div class="token-hint">Токен сохраняется в плагине. Получите токен на сайте в разделе API.</div>
   </div>
 
   <div class="section">
@@ -351,11 +389,20 @@
       btn.disabled = true;
       btn.textContent = '⏳ Генерация...';
       
+      const apiToken = document.getElementById('api-token').value.trim();
+      
+      if (!apiToken) {
+        alert('⚠️ Введите API токен!');
+        btn.disabled = false;
+        btn.textContent = '⚡ Генерировать код';
+        return;
+      }
+      
       document.getElementById('code-output').classList.remove('visible');
       clearLog();
       addLog('🚀 Начинаю генерацию...', 'info');
       
-      parent.postMessage({ pluginMessage: { type: 'generate-code' } }, '*');
+      parent.postMessage({ pluginMessage: { type: 'generate-code', apiToken } }, '*');
     }
 
     function cancel() {
