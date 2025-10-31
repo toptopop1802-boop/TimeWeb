@@ -48,20 +48,176 @@ function createApp() {
         }
     });
 
-    // GET endpoint for upload info
+    // GET endpoint for upload info - HTML page
     app.get('/api/images/upload', (req, res) => {
-        res.json({
-            info: 'Upload images via POST',
-            method: 'POST',
-            endpoint: '/api/images/upload',
-            requirements: {
-                auth: 'Required (Bearer token)',
-                field: 'image',
-                formats: ['png', 'jpg', 'jpeg', 'gif', 'webp'],
-                maxSize: '15 MB'
-            },
-            example: 'POST /api/images/upload with multipart/form-data containing "image" field'
-        });
+        res.send(`
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Upload API - Status</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+        .status {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .status-icon {
+            font-size: 64px;
+            margin-bottom: 10px;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        .info-card {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .label {
+            font-weight: 600;
+            color: #555;
+        }
+        .value {
+            color: #667eea;
+            font-weight: 500;
+        }
+        .formats {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .format-tag {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .example-code {
+            background: #2d3748;
+            color: #68d391;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+        .back-btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .back-btn:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="status">
+            <div class="status-icon">✅</div>
+            <h1>Image Upload API</h1>
+            <div class="subtitle">Статус: <strong style="color: #68d391;">РАБОТАЕТ</strong></div>
+        </div>
+
+        <div class="info-card">
+            <div class="info-row">
+                <span class="label">Метод:</span>
+                <span class="value">POST</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Endpoint:</span>
+                <span class="value">/api/images/upload</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Авторизация:</span>
+                <span class="value">Bearer Token</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Поле формы:</span>
+                <span class="value">image</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Макс. размер:</span>
+                <span class="value">15 MB</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Форматы:</span>
+                <div class="formats">
+                    <span class="format-tag">PNG</span>
+                    <span class="format-tag">JPG</span>
+                    <span class="format-tag">JPEG</span>
+                    <span class="format-tag">GIF</span>
+                    <span class="format-tag">WebP</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="example-code">
+curl -X POST https://bublickrust.ru/api/images/upload \\
+  -H "Authorization: Bearer YOUR_TOKEN" \\
+  -F "image=@your-image.png"
+        </div>
+
+        <center>
+            <a href="/" class="back-btn">← Вернуться на главную</a>
+        </center>
+    </div>
+</body>
+</html>
+        `);
     });
 
     // Authenticated upload, public read
