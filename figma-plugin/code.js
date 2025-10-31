@@ -157,11 +157,32 @@ async function uploadImages(images) {
   const uploaded = [];
   const BATCH_SIZE = 5; // Загружаем по 5 изображений за раз
   const DELAY_MS = 500; // Задержка между батчами
+  const RETRY_ATTEMPTS = 6; // Повторные проверки доступности URL
+  const RETRY_DELAY = 400; // мс между проверками
+
+  // Локальный кэш по хешу Figma, чтобы не загружать одно и то же изображение повторно
+  const hashToUrl = new Map();
 
   figma.ui.postMessage({
     type: 'log',
     message: `📤 Начинаю загрузку ${images.length} изображений (батчами по ${BATCH_SIZE})...`
   });
+
+  // Проверка доступности прямой ссылки (некоторые CDN/проксирующие слои активируются с задержкой)
+  async function ensureDirectUrlAvailable(url) {
+    for (let attempt = 1; attempt <= RETRY_ATTEMPTS; attempt++) {
+      try {
+        const resp = await fetch(`${url}?cb=${Date.now()}`, { method: 'GET' });
+        if (resp.ok) {
+          return true;
+        }
+      } catch (_) {
+        // игнорируем сетевые ошибки и повторяем
+      }
+      await new Promise(r => setTimeout(r, RETRY_DELAY));
+    }
+    return false;
+  }
 
   for (let i = 0; i < images.length; i++) {
     const img = images[i];
@@ -176,6 +197,17 @@ async function uploadImages(images) {
       await new Promise(resolve => setTimeout(resolve, DELAY_MS));
     }
     
+    // Дедупликация: если такой hash уже загружали — переиспользуем URL и не шлём запрос
+    if (hashToUrl.has(img.hash)) {
+      const reusedUrl = hashToUrl.get(img.hash);
+      uploaded.push({ hash: img.hash, url: reusedUrl, node: img.node });
+      figma.ui.postMessage({
+        type: 'log',
+        message: `🔁 [${i + 1}/${images.length}] Повтор: ${imageName} -> reuse ${reusedUrl}`
+      });
+      continue;
+    }
+
     figma.ui.postMessage({
       type: 'log',
       message: `📤 [${i + 1}/${images.length}] Загружаю: ${imageName}`
@@ -265,15 +297,23 @@ async function uploadImages(images) {
       const data = JSON.parse(responseText);
 
       if (data.success) {
-        uploaded.push({
-          hash: img.hash,
-          url: data.directUrl,
-          node: img.node
-        });
+        const url = data.directUrl;
+        // Проверяем доступность прямой ссылки, иногда требуется время на репликацию
+        const available = await ensureDirectUrlAvailable(url);
+        if (!available) {
+          figma.ui.postMessage({
+            type: 'log',
+            message: `   ⚠️ URL пока недоступен (проверки исчерпаны). Пропускаю картинку для генерации: ${url}`
+          });
+          // Не добавляем в карту, чтобы генератор не вставлял битую ссылку
+        } else {
+          uploaded.push({ hash: img.hash, url, node: img.node });
+          hashToUrl.set(img.hash, url);
+        }
         
         figma.ui.postMessage({
           type: 'log',
-          message: `   ✅ Успех! URL: ${data.directUrl}`
+          message: `   ✅ Успех! URL: ${url}`
         });
       } else {
         throw new Error(data.error || 'Неизвестная ошибка');
@@ -506,6 +546,11 @@ function generateCSharpElements(node, parentName, level, imageMap) {
     text = text.replace(/[\uFEFF\uFFF9-\uFFFB]/g, ''); // BOM и другие невидимые
     text = text.replace(/[\u180E]/g, ''); // Mongolian vowel separator
     text = text.replace(/[\u061C]/g, ''); // Arabic letter mark
+    // Дополнительно удаляем проблемные невидимые/форматирующие символы, встречающиеся в Figma
+    text = text.replace(/\u00AD/g, ''); // Soft hyphen
+    text = text.replace(/[\u2060-\u206F]/g, ''); // Word joiner и прочие управления
+    text = text.replace(/[\uFE00-\uFE0F]/g, ''); // Variation Selectors
+    text = text.replace(/[\uE000-\uF8FF]/g, ''); // Private Use Area
     
     // 2. Нормализуем пробелы (все виды пробелов -> обычный пробел)
     text = text.replace(/[\s\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]+/g, ' ');
@@ -520,6 +565,32 @@ function generateCSharpElements(node, parentName, level, imageMap) {
       .replace(/\t/g, '\\t');   // Экранируем табы
   }
   
+  // Санитизация текста для комментариев (без экранирования кавычек)
+  function sanitizeComment(text, maxLen = 120) {
+    if (!text) return '';
+    // 1) удаляем невидимые/управляющие символы
+    text = text.replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
+    text = text.replace(/[\u200B-\u200F]/g, '');
+    text = text.replace(/[\u2028-\u202F]/g, '');
+    text = text.replace(/[\uFEFF\uFFF9-\uFFFB]/g, '');
+    text = text.replace(/[\u180E]/g, '');
+    text = text.replace(/[\u061C]/g, '');
+    text = text.replace(/\u00AD/g, '');
+    text = text.replace(/[\u2060-\u206F]/g, '');
+    text = text.replace(/[\uFE00-\uFE0F]/g, '');
+    text = text.replace(/[\uE000-\uF8FF]/g, '');
+    // 2) нормализуем пробелы
+    text = text.replace(/[\s\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]+/g, ' ').trim();
+    // 3) убираем возможные последовательности комментариев
+    text = text.replace(/\*\//g, '');
+    text = text.replace(/\/\//g, '/');
+    // 4) ограничиваем длину
+    if (text.length > maxLen) {
+      text = text.slice(0, maxLen - 1) + '…';
+    }
+    return text;
+  }
+  
   if ('children' in node) {
     for (let i = 0; i < node.children.length; i++) {
       const child = node.children[i];
@@ -530,6 +601,7 @@ function generateCSharpElements(node, parentName, level, imageMap) {
         const textAlign = getTextAlign(child);
         const originalText = child.characters || '';
         const escapedText = escapeCSharpString(originalText);
+        const commentPreview = sanitizeComment(child.name || originalText, 120);
         
         // 📊 ЛОГИ ДЛЯ ОТЛАДКИ ТЕКСТА
         if (originalText.length > 50) {
@@ -545,7 +617,7 @@ function generateCSharpElements(node, parentName, level, imageMap) {
           fontName = 'robotocondensed-bold.ttf';
         }
         
-        code += `${indent}// Text: ${child.name}\n`;
+        code += `${indent}// Text: ${commentPreview}\n`;
         code += `${indent}elements.Add(new CuiLabel\n`;
         code += `${indent}{\n`;
         code += `${indent}    Text = { Text = "${escapedText}", FontSize = ${child.fontSize || 14}, Align = TextAnchor.${textAlign}, Color = "${textColor}", Font = "${fontName}" },\n`;
@@ -766,7 +838,8 @@ function getFillColor(node) {
       return `${r.toFixed(2)} ${g.toFixed(2)} ${b.toFixed(2)} ${a.toFixed(2)}`;
     }
   }
-  return "1 1 1 1";
+  // Нет заливки в Figma -> делаем панель прозрачной
+  return "0 0 0 0";
 }
 
 function getRGBAColor(node) {
@@ -780,7 +853,8 @@ function getRGBAColor(node) {
       return `${r} ${g} ${b} ${a}`;
     }
   }
-  return "1 1 1 0.5";
+  // Нет заливки -> полностью прозрачный цвет
+  return "0 0 0 0";
 }
 
 function getTextAlign(node) {
@@ -815,6 +889,12 @@ function getImageUrl(node, imageMap) {
   return "";
 }
 
+function clamp01(v) {
+  if (v < 0) return 0;
+  if (v > 1) return 1;
+  return v;
+}
+
 function calculateAnchorMin(node) {
   const parent = node.parent;
   if (!parent || !('width' in parent) || !('height' in parent)) {
@@ -824,7 +904,7 @@ function calculateAnchorMin(node) {
   const x = node.x / parent.width;
   const y = 1 - ((node.y + node.height) / parent.height);
   
-  return `${x.toFixed(4)} ${y.toFixed(4)}`;
+  return `${clamp01(x).toFixed(4)} ${clamp01(y).toFixed(4)}`;
 }
 
 function calculateAnchorMax(node) {
@@ -836,7 +916,7 @@ function calculateAnchorMax(node) {
   const x = (node.x + node.width) / parent.width;
   const y = 1 - (node.y / parent.height);
   
-  return `${x.toFixed(4)} ${y.toFixed(4)}`;
+  return `${clamp01(x).toFixed(4)} ${clamp01(y).toFixed(4)}`;
 }
 
 

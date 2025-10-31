@@ -13,6 +13,7 @@ const { requireAuth, requireAdmin } = require('./auth-middleware');
 
 const PORT = process.env.PORT || 3000;
 const IS_SERVERLESS = !!process.env.VERCEL;
+const GALLERY_PATH = process.env.GALLERY_PATH || '/gallery-images-bublick';
 
 function createApp() {
     const app = express();
@@ -357,35 +358,80 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
         }
     });
 
+    // List images (for gallery)
+    app.get('/api/images/list', async (req, res) => {
+        try {
+            if (!supabase) return res.status(503).json({ error: 'Supabase not configured' });
+            const limit = Math.min(parseInt(req.query.limit) || 500, 1000);
+            const { data, error } = await supabase
+                .from('images_metadata')
+                .select('image_id, user_id, original_name, file_size, mime_type, storage_path, short_code, created_at')
+                .order('created_at', { ascending: false })
+                .limit(limit);
+            if (error) throw error;
+
+            const base = process.env.PUBLIC_BASE_URL || (req.headers['x-forwarded-proto'] ? `${req.headers['x-forwarded-proto']}://${req.headers.host}` : `${req.protocol}://${req.get('host')}`);
+            const items = (data || []).map(row => ({
+                ...row,
+                directUrl: `${base}/i/${row.short_code}`
+            }));
+            res.json({ items, count: items.length });
+        } catch (e) {
+            console.error('Image list error:', e);
+            res.status(500).json({ error: e.message });
+        }
+    });
+
     // Public image by short code
     app.get('/i/:shortCode([A-Z0-9]{7})', async (req, res) => {
         try {
             if (!supabase) return res.status(503).send('Supabase not configured');
             const shortCode = req.params.shortCode;
 
-            // List bucket and match by derived code
-            let files = null;
-            const r1 = await supabase.storage.from('images').list('images');
-            files = (!r1.error && r1.data) ? r1.data : (await supabase.storage.from('images').list('')).data;
+            // 1) Пытаемся найти запись напрямую в БД (самый быстрый и консистентный способ)
+            let storagePath = null;
+            try {
+                const { data: row, error: metaErr } = await supabase
+                    .from('images_metadata')
+                    .select('storage_path')
+                    .eq('short_code', shortCode)
+                    .order('created_at', { ascending: false })
+                    .limit(1)
+                    .single();
+                if (!metaErr && row && row.storage_path) {
+                    storagePath = row.storage_path;
+                }
+            } catch (e) {
+                // игнорируем и используем резервный путь
+            }
 
-            const file = files?.find(f => {
-                const ext = path.extname(f.name);
-                const fileId = path.basename(f.name, ext);
-                const cleaned = fileId.replace(/-/g, '');
-                const hash = cleaned.split('').reduce((acc, c) => ((acc << 5) - acc) + c.charCodeAt(0), 0);
-                const code = Math.abs(hash).toString(36).substring(0, 7).toUpperCase().padEnd(7, '0');
-                return code === shortCode;
-            });
+            // 2) Резервный путь — сканируем bucket и вычисляем код (дорого, но рабочий)
+            if (!storagePath) {
+                let files = null;
+                const r1 = await supabase.storage.from('images').list('images');
+                files = (!r1.error && r1.data) ? r1.data : (await supabase.storage.from('images').list('')).data;
 
-            if (!file) return res.status(404).send('Not found');
+                const file = files?.find(f => {
+                    const ext = path.extname(f.name);
+                    const fileId = path.basename(f.name, ext);
+                    const cleaned = fileId.replace(/-/g, '');
+                    const hash = cleaned.split('').reduce((acc, c) => ((acc << 5) - acc) + c.charCodeAt(0), 0);
+                    const code = Math.abs(hash).toString(36).substring(0, 7).toUpperCase().padEnd(7, '0');
+                    return code === shortCode;
+                });
+                if (file) {
+                    storagePath = file.name.startsWith('images/') ? file.name : `images/${file.name}`;
+                }
+            }
 
-            const storagePath = file.name.startsWith('images/') ? file.name : `images/${file.name}`;
+            if (!storagePath) return res.status(404).send('Not found');
+
             const { data, error } = await supabase.storage.from('images').download(storagePath);
             if (error || !data) return res.status(404).send('Not found');
 
             const arrayBuffer = await data.arrayBuffer();
             const buffer = Buffer.from(arrayBuffer);
-            const ext = path.extname(file.name).toLowerCase();
+            const ext = path.extname(storagePath).toLowerCase();
             const type = ext === '.png' ? 'image/png' : ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : ext === '.gif' ? 'image/gif' : ext === '.webp' ? 'image/webp' : 'application/octet-stream';
             res.setHeader('Content-Type', type);
             res.setHeader('Content-Length', buffer.length);
@@ -1564,6 +1610,11 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
             return next(); // Skip static files for API routes
         }
         return staticMiddleware(req, res, next);
+    });
+
+    // Hidden gallery page (not linked anywhere)
+    app.get(GALLERY_PATH, (req, res) => {
+        res.sendFile(path.join(__dirname, 'public', 'images-gallery.html'));
     });
 
     return app;

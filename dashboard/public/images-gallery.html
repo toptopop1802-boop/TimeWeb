@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Галерея изображений</title>
+  <style>
+    :root{--bg:#0f1115;--card:#171923;--text:#e2e8f0;--muted:#94a3b8;--primary:#c40552}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif}
+    header{position:sticky;top:0;background:linear-gradient(180deg,rgba(15,17,21,.95),rgba(15,17,21,.8));backdrop-filter:blur(8px);z-index:5;border-bottom:1px solid rgba(255,255,255,.06)}
+    .wrap{max-width:1200px;margin:0 auto;padding:16px}
+    .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+    .search{flex:1;min-width:220px}
+    input,select{background:#0b0d12;border:1px solid rgba(255,255,255,.08);color:var(--text);border-radius:10px;padding:10px 12px;width:100%;outline:none}
+    main{max-width:1200px;margin:20px auto;padding:0 16px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+    .card{background:var(--card);border:1px solid rgba(255,255,255,.06);border-radius:14px;overflow:hidden;box-shadow:0 10px 24px rgba(0,0,0,.25)}
+    .thumb{background:#0b0d12;display:flex;align-items:center;justify-content:center;height:160px}
+    .thumb img{max-width:100%;max-height:100%}
+    .meta{padding:10px 12px;border-top:1px solid rgba(255,255,255,.06)}
+    .meta .name{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .meta .row{justify-content:space-between;color:var(--muted);font-size:12px;margin-top:6px}
+    .btns{display:flex;gap:8px;margin-top:10px}
+    button{background:linear-gradient(135deg,#c40552,#e4735c);border:none;color:#fff;border-radius:10px;padding:8px 10px;cursor:pointer}
+    .copy{background:#0b0d12;color:#cbd5e1;border:1px solid rgba(255,255,255,.08)}
+    footer{color:var(--muted);text-align:center;margin:26px 0}
+  </style>
+  <script>
+    async function fetchImages(){
+      const res = await fetch('/api/images/list?limit=1000');
+      if(!res.ok) throw new Error('Failed to fetch images');
+      const data = await res.json();
+      return data.items || [];
+    }
+    function fmtSize(b){ if(!b && b!==0) return '-'; const kb=b/1024, mb=kb/1024; return mb>=1?mb.toFixed(2)+' MB':kb.toFixed(1)+' KB'}
+    function fmtDate(s){ try{ return new Date(s).toLocaleString() }catch(e){ return s||'-' } }
+    function render(items){
+      const q = (document.getElementById('q').value||'').toLowerCase().trim();
+      const grid = document.getElementById('grid');
+      grid.innerHTML = '';
+      const filtered = items.filter(x=> x.original_name?.toLowerCase().includes(q) || x.short_code?.toLowerCase().includes(q));
+      for(const it of filtered){
+        const card = document.createElement('div');
+        card.className='card';
+        card.innerHTML = `
+          <div class="thumb">
+            <img loading="lazy" src="${it.directUrl}" alt="${it.original_name||it.short_code}">
+          </div>
+          <div class="meta">
+            <div class="name" title="${it.original_name||''}">${it.original_name||'image'}</div>
+            <div class="row"><span>Код</span><span>${it.short_code}</span></div>
+            <div class="row"><span>Размер</span><span>${fmtSize(it.file_size)}</span></div>
+            <div class="row"><span>Дата</span><span>${fmtDate(it.created_at)}</span></div>
+            <div class="btns">
+              <button onclick="window.open('${it.directUrl}','_blank')">Открыть</button>
+              <button class="copy" onclick="navigator.clipboard.writeText('${it.directUrl}')">Копировать</button>
+            </div>
+          </div>`;
+        grid.appendChild(card);
+      }
+      document.getElementById('count').textContent = filtered.length;
+    }
+    let _items = [];
+    async function init(){
+      try{
+        _items = await fetchImages();
+        render(_items);
+      }catch(e){
+        document.getElementById('grid').innerHTML = `<div style="color:#ef4444">Ошибка загрузки: ${e.message}</div>`
+      }
+    }
+    addEventListener('DOMContentLoaded', init);
+  </script>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="row">
+        <div style="font-weight:800;letter-spacing:.5px">Галерея изображений</div>
+        <div class="search"><input id="q" placeholder="Поиск по имени или коду" oninput="render(_items)"></div>
+        <div id="count" style="color:#94a3b8">0</div>
+      </div>
+    </div>
+  </header>
+  <main>
+    <div id="grid" class="grid"></div>
+  </main>
+  <footer>Страница скрыта (noindex). Ссылка не публикуется в навигации.</footer>
+</body>
+</html>
+
+
