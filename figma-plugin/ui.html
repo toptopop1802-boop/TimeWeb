@@ -455,6 +455,13 @@
       entry.className = `log-entry ${type}`;
       entry.textContent = message;
       logWindow.appendChild(entry);
+      
+      // Ограничиваем количество логов (удаляем старые при большом количестве)
+      const MAX_LOGS = 200;
+      while (logWindow.children.length > MAX_LOGS) {
+        logWindow.removeChild(logWindow.firstChild);
+      }
+      
       logWindow.scrollTop = logWindow.scrollHeight;
     }
 

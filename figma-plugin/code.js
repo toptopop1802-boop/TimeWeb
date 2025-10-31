@@ -2,8 +2,8 @@
 const API_URL = 'https://bublickrust.ru/api/images/upload';
 let currentApiToken = '';
 
-// Показать UI
-figma.showUI(__html__, { width: 450, height: 700, themeColors: true });
+// Показать UI (увеличенный размер для большого количества логов)
+figma.showUI(__html__, { width: 500, height: 800, themeColors: true });
 
 // Обработка сообщений от UI
 figma.ui.onmessage = async (msg) => {
@@ -145,18 +145,29 @@ async function processImages(node) {
   return images;
 }
 
-// Загрузка изображений через API
+// Загрузка изображений через API с батчингом
 async function uploadImages(images) {
   const uploaded = [];
+  const BATCH_SIZE = 5; // Загружаем по 5 изображений за раз
+  const DELAY_MS = 500; // Задержка между батчами
 
   figma.ui.postMessage({
     type: 'log',
-    message: `📤 Начинаю загрузку ${images.length} изображений...`
+    message: `📤 Начинаю загрузку ${images.length} изображений (батчами по ${BATCH_SIZE})...`
   });
 
   for (let i = 0; i < images.length; i++) {
     const img = images[i];
     const imageName = `figma-image-${img.hash.substring(0, 8)}.png`;
+    
+    // Добавляем задержку после каждого батча
+    if (i > 0 && i % BATCH_SIZE === 0) {
+      figma.ui.postMessage({
+        type: 'log',
+        message: `⏳ Пауза ${DELAY_MS}ms перед следующим батчем...`
+      });
+      await new Promise(resolve => setTimeout(resolve, DELAY_MS));
+    }
     
     figma.ui.postMessage({
       type: 'log',
@@ -214,51 +225,68 @@ async function uploadImages(images) {
         message: `   🔑 Authorization: Bearer ${currentApiToken.substring(0, 20)}...`
       });
 
-      // Отправляем на API
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${currentApiToken}`,
-          'Content-Type': `multipart/form-data; boundary=----${boundary}`
-        },
-        body: bodyBytes
-      });
-
-      figma.ui.postMessage({
-        type: 'log',
-        message: `   📥 Статус: ${response.status} ${response.statusText}`
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        figma.ui.postMessage({
-          type: 'log',
-          message: `   ❌ Ошибка: ${errorText.substring(0, 200)}`
-        });
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const responseText = await response.text();
-      figma.ui.postMessage({
-        type: 'log',
-        message: `   📄 Ответ (${responseText.length} символов): ${responseText.substring(0, 100)}...`
-      });
-
-      const data = JSON.parse(responseText);
-
-      if (data.success) {
-        uploaded.push({
-          hash: img.hash,
-          url: data.directUrl,
-          node: img.node
+      // Отправляем на API с timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 секунд timeout
+      
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${currentApiToken}`,
+            'Content-Type': `multipart/form-data; boundary=----${boundary}`
+          },
+          body: bodyBytes,
+          signal: controller.signal
         });
         
+        clearTimeout(timeoutId);
+
         figma.ui.postMessage({
           type: 'log',
-          message: `   ✅ Успех! URL: ${data.directUrl}`
+          message: `   📥 Статус: ${response.status} ${response.statusText}`
         });
-      } else {
-        throw new Error(data.error || 'Неизвестная ошибка');
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          figma.ui.postMessage({
+            type: 'log',
+            message: `   ❌ Ошибка: ${errorText.substring(0, 200)}`
+          });
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const responseText = await response.text();
+        figma.ui.postMessage({
+          type: 'log',
+          message: `   📄 Ответ (${responseText.length} символов): ${responseText.substring(0, 100)}...`
+        });
+
+        const data = JSON.parse(responseText);
+
+        if (data.success) {
+          uploaded.push({
+            hash: img.hash,
+            url: data.directUrl,
+            node: img.node
+          });
+          
+          figma.ui.postMessage({
+            type: 'log',
+            message: `   ✅ Успех! URL: ${data.directUrl}`
+          });
+        } else {
+          throw new Error(data.error || 'Неизвестная ошибка');
+        }
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+        if (fetchError.name === 'AbortError') {
+          figma.ui.postMessage({
+            type: 'log',
+            message: `   ⏱️ Timeout: загрузка прервана через 30 секунд`
+          });
+        }
+        throw fetchError;
       }
 
     } catch (error) {
