@@ -83,7 +83,14 @@ async function generateCode() {
       imageMap.set(img.hash, img.url);
     }
     
+    // Даем Figma "передохнуть" перед генерацией
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
     const cuiCode = generateRustCUI(node, uploadedImages);
+    
+    // Даем Figma "передохнуть" между генерациями
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
     const csharpCode = generateCSharpCode(node, imageMap);
 
     // Отправляем результат в UI
@@ -483,6 +490,12 @@ function generateCSharpElements(node, parentName, level, imageMap) {
   // Функция для экранирования текста в C# строках
   function escapeCSharpString(text) {
     if (!text) return '';
+    
+    // Убираем невидимые символы и нормализуем пробелы
+    text = text.replace(/[\u200B-\u200D\uFEFF]/g, ''); // Убираем zero-width символы
+    text = text.replace(/\s+/g, ' '); // Нормализуем пробелы
+    text = text.trim();
+    
     return text
       .replace(/\\/g, '\\\\')   // Экранируем обратные слеши
       .replace(/"/g, '\\"')     // Экранируем кавычки
