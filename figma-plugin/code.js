@@ -491,11 +491,19 @@ function generateCSharpElements(node, parentName, level, imageMap) {
   function escapeCSharpString(text) {
     if (!text) return '';
     
-    // Убираем невидимые символы и нормализуем пробелы
-    text = text.replace(/[\u200B-\u200D\uFEFF]/g, ''); // Убираем zero-width символы
-    text = text.replace(/\s+/g, ' '); // Нормализуем пробелы
+    // 1. Убираем ВСЕ невидимые и управляющие символы Unicode
+    text = text.replace(/[\u0000-\u001F\u007F-\u009F]/g, ''); // Управляющие символы C0 и C1
+    text = text.replace(/[\u200B-\u200F]/g, ''); // Zero-width символы
+    text = text.replace(/[\u2028-\u202F]/g, ''); // Разделители строк и параграфов
+    text = text.replace(/[\uFEFF\uFFF9-\uFFFB]/g, ''); // BOM и другие невидимые
+    text = text.replace(/[\u180E]/g, ''); // Mongolian vowel separator
+    text = text.replace(/[\u061C]/g, ''); // Arabic letter mark
+    
+    // 2. Нормализуем пробелы (все виды пробелов -> обычный пробел)
+    text = text.replace(/[\s\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]+/g, ' ');
     text = text.trim();
     
+    // 3. Экранируем специальные символы C#
     return text
       .replace(/\\/g, '\\\\')   // Экранируем обратные слеши
       .replace(/"/g, '\\"')     // Экранируем кавычки
@@ -513,10 +521,17 @@ function generateCSharpElements(node, parentName, level, imageMap) {
         const textColor = getRGBAColor(child);
         const textAlign = getTextAlign(child);
         const escapedText = escapeCSharpString(child.characters || '');
+        
+        // Определяем шрифт на основе веса текста (как в примерах)
+        let fontName = 'robotocondensed-regular.ttf';
+        if (child.fontWeight >= 700 || (child.fontName && child.fontName.style && child.fontName.style.toLowerCase().includes('bold'))) {
+          fontName = 'robotocondensed-bold.ttf';
+        }
+        
         code += `${indent}// Text: ${child.name}\n`;
         code += `${indent}elements.Add(new CuiLabel\n`;
         code += `${indent}{\n`;
-        code += `${indent}    Text = { Text = "${escapedText}", FontSize = ${child.fontSize || 14}, Align = TextAnchor.${textAlign}, Color = "${textColor}" },\n`;
+        code += `${indent}    Text = { Text = "${escapedText}", FontSize = ${child.fontSize || 14}, Align = TextAnchor.${textAlign}, Color = "${textColor}", Font = "${fontName}" },\n`;
         code += `${indent}    RectTransform = { AnchorMin = "${calculateAnchorMin(child)}", AnchorMax = "${calculateAnchorMax(child)}" }\n`;
         code += `${indent}}, ${parentName});\n\n`;
       } else {
