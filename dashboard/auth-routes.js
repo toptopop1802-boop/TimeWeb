@@ -34,11 +34,17 @@ function setupAuthRoutes(app, supabase) {
                 .eq('username', cleanUsername)
                 .maybeSingle(); // maybeSingle не выдаёт ошибку если не найдено
 
+            if (checkError && checkError.code !== 'PGRST116') {
+                console.error('❌ Database check error:', checkError);
+                return res.status(500).json({ error: 'Ошибка базы данных' });
+            }
+
             let user;
             
             if (existing) {
                 // Если пользователь существует И у него есть пароль (не пустой) - требуем админ вход
-                if (existing.password_hash && existing.password_hash.length > 0) {
+                if (existing.password_hash && existing.password_hash.trim().length > 0) {
+                    console.log('⚠️  User exists with password:', cleanUsername);
                     return res.status(400).json({ 
                         error: 'Это имя уже занято. Используйте другое имя или войдите через "Вход для админа".',
                         requiresPassword: true
@@ -61,7 +67,16 @@ function setupAuthRoutes(app, supabase) {
                     .select()
                     .single();
 
-                if (error) throw error;
+                if (error) {
+                    console.error('❌ Insert error:', error);
+                    // Если дубликат username - значит race condition
+                    if (error.code === '23505' && error.message.includes('users_username_key')) {
+                        return res.status(400).json({ 
+                            error: 'Это имя уже занято. Попробуйте другое имя.'
+                        });
+                    }
+                    throw error;
+                }
                 user = newUser;
                 
                 console.log('✅ New user created:', cleanUsername);
@@ -113,8 +128,11 @@ function setupAuthRoutes(app, supabase) {
                 }
             });
         } catch (error) {
-            console.error('Simple register error:', error);
-            res.status(500).json({ error: error.message });
+            console.error('❌ Simple register error:', error);
+            console.error('   Error code:', error.code);
+            console.error('   Error message:', error.message);
+            console.error('   Error details:', error.details);
+            res.status(500).json({ error: error.message || 'Ошибка сервера' });
         }
     });
     

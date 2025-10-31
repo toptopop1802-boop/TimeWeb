@@ -313,9 +313,42 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
             const hash = cleaned.split('').reduce((acc, c) => ((acc << 5) - acc) + c.charCodeAt(0), 0);
             const shortCode = Math.abs(hash).toString(36).substring(0, 7).toUpperCase().padEnd(7, '0');
 
+            // Сохраняем метаданные в таблицу images_metadata
+            try {
+                const { error: metaError } = await supabase
+                    .from('images_metadata')
+                    .insert({
+                        image_id: id,
+                        user_id: currentUser.id,
+                        original_name: req.file.originalname,
+                        file_size: req.file.size,
+                        mime_type: req.file.mimetype,
+                        storage_path: storagePath,
+                        short_code: shortCode
+                    });
+                
+                if (metaError) {
+                    console.error('   ⚠️  Failed to save image metadata:', metaError);
+                } else {
+                    console.log('   ✅ Image metadata saved:', shortCode);
+                }
+            } catch (metaErr) {
+                console.error('   ⚠️  Image metadata error:', metaErr);
+            }
+
+            // Логируем действие пользователя
+            await logUserAction(currentUser.id, 'image_upload', {
+                image_id: id,
+                short_code: shortCode,
+                original_name: req.file.originalname,
+                file_size: req.file.size
+            });
+
             // Public direct URL via our domain
             const base = process.env.PUBLIC_BASE_URL || (req.headers['x-forwarded-proto'] ? `${req.headers['x-forwarded-proto']}://${req.headers.host}` : `${req.protocol}://${req.get('host')}`);
             const directUrl = `${base}/i/${shortCode}`;
+
+            console.log('   🎉 Upload complete:', directUrl);
 
             res.json({ success: true, id, shortCode, directUrl });
         } catch (error) {
