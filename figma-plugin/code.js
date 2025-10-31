@@ -361,7 +361,8 @@ function generateCSharpCode(node, imageMap) {
   code += `    [Info("${className}UI", "BublickRust", "1.0.0")]\n`;
   code += `    [Description("Auto-generated UI from Figma")]\n`;
   code += `    class ${className}UI : RustPlugin\n    {\n`;
-  code += `        private const string UIName = "${uiName}";\n\n`;
+  code += `        private const string UIName = "${uiName}";\n`;
+  code += `        private readonly HashSet<ulong> playersWithUI = new HashSet<ulong>();\n\n`;
   code += `        void Init()\n        {\n`;
   code += `            Puts("[${className}UI] Plugin initialized. Use /${commandName} to toggle UI");\n`;
   code += `        }\n\n`;
@@ -399,13 +400,14 @@ function generateCSharpCode(node, imageMap) {
   
   // HasUI check
   code += `        private bool HasUI(BasePlayer player)\n        {\n`;
-  code += `            return CuiHelper.DestroyUi(player, UIName);\n`;
+  code += `            return playersWithUI.Contains(player.userID);\n`;
   code += `        }\n\n`;
   
   // ShowUI method
   code += `        private void ShowUI(BasePlayer player)\n        {\n`;
   code += `            Puts($"[${className}UI] ShowUI called for {player.displayName}");\n`;
-  code += `            CloseUI(player);\n            \n`;
+  code += `            CloseUI(player);\n`;
+  code += `            playersWithUI.Add(player.userID);\n            \n`;
   code += `            var elements = new CuiElementContainer();\n`;
   code += `            Puts($"[${className}UI] Creating UI elements...");\n\n`;
   code += `            // Main panel\n`;
@@ -435,12 +437,19 @@ function generateCSharpCode(node, imageMap) {
   // CloseUI method
   code += `        private void CloseUI(BasePlayer player)\n        {\n`;
   code += `            CuiHelper.DestroyUi(player, UIName);\n`;
+  code += `            playersWithUI.Remove(player.userID);\n`;
+  code += `        }\n\n`;
+  
+  // OnPlayerDisconnected
+  code += `        void OnPlayerDisconnected(BasePlayer player)\n        {\n`;
+  code += `            playersWithUI.Remove(player.userID);\n`;
   code += `        }\n\n`;
   
   // Unload
   code += `        void Unload()\n        {\n`;
   code += `            foreach (var player in BasePlayer.activePlayerList)\n`;
   code += `                CloseUI(player);\n`;
+  code += `            playersWithUI.Clear();\n`;
   code += `        }\n`;
   
   code += `    }\n`;
