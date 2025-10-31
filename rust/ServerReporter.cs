@@ -14,7 +14,7 @@ namespace Oxide.Plugins
         private const string DefaultEndpoint = "https://bublickrust.ru/api/rust/players/report";
         private string _endpoint = DefaultEndpoint;
         private string _apiToken = ""; // runtime only, not saved
-        private int _intervalSeconds = 20;
+        private int _intervalSeconds = 5;
         private string _serverName = "Rust Server";
         private Timer _timer;
 

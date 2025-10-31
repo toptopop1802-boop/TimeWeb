@@ -1232,7 +1232,7 @@ async function loadServerPlayers() {
             tbody.innerHTML = `<tr><td colspan="8" style="padding:14px; color: var(--text-secondary);">Загрузка...</td></tr>`;
         }
         const onlineOnly = document.getElementById('server-online-only')?.checked;
-        const res = await fetchWithAuth('/api/rust/players');
+        const res = await fetchWithAuth(`/api/rust/players?cb=${Date.now()}`);
         const data = await res.json();
         const search = (document.getElementById('server-search')?.value || '').trim().toLowerCase();
 
