@@ -3,6 +3,36 @@
 <head>
   <meta charset="UTF-8">
   <style>
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(1.05); }
+    }
+    
+    @keyframes rotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    @keyframes glow {
+      0%, 100% { filter: drop-shadow(0 0 4px rgba(124, 58, 237, 0.5)); }
+      50% { filter: drop-shadow(0 0 8px rgba(124, 58, 237, 0.8)); }
+    }
+    
+    @keyframes sparkle {
+      0%, 100% { opacity: 0.3; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.2); }
+    }
+    
     * {
       margin: 0;
       padding: 0;
@@ -10,140 +40,245 @@
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      padding: 15px;
-      background: #ffffff;
-      color: #333;
-      font-size: 12px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+      padding: 20px;
+      background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
+      color: #e2e8f0;
+      font-size: 13px;
+      animation: fadeIn 0.5s ease-in;
     }
 
     .header {
-      margin-bottom: 15px;
-      padding-bottom: 12px;
-      border-bottom: 2px solid #c40552;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid rgba(124, 58, 237, 0.3);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      animation: slideIn 0.6s ease-out;
+    }
+
+    .header-icon {
+      width: 32px;
+      height: 32px;
+      animation: pulse 2s ease-in-out infinite;
     }
 
     h1 {
-      font-size: 16px;
+      font-size: 20px;
       font-weight: 700;
-      color: #c40552;
-      margin-bottom: 4px;
+      background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin: 0;
     }
 
     .subtitle {
-      font-size: 11px;
-      color: #6c757d;
+      font-size: 12px;
+      color: #94a3b8;
+      margin-top: 4px;
     }
 
     .section {
-      margin-bottom: 15px;
+      margin-bottom: 20px;
+      animation: slideIn 0.6s ease-out;
+      animation-fill-mode: both;
     }
 
+    .section:nth-child(2) { animation-delay: 0.1s; }
+    .section:nth-child(3) { animation-delay: 0.2s; }
+    .section:nth-child(4) { animation-delay: 0.3s; }
+    .section:nth-child(5) { animation-delay: 0.4s; }
+
     .info-box {
-      background: rgba(59, 155, 249, 0.1);
-      border-left: 3px solid #3b9bf9;
-      border-radius: 6px;
-      padding: 10px;
-      font-size: 10px;
-      color: #495057;
-      line-height: 1.4;
-      margin-bottom: 15px;
+      background: rgba(30, 41, 59, 0.6);
+      border-left: 3px solid #7c3aed;
+      border-radius: 8px;
+      padding: 14px;
+      font-size: 11px;
+      color: #cbd5e1;
+      line-height: 1.6;
+      margin-bottom: 20px;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+    }
+
+    .info-box:hover {
+      border-left-color: #a855f7;
+      background: rgba(30, 41, 59, 0.8);
     }
 
     .info-box strong {
-      color: #3b9bf9;
-      display: block;
-      margin-bottom: 4px;
+      color: #a855f7;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+      font-size: 12px;
+    }
+
+    .info-box strong svg {
+      width: 16px;
+      height: 16px;
+      animation: sparkle 2s ease-in-out infinite;
     }
 
     .status {
-      padding: 10px;
-      background: #f8f9fa;
-      border-left: 3px solid #3b9bf9;
-      border-radius: 6px;
-      font-size: 11px;
-      color: #495057;
-      margin-bottom: 12px;
-      min-height: 35px;
+      padding: 14px;
+      background: rgba(30, 41, 59, 0.6);
+      border-left: 3px solid #3b82f6;
+      border-radius: 8px;
+      font-size: 12px;
+      color: #cbd5e1;
+      margin-bottom: 16px;
+      min-height: 48px;
       display: flex;
       align-items: center;
+      gap: 10px;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+    }
+
+    .status svg {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+      animation: pulse 2s ease-in-out infinite;
     }
 
     .status.error {
-      border-left-color: #dc3545;
-      background: #fff5f5;
-      color: #dc3545;
+      border-left-color: #ef4444;
+      background: rgba(239, 68, 68, 0.1);
+      color: #fca5a5;
+    }
+
+    .status.error svg {
+      animation: pulse 1s ease-in-out infinite;
     }
 
     .status.success {
-      border-left-color: #28a745;
-      background: #f0fff4;
-      color: #28a745;
+      border-left-color: #10b981;
+      background: rgba(16, 185, 129, 0.1);
+      color: #6ee7b7;
+    }
+
+    .status.success svg {
+      animation: none;
     }
 
     /* LOG WINDOW */
     .log-window {
-      background: #1e1e1e;
-      border-radius: 8px;
-      padding: 12px;
-      max-height: 200px;
+      background: #0f172a;
+      border-radius: 10px;
+      padding: 16px;
+      max-height: 250px;
       overflow-y: auto;
-      font-family: 'Courier New', monospace;
-      font-size: 10px;
-      line-height: 1.5;
-      color: #d4d4d4;
-      margin-bottom: 15px;
-      border: 1px solid #333;
+      font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+      font-size: 11px;
+      line-height: 1.6;
+      color: #94a3b8;
+      margin-bottom: 16px;
+      border: 1px solid rgba(124, 58, 237, 0.2);
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3);
+      transition: all 0.3s ease;
+    }
+
+    .log-window:hover {
+      border-color: rgba(124, 58, 237, 0.4);
     }
 
     .log-window::-webkit-scrollbar {
-      width: 6px;
+      width: 8px;
     }
 
     .log-window::-webkit-scrollbar-track {
-      background: #2d2d2d;
+      background: #1e293b;
+      border-radius: 4px;
     }
 
     .log-window::-webkit-scrollbar-thumb {
-      background: #555;
-      border-radius: 3px;
+      background: linear-gradient(180deg, #7c3aed 0%, #a855f7 100%);
+      border-radius: 4px;
+    }
+
+    .log-window::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(180deg, #a855f7 0%, #c084fc 100%);
     }
 
     .log-entry {
-      margin-bottom: 4px;
+      margin-bottom: 6px;
       word-wrap: break-word;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 4px 0;
+    }
+
+    .log-entry svg {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+      margin-top: 2px;
+      animation: sparkle 2s ease-in-out infinite;
     }
 
     .log-entry.success {
-      color: #68d391;
+      color: #6ee7b7;
     }
 
     .log-entry.error {
-      color: #ff6b6b;
+      color: #fca5a5;
+    }
+
+    .log-entry.error svg {
+      animation: pulse 1s ease-in-out infinite;
     }
 
     .log-entry.info {
-      color: #4ec9b0;
+      color: #7dd3fc;
     }
 
     .button {
       width: 100%;
-      padding: 10px;
-      background: linear-gradient(135deg, #c40552, #e4735c);
+      padding: 14px 20px;
+      background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
       color: white;
       border: none;
-      border-radius: 8px;
-      font-size: 13px;
+      border-radius: 10px;
+      font-size: 14px;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.3s;
-      box-shadow: 0 2px 8px rgba(196, 5, 82, 0.3);
-      margin-bottom: 8px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 16px rgba(124, 58, 237, 0.4);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    .button:hover::before {
+      left: 100%;
     }
 
     .button:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(196, 5, 82, 0.4);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(124, 58, 237, 0.6);
+      background: linear-gradient(135deg, #8b5cf6 0%, #c084fc 100%);
     }
 
     .button:active {
@@ -156,13 +291,29 @@
       transform: none;
     }
 
+    .button svg {
+      width: 18px;
+      height: 18px;
+      animation: rotate 2s linear infinite;
+    }
+
+    .button:disabled svg {
+      animation: none;
+    }
+
     .button-secondary {
-      background: #6c757d;
-      box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+      background: linear-gradient(135deg, #475569 0%, #64748b 100%);
+      box-shadow: 0 4px 16px rgba(71, 85, 105, 0.3);
+    }
+
+    .button-secondary:hover {
+      background: linear-gradient(135deg, #64748b 0%, #94a3b8 100%);
+      box-shadow: 0 6px 24px rgba(100, 116, 139, 0.5);
     }
 
     .code-output {
       display: none;
+      animation: slideIn 0.5s ease-out;
     }
 
     .code-output.visible {
@@ -170,39 +321,52 @@
     }
 
     .section-title {
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 600;
-      margin-bottom: 8px;
-      color: #495057;
+      margin-bottom: 12px;
+      color: #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title svg {
+      width: 18px;
+      height: 18px;
+      animation: glow 2s ease-in-out infinite;
     }
 
     .code-tabs {
       display: flex;
-      gap: 6px;
-      margin-bottom: 8px;
+      gap: 8px;
+      margin-bottom: 12px;
     }
 
     .code-tab {
       flex: 1;
-      padding: 6px;
-      background: #f8f9fa;
+      padding: 10px;
+      background: rgba(30, 41, 59, 0.6);
       border: 2px solid transparent;
-      border-radius: 6px;
-      font-size: 11px;
+      border-radius: 8px;
+      font-size: 12px;
       font-weight: 600;
       cursor: pointer;
       text-align: center;
-      transition: all 0.2s;
+      transition: all 0.3s ease;
+      color: #94a3b8;
+      backdrop-filter: blur(10px);
     }
 
     .code-tab.active {
-      background: white;
-      border-color: #c40552;
-      color: #c40552;
+      background: rgba(124, 58, 237, 0.2);
+      border-color: #7c3aed;
+      color: #c084fc;
+      box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
     }
 
     .code-tab:hover {
-      background: #e9ecef;
+      background: rgba(30, 41, 59, 0.8);
+      border-color: rgba(124, 58, 237, 0.5);
     }
 
     .code-container {
@@ -211,18 +375,19 @@
 
     .code-box {
       display: none;
-      background: #1e1e1e;
-      border-radius: 8px;
-      padding: 12px;
-      max-height: 250px;
+      background: #0f172a;
+      border-radius: 10px;
+      padding: 16px;
+      max-height: 300px;
       overflow-y: auto;
-      font-family: 'Courier New', monospace;
-      font-size: 10px;
-      line-height: 1.4;
-      color: #d4d4d4;
+      font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+      font-size: 11px;
+      line-height: 1.5;
+      color: #e2e8f0;
       white-space: pre-wrap;
       word-break: break-all;
-      border: 1px solid #333;
+      border: 1px solid rgba(124, 58, 237, 0.3);
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3);
     }
 
     .code-box.visible {
@@ -230,51 +395,80 @@
     }
 
     .code-box::-webkit-scrollbar {
-      width: 6px;
+      width: 8px;
     }
 
     .code-box::-webkit-scrollbar-track {
-      background: #2d2d2d;
+      background: #1e293b;
+      border-radius: 4px;
     }
 
     .code-box::-webkit-scrollbar-thumb {
-      background: #555;
-      border-radius: 3px;
+      background: linear-gradient(180deg, #7c3aed 0%, #a855f7 100%);
+      border-radius: 4px;
+    }
+
+    .code-box::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(180deg, #a855f7 0%, #c084fc 100%);
     }
 
     .copy-btn {
       position: absolute;
-      top: 8px;
-      right: 8px;
-      padding: 5px 10px;
-      background: #c40552;
+      top: 12px;
+      right: 12px;
+      padding: 8px 14px;
+      background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
       color: white;
       border: none;
-      border-radius: 6px;
-      font-size: 10px;
+      border-radius: 8px;
+      font-size: 11px;
       font-weight: 600;
       cursor: pointer;
       z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(124, 58, 237, 0.4);
     }
 
     .copy-btn:hover {
-      background: #a00442;
+      background: linear-gradient(135deg, #8b5cf6 0%, #c084fc 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.6);
+    }
+
+    .copy-btn svg {
+      width: 14px;
+      height: 14px;
     }
 
     .toggle-log-btn {
-      padding: 4px 10px;
-      background: #6c757d;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      font-size: 10px;
+      padding: 6px 14px;
+      background: rgba(30, 41, 59, 0.6);
+      color: #cbd5e1;
+      border: 2px solid rgba(124, 58, 237, 0.3);
+      border-radius: 8px;
+      font-size: 11px;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      backdrop-filter: blur(10px);
     }
 
     .toggle-log-btn:hover {
-      background: #5a6268;
+      background: rgba(124, 58, 237, 0.2);
+      border-color: #7c3aed;
+      color: #c084fc;
+    }
+
+    .toggle-log-btn svg {
+      width: 14px;
+      height: 14px;
+      transition: transform 0.3s ease;
     }
 
     .log-window.collapsed {
@@ -283,40 +477,55 @@
 
     .token-input {
       width: 100%;
-      padding: 10px;
-      border: 2px solid #dee2e6;
-      border-radius: 8px;
-      font-family: 'Courier New', monospace;
-      font-size: 11px;
-      background: #f8f9fa;
-      color: #495057;
-      transition: all 0.2s;
+      padding: 12px 16px;
+      border: 2px solid rgba(124, 58, 237, 0.3);
+      border-radius: 10px;
+      font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+      font-size: 12px;
+      background: rgba(15, 23, 42, 0.8);
+      color: #e2e8f0;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
     }
 
     .token-input:focus {
       outline: none;
-      border-color: #c40552;
-      background: white;
+      border-color: #7c3aed;
+      background: rgba(15, 23, 42, 1);
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
     }
 
     .token-hint {
-      font-size: 10px;
-      color: #6c757d;
-      margin-top: 6px;
+      font-size: 11px;
+      color: #94a3b8;
+      margin-top: 8px;
       font-style: italic;
+      line-height: 1.5;
     }
   </style>
 </head>
 <body>
   <div class="header">
-    <h1>🎮 Figma → Rust CUI</h1>
-    <p class="subtitle">Экспорт в C# код для игры Rust</p>
+    <svg class="header-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <path d="M2 17L12 22L22 17" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <path d="M2 12L12 17L22 12" stroke="#c084fc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </svg>
+    <div>
+      <h1>Figma → Rust CUI</h1>
+      <p class="subtitle">Экспорт в C# код для игры Rust</p>
+    </div>
   </div>
-
 
   <!-- API Token Input -->
   <div class="section">
-    <div class="section-title">🔑 API Токен:</div>
+    <div class="section-title">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M21 10C21 17 12 23 12 23C12 23 3 17 3 10C3 7.61305 3.94821 5.32387 5.63604 3.63604C7.32387 1.94821 9.61305 1 12 1C14.3869 1 16.6761 1.94821 18.364 3.63604C20.0518 5.32387 21 7.61305 21 10Z" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <circle cx="12" cy="10" r="3" stroke="#a855f7" stroke-width="2" fill="none"/>
+      </svg>
+      <span>API Токен:</span>
+    </div>
     <input 
       type="text" 
       id="api-token" 
@@ -328,41 +537,77 @@
   </div>
 
   <div class="section">
-    <div class="section-title">🧭 Масштаб UI (экспорт):</div>
+    <div class="section-title">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2V22M2 12H22" stroke="#7c3aed" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="12" cy="12" r="3" stroke="#a855f7" stroke-width="2" fill="none"/>
+      </svg>
+      <span>Масштаб UI (экспорт):</span>
+    </div>
     <input type="number" id="ui-scale" class="token-input" value="1" step="0.05" min="0.25" max="3" />
     <div class="token-hint">1.00 = размер как в Figma. Уменьшите, если в игре выглядит крупнее.</div>
   </div>
 
   <div class="section">
     <div class="status" id="status">
-      Ожидание... Выберите фрейм
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
+        <path d="M12 6V12L16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span>Ожидание... Выберите фрейм</span>
     </div>
   </div>
 
   <!-- LOG WINDOW -->
   <div class="section">
     <div class="section-title" style="display: flex; justify-content: space-between; align-items: center;">
-      <span>📊 Лог операций:</span>
+      <span style="display: flex; align-items: center; gap: 8px;">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+        <span>Лог операций:</span>
+      </span>
       <button class="toggle-log-btn" onclick="toggleLogs()" id="toggle-log-btn">
-        ▶ Показать
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+        <span>Показать</span>
       </button>
     </div>
     <div class="log-window collapsed" id="log-window">
-      <div class="log-entry info">Готов к работе...</div>
+      <div class="log-entry info">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
+          <path d="M12 16V12M12 8H12.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <span>Готов к работе...</span>
+      </div>
     </div>
   </div>
 
   <div class="section">
     <button class="button" id="generate" onclick="generateCode()">
-      ⚡ Генерировать код
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </svg>
+      <span>Генерировать код</span>
     </button>
     <button class="button button-secondary" onclick="cancel()">
-      ✕ Закрыть
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span>Закрыть</span>
     </button>
   </div>
 
   <div class="code-output" id="code-output">
-    <div class="section-title">📄 Результат:</div>
+    <div class="section-title">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <path d="M14 2V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span>Результат:</span>
+    </div>
     
     <div class="code-tabs">
       <div class="code-tab active" data-tab="cui" onclick="switchTab('cui')">CUI JSON</div>
@@ -370,7 +615,12 @@
     </div>
 
     <div class="code-container">
-      <button class="copy-btn" onclick="copyCode()">📋 Копировать</button>
+      <button class="copy-btn" onclick="copyCode()">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z" fill="currentColor"/>
+        </svg>
+        <span>Копировать</span>
+      </button>
       <div class="code-box visible" id="code-cui"></div>
       <div class="code-box" id="code-csharp"></div>
     </div>
@@ -384,15 +634,16 @@
     function generateCode() {
       const btn = document.getElementById('generate');
       btn.disabled = true;
-      btn.textContent = '⏳ Генерация...';
+      const btnText = btn.querySelector('span');
+      btnText.textContent = 'Генерация...';
       
       const apiToken = document.getElementById('api-token').value.trim();
       const scale = parseFloat(document.getElementById('ui-scale').value) || 1;
       
       if (!apiToken) {
-        alert('⚠️ Введите API токен!');
+        alert('Введите API токен!');
         btn.disabled = false;
-        btn.textContent = '⚡ Генерировать код';
+        btnText.textContent = 'Генерировать код';
         return;
       }
 
@@ -401,7 +652,7 @@
       
       document.getElementById('code-output').classList.remove('visible');
       clearLog();
-      addLog('🚀 Начинаю генерацию...', 'info');
+      addLog('Начинаю генерацию...', 'info');
       
       parent.postMessage({ pluginMessage: { type: 'generate-code', apiToken, scale } }, '*');
     }
@@ -444,12 +695,13 @@
       document.body.removeChild(textarea);
       
       // Show feedback
-      const btn = event.target;
-      const originalText = btn.textContent;
-      btn.textContent = '✅ Скопировано!';
-      addLog('📋 Код скопирован в буфер обмена', 'success');
+      const btn = event.target.closest('.copy-btn');
+      const btnText = btn.querySelector('span');
+      const originalText = btnText.textContent;
+      btnText.textContent = 'Скопировано!';
+      addLog('Код скопирован в буфер обмена', 'success');
       setTimeout(() => {
-        btn.textContent = originalText;
+        btnText.textContent = originalText;
       }, 2000);
     }
 
@@ -457,11 +709,21 @@
       document.getElementById('log-window').innerHTML = '';
     }
 
+    function getLogIcon(type) {
+      if (type === 'success') {
+        return '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>';
+      } else if (type === 'error') {
+        return '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/><path d="M12 8V12M12 16H12.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+      } else {
+        return '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/><path d="M12 16V12M12 8H12.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+      }
+    }
+
     function addLog(message, type = 'info') {
       const logWindow = document.getElementById('log-window');
       const entry = document.createElement('div');
       entry.className = `log-entry ${type}`;
-      entry.textContent = message;
+      entry.innerHTML = `${getLogIcon(type)}<span>${message}</span>`;
       logWindow.appendChild(entry);
       
       // Ограничиваем количество логов (удаляем старые при большом количестве)
@@ -476,14 +738,32 @@
     function toggleLogs() {
       const logWindow = document.getElementById('log-window');
       const toggleBtn = document.getElementById('toggle-log-btn');
+      const toggleIcon = toggleBtn.querySelector('svg');
       
       if (logWindow.classList.contains('collapsed')) {
         logWindow.classList.remove('collapsed');
-        toggleBtn.textContent = '▼ Скрыть';
+        toggleBtn.querySelector('span').textContent = 'Скрыть';
+        toggleIcon.style.transform = 'rotate(180deg)';
       } else {
         logWindow.classList.add('collapsed');
-        toggleBtn.textContent = '▶ Показать';
+        toggleBtn.querySelector('span').textContent = 'Показать';
+        toggleIcon.style.transform = 'rotate(0deg)';
       }
+    }
+
+    function updateStatusIcon(type, message) {
+      const status = document.getElementById('status');
+      let icon = '';
+      
+      if (type === 'error') {
+        icon = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/><path d="M12 8V12M12 16H12.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+      } else if (type === 'success') {
+        icon = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M22 11.08V12C21.9988 14.1564 21.3005 16.2547 20.0093 17.9818C18.7182 19.7088 16.9033 20.9725 14.8354 21.5839C12.7674 22.1953 10.5573 22.1219 8.53447 21.3746C6.51168 20.6273 4.78465 19.2461 3.61096 17.4371C2.43727 15.628 1.87979 13.4881 2.02168 11.3363C2.16356 9.18455 2.99721 7.13631 4.39828 5.49706C5.79935 3.85781 7.69279 2.71537 9.79619 2.24013C11.8996 1.7649 14.1003 1.98232 16.07 2.85999" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M22 4L12 14.01L9 11.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      } else {
+        icon = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/><path d="M12 6V12L16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+      }
+      
+      status.innerHTML = icon + '<span>' + message + '</span>';
     }
 
     // Handle messages from plugin
@@ -491,30 +771,30 @@
       const msg = event.data.pluginMessage;
       
       if (msg.type === 'status') {
-        const status = document.getElementById('status');
-        status.className = 'status';
-        status.textContent = msg.message;
+        updateStatusIcon('info', msg.message);
       } 
       else if (msg.type === 'log') {
-        // Определяем тип лога по символам
+        // Убираем эмодзи из сообщений
+        let cleanMessage = msg.message
+          .replace(/🎮|🔑|🧭|📊|⚡|✕|📄|📋|⏳|⚠️|🚀|🔍|📸|✅|❌|🎉|📤|⏳|🔁|📊|🔨|🌐|🔑|📥|📄|⚠️|⚙️/g, '')
+          .trim();
+        
+        // Определяем тип лога
         let logType = 'info';
-        if (msg.message.includes('✅') || msg.message.includes('🎉')) {
+        if (msg.message.includes('✅') || msg.message.includes('🎉') || msg.message.includes('успешно') || msg.message.includes('Готово')) {
           logType = 'success';
-        } else if (msg.message.includes('❌')) {
+        } else if (msg.message.includes('❌') || msg.message.includes('Ошибка') || msg.message.includes('ошибка')) {
           logType = 'error';
         }
-        addLog(msg.message, logType);
+        addLog(cleanMessage, logType);
       }
       else if (msg.type === 'error') {
-        const status = document.getElementById('status');
-        status.className = 'status error';
-        status.textContent = msg.message;
-        
+        updateStatusIcon('error', msg.message);
         addLog(msg.message, 'error');
         
         const btn = document.getElementById('generate');
         btn.disabled = false;
-        btn.textContent = '⚡ Генерировать код';
+        btn.querySelector('span').textContent = 'Генерировать код';
       } 
       else if (msg.type === 'code-generated') {
         generatedCUI = msg.cui;
@@ -524,15 +804,12 @@
         document.getElementById('code-csharp').textContent = msg.csharp;
         document.getElementById('code-output').classList.add('visible');
         
-        const status = document.getElementById('status');
-        status.className = 'status success';
-        status.textContent = '✅ Код успешно сгенерирован!';
-        
-        addLog('✅ Готово! Код доступен для копирования', 'success');
+        updateStatusIcon('success', 'Код успешно сгенерирован!');
+        addLog('Готово! Код доступен для копирования', 'success');
         
         const btn = document.getElementById('generate');
         btn.disabled = false;
-        btn.textContent = '⚡ Генерировать код';
+        btn.querySelector('span').textContent = 'Генерировать код';
       }
       else if (msg.type === 'prefill-token') {
         const { apiToken } = msg;

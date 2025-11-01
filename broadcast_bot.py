@@ -207,21 +207,35 @@ async def handle_gradient_role_request(request: web.Request) -> web.Response:
             view=view
         )
         
-        # Сохраняем данные заявки для обработки кнопок
-        # (в реальном проекте лучше использовать базу данных)
+        # Сохраняем данные заявки в базу данных
+        member_ids = [m.id for m in found_members]
+        
+        # Сохраняем в память для обратной совместимости (если БД недоступна)
         if not hasattr(bot, 'gradient_requests'):
             bot.gradient_requests = {}
         
         bot.gradient_requests[str(channel.id)] = {
             'role_name': role_name,
             'color1': color1,
-            'members': [m.id for m in found_members],
+            'members': member_ids,
             'channel_id': channel.id,
             'message_id': msg.id
         }
         
-        # Сохраняем persistent view в БД
+        # Сохраняем в БД (основной источник данных)
         if bot.db:
+            # Сохраняем заявку на градиентную роль
+            await bot.db.save_gradient_role_request(
+                message_id=msg.id,
+                channel_id=channel.id,
+                guild_id=guild.id,
+                role_name=role_name,
+                color1=color1,
+                members=member_ids,
+                applicant_id=int(user_id) if user_id and str(user_id).isdigit() else None
+            )
+            
+            # Сохраняем persistent view для восстановления кнопок
             await bot.db.save_persistent_view(
                 guild_id=guild.id,
                 channel_id=channel.id,
@@ -230,7 +244,7 @@ async def handle_gradient_role_request(request: web.Request) -> web.Response:
                 view_data={
                     'role_name': role_name,
                     'color1': color1,
-                    'members': [m.id for m in found_members],
+                    'members': member_ids,
                     'channel_id': channel.id,
                     'message_id': msg.id
                 }
@@ -713,10 +727,35 @@ def main() -> None:
                             
                             # Восстанавливаем view в зависимости от типа
                             if view_type == "gradient_role":
-                                # Градиентная роль с дашборда
+                                # Градиентная роль с дашборда - восстанавливаем кнопки
                                 if not hasattr(bot, 'gradient_requests'):
                                     bot.gradient_requests = {}
                                 bot.gradient_requests[str(channel_id)] = data
+                                
+                                # Восстанавливаем кнопки одобрения/отклонения
+                                view = discord.ui.View(timeout=None)
+                                approve_button = discord.ui.Button(
+                                    style=discord.ButtonStyle.success,
+                                    label="✅ Одобрить",
+                                    custom_id=f"approve_{channel_id}"
+                                )
+                                reject_button = discord.ui.Button(
+                                    style=discord.ButtonStyle.danger,
+                                    label="❌ Отказать",
+                                    custom_id=f"reject_{channel_id}"
+                                )
+                                view.add_item(approve_button)
+                                view.add_item(reject_button)
+                                
+                                # Находим сообщение с кнопками (второе сообщение после embed)
+                                try:
+                                    async for msg in channel.history(limit=10):
+                                        if msg.author == bot.user and "Для администрации" in (msg.content or ""):
+                                            await msg.edit(view=view)
+                                            break
+                                except Exception as e:
+                                    logging.error(f"Failed to restore buttons for gradient role in channel {channel_id}: {e}")
+                                
                                 logging.info(f"Restored gradient role view in channel {channel_id}")
                             
                             elif view_type == "tournament_role":
@@ -890,15 +929,37 @@ def main() -> None:
                 )
                 return
             
-            # Получаем данные заявки
-            if not hasattr(bot, 'gradient_requests') or channel_id_str not in bot.gradient_requests:
+            # Получаем данные заявки из БД (приоритет) или из памяти (fallback)
+            request_data = None
+            
+            # Пытаемся получить из БД
+            if bot.db:
+                try:
+                    db_request = await bot.db.get_gradient_role_request(int(channel_id_str))
+                    if db_request:
+                        request_data = {
+                            'role_name': db_request['role_name'],
+                            'color1': db_request['color1'],
+                            'members': db_request['members'],
+                            'channel_id': db_request['channel_id'],
+                            'message_id': db_request['message_id']
+                        }
+                except Exception as e:
+                    logging.error(f"Error fetching gradient request from DB: {e}")
+            
+            # Fallback на память если БД недоступна
+            if not request_data:
+                if hasattr(bot, 'gradient_requests') and channel_id_str in bot.gradient_requests:
+                    request_data = bot.gradient_requests[channel_id_str]
+            
+            # Если данных нет нигде - ошибка
+            if not request_data:
                 await interaction.response.send_message(
-                    "❌ Данные заявки не найдены. Возможно бот был перезапущен.",
+                    "❌ Данные заявки не найдены. Попробуйте создать заявку заново.",
                     ephemeral=True
                 )
                 return
             
-            request_data = bot.gradient_requests[channel_id_str]
             channel = interaction.channel
             
             if action == 'approve':
@@ -939,10 +1000,12 @@ def main() -> None:
                     await interaction.followup.send(result_text)
                     
                     # Удаляем заявку из памяти
-                    del bot.gradient_requests[channel_id_str]
+                    if hasattr(bot, 'gradient_requests') and channel_id_str in bot.gradient_requests:
+                        del bot.gradient_requests[channel_id_str]
                     
-                    # Деактивируем persistent view в БД
+                    # Обновляем статус в БД и деактивируем persistent view
                     if _bot_instance and _bot_instance.db:
+                        await _bot_instance.db.update_gradient_role_request_status(int(channel_id_str), 'approved')
                         await _bot_instance.db.deactivate_persistent_view(interaction.message.id)
                     
                     # Через 30 секунд удаляем канал
@@ -963,10 +1026,12 @@ def main() -> None:
                 )
                 
                 # Удаляем заявку из памяти
-                del bot.gradient_requests[channel_id_str]
+                if hasattr(bot, 'gradient_requests') and channel_id_str in bot.gradient_requests:
+                    del bot.gradient_requests[channel_id_str]
                 
-                # Деактивируем persistent view в БД
+                # Обновляем статус в БД и деактивируем persistent view
                 if _bot_instance and _bot_instance.db:
+                    await _bot_instance.db.update_gradient_role_request_status(int(channel_id_str), 'rejected')
                     await _bot_instance.db.deactivate_persistent_view(interaction.message.id)
                 
                 # Через 10 секунд удаляем канал

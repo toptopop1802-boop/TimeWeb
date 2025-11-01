@@ -24,6 +24,91 @@ class Database:
         logging.info("Supabase client initialized successfully")
     
     # ============================================
+    # GRADIENT ROLE REQUESTS
+    # ============================================
+    
+    async def save_gradient_role_request(
+        self,
+        message_id: int,
+        channel_id: int,
+        guild_id: int,
+        role_name: str,
+        color1: str,
+        members: List[int],
+        applicant_id: Optional[int] = None
+    ) -> bool:
+        """Сохраняет заявку на градиентную роль"""
+        try:
+            data = {
+                "message_id": message_id,
+                "channel_id": channel_id,
+                "guild_id": guild_id,
+                "applicant_id": applicant_id,
+                "role_name": role_name,
+                "color1": color1,
+                "members": members,
+                "status": "pending"
+            }
+            
+            self.client.table("gradient_role_requests").insert(data).execute()
+            logging.info(f"Saved gradient role request: message_id={message_id}, role={role_name}")
+            return True
+        except Exception as exc:
+            logging.error(f"Failed to save gradient role request: {exc}")
+            return False
+    
+    async def get_gradient_role_request(self, channel_id: int) -> Optional[Dict[str, Any]]:
+        """Получает заявку на градиентную роль по ID канала"""
+        try:
+            response = self.client.table("gradient_role_requests").select("*").eq("channel_id", channel_id).eq("status", "pending").execute()
+            if response.data:
+                return response.data[0]
+            return None
+        except Exception as exc:
+            logging.error(f"Failed to get gradient role request: {exc}")
+            return None
+    
+    async def get_gradient_role_request_by_message(self, message_id: int) -> Optional[Dict[str, Any]]:
+        """Получает заявку на градиентную роль по ID сообщения"""
+        try:
+            response = self.client.table("gradient_role_requests").select("*").eq("message_id", message_id).execute()
+            if response.data:
+                return response.data[0]
+            return None
+        except Exception as exc:
+            logging.error(f"Failed to get gradient role request by message: {exc}")
+            return None
+    
+    async def get_all_pending_gradient_requests(self, guild_id: int) -> List[Dict[str, Any]]:
+        """Получает все активные заявки на градиентные роли для гильдии"""
+        try:
+            response = self.client.table("gradient_role_requests").select("*").eq("guild_id", guild_id).eq("status", "pending").execute()
+            return response.data or []
+        except Exception as exc:
+            logging.error(f"Failed to get pending gradient requests: {exc}")
+            return []
+    
+    async def update_gradient_role_request_status(self, channel_id: int, status: str) -> bool:
+        """Обновляет статус заявки на градиентную роль"""
+        try:
+            self.client.table("gradient_role_requests").update({"status": status}).eq("channel_id", channel_id).execute()
+            logging.info(f"Updated gradient role request status: channel_id={channel_id}, status={status}")
+            return True
+        except Exception as exc:
+            logging.error(f"Failed to update gradient role request status: {exc}")
+            return False
+    
+    async def delete_gradient_role_request(self, channel_id: int) -> bool:
+        """Удаляет заявку на градиентную роль"""
+        try:
+            self.client.table("gradient_role_requests").delete().eq("channel_id", channel_id).execute()
+            logging.info(f"Deleted gradient role request: channel_id={channel_id}")
+            return True
+        except Exception as exc:
+            logging.error(f"Failed to delete gradient role request: {exc}")
+            return False
+    
+    # ============================================
     # TOURNAMENT ROLE REQUESTS
     # ============================================
     

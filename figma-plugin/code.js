@@ -72,14 +72,14 @@ async function generateCode() {
     // Обрабатываем изображения
     figma.ui.postMessage({
       type: 'log',
-      message: '🔍 Поиск изображений в фрейме...'
+      message: 'Поиск изображений в фрейме...'
     });
     
     const images = await processImages(node);
     
     figma.ui.postMessage({
       type: 'log',
-      message: `📸 Найдено изображений: ${images.length}`
+      message: `Найдено изображений: ${images.length}`
     });
 
     // Загружаем изображения на сервер
@@ -87,13 +87,13 @@ async function generateCode() {
     
     figma.ui.postMessage({
       type: 'log',
-      message: `✅ Загружено изображений: ${uploadedImages.length}/${images.length}`
+      message: `Загружено изображений: ${uploadedImages.length}/${images.length}`
     });
 
     // Генерируем Rust CUI код
     figma.ui.postMessage({
       type: 'log',
-      message: '⚙️ Генерация CUI кода...'
+      message: 'Генерация CUI кода...'
     });
     
     // Создаем Map с URL изображений
@@ -121,18 +121,18 @@ async function generateCode() {
 
     figma.ui.postMessage({
       type: 'log',
-      message: '🎉 Генерация завершена!'
+      message: 'Генерация завершена!'
     });
 
   } catch (error) {
     figma.ui.postMessage({
       type: 'error',
-      message: `❌ Ошибка: ${error.message}`
+      message: `Ошибка: ${error.message}`
     });
     
     figma.ui.postMessage({
       type: 'log',
-      message: `❌ Детали ошибки: ${error.stack || error.message}`
+      message: `Детали ошибки: ${error.stack || error.message}`
     });
   }
 }
@@ -184,7 +184,7 @@ async function uploadImages(images) {
 
   figma.ui.postMessage({
     type: 'log',
-    message: `📤 Начинаю загрузку ${images.length} изображений (батчами по ${BATCH_SIZE})...`
+    message: `Начинаю загрузку ${images.length} изображений (батчами по ${BATCH_SIZE})...`
   });
 
   // Проверка доступности прямой ссылки (некоторые CDN/проксирующие слои активируются с задержкой)
@@ -211,7 +211,7 @@ async function uploadImages(images) {
     if (i > 0 && i % BATCH_SIZE === 0) {
       figma.ui.postMessage({
         type: 'log',
-        message: `⏳ Пауза ${DELAY_MS}ms перед следующим батчем...`
+        message: `Пауза ${DELAY_MS}ms перед следующим батчем...`
       });
       await new Promise(resolve => setTimeout(resolve, DELAY_MS));
     }
@@ -222,25 +222,25 @@ async function uploadImages(images) {
       uploaded.push({ hash: img.hash, url: reusedUrl, node: img.node });
       figma.ui.postMessage({
         type: 'log',
-        message: `🔁 [${i + 1}/${images.length}] Повтор: ${imageName} -> reuse ${reusedUrl}`
+        message: `[${i + 1}/${images.length}] Повтор: ${imageName} -> reuse ${reusedUrl}`
       });
       continue;
     }
 
     figma.ui.postMessage({
       type: 'log',
-      message: `📤 [${i + 1}/${images.length}] Загружаю: ${imageName}`
+      message: `[${i + 1}/${images.length}] Загружаю: ${imageName}`
     });
 
     figma.ui.postMessage({
       type: 'log',
-      message: `   📊 Размер: ${(img.bytes.length / 1024).toFixed(2)} KB`
+      message: `   Размер: ${(img.bytes.length / 1024).toFixed(2)} KB`
     });
 
     try {
       figma.ui.postMessage({
         type: 'log',
-        message: `   🔨 Создаю multipart/form-data...`
+        message: `   Создаю multipart/form-data...`
       });
       
       // Создаем multipart/form-data вручную (FormData и TextEncoder недоступны в Figma Plugin)
@@ -264,7 +264,7 @@ async function uploadImages(images) {
       
       figma.ui.postMessage({
         type: 'log',
-        message: `   📦 Размер запроса: ${((headerBytes.length + img.bytes.length + footerBytes.length) / 1024).toFixed(2)} KB`
+        message: `   Размер запроса: ${((headerBytes.length + img.bytes.length + footerBytes.length) / 1024).toFixed(2)} KB`
       });
       
       // Объединяем все части
@@ -275,12 +275,12 @@ async function uploadImages(images) {
 
       figma.ui.postMessage({
         type: 'log',
-        message: `   🌐 Отправка POST на: ${API_URL}`
+        message: `   Отправка POST на: ${API_URL}`
       });
 
       figma.ui.postMessage({
         type: 'log',
-        message: `   🔑 Authorization: Bearer ${currentApiToken.substring(0, 20)}...`
+        message: `   Authorization: Bearer ${currentApiToken.substring(0, 20)}...`
       });
 
       // Отправляем на API
@@ -295,14 +295,14 @@ async function uploadImages(images) {
 
       figma.ui.postMessage({
         type: 'log',
-        message: `   📥 Статус: ${response.status} ${response.statusText}`
+        message: `   Статус: ${response.status} ${response.statusText}`
       });
 
       if (!response.ok) {
         const errorText = await response.text();
         figma.ui.postMessage({
           type: 'log',
-          message: `   ❌ Ошибка: ${errorText.substring(0, 200)}`
+          message: `   Ошибка: ${errorText.substring(0, 200)}`
         });
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
@@ -310,7 +310,7 @@ async function uploadImages(images) {
       const responseText = await response.text();
       figma.ui.postMessage({
         type: 'log',
-        message: `   📄 Ответ (${responseText.length} символов): ${responseText.substring(0, 100)}...`
+        message: `   Ответ (${responseText.length} символов): ${responseText.substring(0, 100)}...`
       });
 
       const data = JSON.parse(responseText);
@@ -322,7 +322,7 @@ async function uploadImages(images) {
         if (!available) {
           figma.ui.postMessage({
             type: 'log',
-            message: `   ⚠️ URL пока недоступен (проверки исчерпаны). Пропускаю картинку для генерации: ${url}`
+            message: `   URL пока недоступен (проверки исчерпаны). Пропускаю картинку для генерации: ${url}`
           });
           // Не добавляем в карту, чтобы генератор не вставлял битую ссылку
         } else {
@@ -332,7 +332,7 @@ async function uploadImages(images) {
         
         figma.ui.postMessage({
           type: 'log',
-          message: `   ✅ Успех! URL: ${url}`
+          message: `   Успех! URL: ${url}`
         });
       } else {
         throw new Error(data.error || 'Неизвестная ошибка');
@@ -341,7 +341,7 @@ async function uploadImages(images) {
     } catch (error) {
       figma.ui.postMessage({
         type: 'log',
-        message: `   ❌ Ошибка: ${error.message}`
+        message: `   Ошибка: ${error.message}`
       });
       
       figma.ui.postMessage({
@@ -353,7 +353,7 @@ async function uploadImages(images) {
 
   figma.ui.postMessage({
     type: 'log',
-    message: `📦 Итого загружено: ${uploaded.length}/${images.length} изображений`
+    message: `Итого загружено: ${uploaded.length}/${images.length} изображений`
   });
 
   return uploaded;
@@ -560,11 +560,11 @@ function generateCSharpElements(node, parentName, level, imageMap) {
   const indent = '        ' + '    '.repeat(level);
   const scale = (Number.isFinite(currentScale) && currentScale > 0) ? currentScale : 0.6;
   
-  // 🔍 ЛОГ: Сканируем элемент
+  // ЛОГ: Сканируем элемент
   if (level <= 3) { // Логируем только верхние уровни, чтобы не захламлять
     figma.ui.postMessage({
       type: 'log',
-      message: `${'  '.repeat(level)}🔍 [${node.type}] "${node.name}" (level ${level}, children: ${'children' in node ? node.children.length : 0})`
+      message: `${'  '.repeat(level)}[${node.type}] "${node.name}" (level ${level}, children: ${'children' in node ? node.children.length : 0})`
     });
   }
   
@@ -636,11 +636,11 @@ function generateCSharpElements(node, parentName, level, imageMap) {
         const escapedText = escapeCSharpString(originalText);
         const commentPreview = sanitizeComment(child.name || originalText, 120);
         
-        // 📊 ЛОГИ ДЛЯ ОТЛАДКИ ТЕКСТА
+        // ЛОГИ ДЛЯ ОТЛАДКИ ТЕКСТА
         if (originalText.length > 50) {
           figma.ui.postMessage({
             type: 'log',
-            message: `📝 [TEXT] "${child.name}": ${originalText.length} символов (обрезано до ${escapedText.length})`
+            message: `[TEXT] "${child.name}": ${originalText.length} символов (обрезано до ${escapedText.length})`
           });
         }
         
