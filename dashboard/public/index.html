@@ -735,27 +735,148 @@
                     </h2>
                 </header>
 
-                <div class="card" style="max-width: 900px; margin: 0 auto;">
-                    <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                        🚀 API для загрузки изображений
+                <style>
+                    @keyframes fadeInUp {
+                        from {
+                            opacity: 0;
+                            transform: translateY(30px);
+                        }
+                        to {
+                            opacity: 1;
+                            transform: translateY(0);
+                        }
+                    }
+                    
+                    @keyframes pulse {
+                        0%, 100% {
+                            opacity: 1;
+                        }
+                        50% {
+                            opacity: 0.7;
+                        }
+                    }
+                    
+                    @keyframes slideIn {
+                        from {
+                            opacity: 0;
+                            transform: translateX(-20px);
+                        }
+                        to {
+                            opacity: 1;
+                            transform: translateX(0);
+                        }
+                    }
+                    
+                    .api-card {
+                        animation: fadeInUp 0.6s ease-out backwards;
+                        transition: all 0.3s ease;
+                    }
+                    
+                    .api-card:hover {
+                        transform: translateY(-4px);
+                        box-shadow: 0 12px 48px rgba(196, 5, 82, 0.2);
+                    }
+                    
+                    .status-badge-animated {
+                        animation: pulse 2s ease-in-out infinite;
+                    }
+                    
+                    .format-tag {
+                        transition: all 0.3s ease;
+                    }
+                    
+                    .format-tag:hover {
+                        background: var(--accent-primary) !important;
+                        color: white !important;
+                        transform: translateY(-2px);
+                    }
+                </style>
+                
+                <div class="card api-card" style="max-width: 900px; margin: 0 auto;">
+                    <!-- Status Badge -->
+                    <div style="text-align: center; margin-bottom: 30px;">
+                        <div class="status-badge-animated" style="display: inline-flex; align-items: center; gap: 8px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; color: var(--success);">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            Статус: РАБОТАЕТ
+                        </div>
+                    </div>
+                    
+                    <h3 style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 10px; font-size: 32px; font-weight: 800;">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        Image Upload API
                     </h3>
-                    <p style="color: var(--text-secondary); margin-bottom: 30px;">Используйте наш API для загрузки изображений из других сервисов и приложений</p>
+                    <p style="color: var(--text-secondary); margin-bottom: 40px; text-align: center; font-size: 16px;">Быстрая и надежная загрузка изображений</p>
                     
                     <!-- Endpoint -->
-                    <div style="background: var(--bg-card); border-radius: 12px; padding: 20px; margin-bottom: 30px; border: 2px solid var(--accent-primary);">
-                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
-                            <div style="display: flex; align-items: center; gap: 15px;">
-                                <span style="padding: 6px 12px; background: var(--success); color: white; border-radius: 6px; font-weight: 700; font-size: 12px;">POST</span>
-                                <code style="padding: 10px 16px; background: var(--bg-secondary); border-radius: 8px; font-size: 14px; font-family: monospace;">/api/images/upload</code>
+                    <div class="api-card" style="background: var(--bg-card); border-radius: 16px; padding: 24px; margin-bottom: 30px; border: 1px solid var(--border-color); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="16 18 22 12 16 6"></polyline>
+                                <polyline points="8 6 2 12 8 18"></polyline>
+                            </svg>
+                            <h4 style="margin: 0; font-size: 18px;">Основная информация</h4>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 20px;">
+                            <div style="background: var(--bg-darker); padding: 16px; border-radius: 12px; border: 1px solid var(--border-color); transition: all 0.3s ease;" onmouseover="this.style.borderColor='var(--accent-primary)'" onmouseout="this.style.borderColor='var(--border-color)'">
+                                <div style="font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; font-weight: 600;">Метод</div>
+                                <div style="font-size: 16px; font-weight: 700;"><span style="padding: 4px 12px; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); color: white; border-radius: 6px; font-size: 13px;">POST</span></div>
                             </div>
-                            <button onclick="copyApiEndpoint()" class="btn btn-sm" style="background: var(--accent-primary); color: white; padding: 8px 12px; display: flex; align-items: center; gap: 6px;" title="Копировать URL">
+                            <div style="background: var(--bg-darker); padding: 16px; border-radius: 12px; border: 1px solid var(--border-color); transition: all 0.3s ease;" onmouseover="this.style.borderColor='var(--accent-primary)'" onmouseout="this.style.borderColor='var(--border-color)'">
+                                <div style="font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; font-weight: 600;">Endpoint</div>
+                                <div style="font-size: 14px; font-weight: 700; font-family: monospace;">/api/images/upload</div>
+                            </div>
+                            <div style="background: var(--bg-darker); padding: 16px; border-radius: 12px; border: 1px solid var(--border-color); transition: all 0.3s ease;" onmouseover="this.style.borderColor='var(--accent-primary)'" onmouseout="this.style.borderColor='var(--border-color)'">
+                                <div style="font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; font-weight: 600;">Авторизация</div>
+                                <div style="font-size: 14px; font-weight: 700;">Bearer Token</div>
+                            </div>
+                            <div style="background: var(--bg-darker); padding: 16px; border-radius: 12px; border: 1px solid var(--border-color); transition: all 0.3s ease;" onmouseover="this.style.borderColor='var(--accent-primary)'" onmouseout="this.style.borderColor='var(--border-color)'">
+                                <div style="font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; font-weight: 600;">Поле формы</div>
+                                <div style="font-size: 14px; font-weight: 700; font-family: monospace;">image</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <input type="text" id="api-endpoint-url" readonly style="flex: 1; padding: 12px; background: var(--bg-darker); border: 1px solid var(--border-color); border-radius: 10px; font-family: monospace; font-size: 13px; color: var(--text-primary);">
+                            <button onclick="copyApiEndpoint()" class="btn btn-sm" style="background: var(--accent-primary); color: white; padding: 12px 16px; display: flex; align-items: center; gap: 6px; border-radius: 10px; transition: all 0.3s ease;" title="Копировать URL">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                                 </svg>
                             </button>
                         </div>
-                        <input type="text" id="api-endpoint-url" readonly style="width: 100%; padding: 12px; background: var(--bg-darker); border: 1px solid var(--border-color); border-radius: 8px; font-family: monospace; font-size: 13px; color: var(--text-primary);">
+                    </div>
+                    
+                    <!-- File Requirements -->
+                    <div class="api-card" style="background: var(--bg-card); border-radius: 16px; padding: 24px; margin-bottom: 30px; border: 1px solid var(--border-color); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); animation-delay: 0.1s;">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                <polyline points="21 15 16 10 5 21"></polyline>
+                            </svg>
+                            <h4 style="margin: 0; font-size: 18px;">Требования к файлам</h4>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                            <div style="background: var(--bg-darker); padding: 16px; border-radius: 12px; border: 1px solid var(--border-color);">
+                                <div style="font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; font-weight: 600;">Макс. размер</div>
+                                <div style="font-size: 20px; font-weight: 700; color: var(--text-primary);">15 MB</div>
+                            </div>
+                            <div style="background: var(--bg-darker); padding: 16px; border-radius: 12px; border: 1px solid var(--border-color); grid-column: span 2;">
+                                <div style="font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; font-weight: 600;">Форматы</div>
+                                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                                    <span class="format-tag" style="padding: 6px 14px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px; font-weight: 600;">PNG</span>
+                                    <span class="format-tag" style="padding: 6px 14px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px; font-weight: 600;">JPG</span>
+                                    <span class="format-tag" style="padding: 6px 14px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px; font-weight: 600;">JPEG</span>
+                                    <span class="format-tag" style="padding: 6px 14px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px; font-weight: 600;">GIF</span>
+                                    <span class="format-tag" style="padding: 6px 14px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px; font-weight: 600;">WebP</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Получение токена -->
