@@ -7,34 +7,36 @@
   <title>Галерея изображений</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
-    :root{--bg:#ffffff;--card:#f8f9fa;--text:#212529;--muted:#6c757d;--primary:#c40552;--accent:#e4735c;--border:#dee2e6;--hover:#e9ecef}
+    :root{--bg:#0a0a0a;--card:#1a1a1a;--card-hover:#222;--text:#e5e5e5;--muted:#888;--primary:#c40552;--accent:#e4735c;--border:#2a2a2a;--hover:#2a2a2a}
     *{box-sizing:border-box}
     body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif}
-    header{position:sticky;top:0;background:rgba(255,255,255,.98);backdrop-filter:blur(12px);z-index:5;border-bottom:2px solid var(--border);box-shadow:0 2px 8px rgba(0,0,0,.04)}
+    header{position:sticky;top:0;background:rgba(10,10,10,.95);backdrop-filter:blur(12px);z-index:5;border-bottom:1px solid var(--border);box-shadow:0 4px 20px rgba(0,0,0,.5)}
     .wrap{max-width:1200px;margin:0 auto;padding:16px}
     .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
     .search{flex:1;min-width:220px}
-    input,select{background:#fff;border:2px solid var(--border);color:var(--text);border-radius:10px;padding:10px 14px;width:100%;outline:none;transition:border-color .2s;font-size:14px}
-    input:focus,select:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(196,5,82,.1)}
+    input,select{background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:12px;padding:12px 16px;width:100%;outline:none;transition:all .3s ease;font-size:14px}
+    input:focus,select:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(196,5,82,.15);background:var(--card-hover)}
+    input::placeholder{color:var(--muted)}
     main{max-width:1200px;margin:20px auto;padding:0 16px}
     .controls{display:flex;gap:10px;align-items:center;justify-content:space-between;margin:10px 0}
-    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px}
-    .card{background:var(--card);border:2px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.08);transition:transform .2s,box-shadow .2s}
-    .card:hover{transform:translateY(-4px);box-shadow:0 8px 24px rgba(0,0,0,.12);border-color:var(--primary)}
-    .thumb{background:#f0f0f0;display:flex;align-items:center;justify-content:center;height:180px;overflow:hidden;position:relative}
-    .thumb img{max-width:100%;max-height:100%;object-fit:contain}
-    .meta{padding:14px;border-top:2px solid var(--border)}
-    .meta .name{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text);margin-bottom:8px}
-    .meta .row{justify-content:space-between;color:var(--muted);font-size:12px;margin-top:6px}
-    .btns{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
-    button{background:linear-gradient(135deg,var(--primary),var(--accent));border:none;color:#fff;border-radius:10px;padding:10px 14px;cursor:pointer;font-weight:600;transition:opacity .2s,transform .1s;font-size:13px;white-space:nowrap;flex:1;min-width:80px}
-    button:hover{opacity:.85;transform:scale(1.02)}
-    .copy{background:#fff;color:var(--primary);border:2px solid var(--primary)}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:24px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:20px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4);transition:all .3s ease}
+    .card:hover{transform:translateY(-6px);box-shadow:0 12px 40px rgba(196,5,82,.3);border-color:var(--primary);background:var(--card-hover)}
+    .thumb{background:#0f0f0f;display:flex;align-items:center;justify-content:center;height:200px;overflow:hidden;position:relative}
+    .thumb img{max-width:100%;max-height:100%;object-fit:contain;transition:transform .3s ease}
+    .card:hover .thumb img{transform:scale(1.05)}
+    .meta{padding:16px;border-top:1px solid var(--border)}
+    .meta .name{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text);margin-bottom:10px;font-size:15px}
+    .meta .row{justify-content:space-between;color:var(--muted);font-size:12px;margin-top:8px}
+    .btns{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+    button{background:linear-gradient(135deg,var(--primary),var(--accent));border:none;color:#fff;border-radius:12px;padding:11px 16px;cursor:pointer;font-weight:600;transition:all .3s ease;font-size:13px;white-space:nowrap;flex:1;min-width:80px;box-shadow:0 4px 12px rgba(196,5,82,.3)}
+    button:hover{opacity:.9;transform:translateY(-2px);box-shadow:0 6px 20px rgba(196,5,82,.5)}
+    .copy{background:var(--card);color:var(--primary);border:1px solid var(--primary)}
     .copy:hover{background:var(--primary);color:#fff}
     footer{color:var(--muted);text-align:center;margin:26px 0;font-size:12px}
-    .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#212529;color:#fff;border:2px solid var(--primary);padding:12px 18px;border-radius:12px;opacity:0;transition:opacity .2s, transform .2s;pointer-events:none;box-shadow:0 8px 24px rgba(196,5,82,.3);font-weight:600}
+    .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--card);color:#fff;border:1px solid var(--primary);padding:14px 20px;border-radius:16px;opacity:0;transition:opacity .3s, transform .3s;pointer-events:none;box-shadow:0 12px 32px rgba(196,5,82,.4);font-weight:600}
     .toast.show{opacity:1;transform:translateX(-50%) translateY(-6px)}
-    #chart{background:#fff;border-radius:12px;padding:12px;border:2px solid var(--border)}
+    #chart{background:var(--card);border-radius:16px;padding:16px;border:1px solid var(--border)}
   </style>
   <script>
     // Access guard in UI: only admins can view data
@@ -183,16 +185,17 @@
                 borderColor:'rgba(196,5,82,1)', 
                 backgroundColor:gradientImages, 
                 fill:true, 
-                tension:0.5, 
+                tension:0.4, 
                 borderWidth:3,
                 pointRadius:0,
-                pointHoverRadius:6,
-                pointBackgroundColor:'#ffffff',
+                pointHoverRadius:8,
+                pointBackgroundColor:'#1a1a1a',
                 pointBorderColor:'rgba(196,5,82,1)',
-                pointBorderWidth:2,
-                pointHoverBorderWidth:3,
+                pointBorderWidth:3,
+                pointHoverBorderWidth:4,
                 pointHoverBackgroundColor:'rgba(196,5,82,1)',
-                spanGaps:true
+                spanGaps:true,
+                cubicInterpolationMode: 'monotone'
               },
               { 
                 label:'MB', 
@@ -201,26 +204,61 @@
                 borderColor:'#6ac1ff', 
                 backgroundColor:gradientMB, 
                 fill:true, 
-                tension:0.5,
+                tension:0.4,
                 borderWidth:3,
                 pointRadius:0,
-                pointHoverRadius:6,
-                pointBackgroundColor:'#ffffff',
+                pointHoverRadius:8,
+                pointBackgroundColor:'#1a1a1a',
                 pointBorderColor:'#6ac1ff',
-                pointBorderWidth:2,
-                pointHoverBorderWidth:3,
+                pointBorderWidth:3,
+                pointHoverBorderWidth:4,
                 pointHoverBackgroundColor:'#6ac1ff',
-                spanGaps:true
+                spanGaps:true,
+                cubicInterpolationMode: 'monotone'
               }
             ]
           }, 
           options:{ 
             responsive:true, 
-            plugins:{ legend:{ display:true }}, 
-            elements:{ line:{ tension:0.5 }}, 
+            plugins:{ 
+              legend:{ 
+                display:true,
+                labels: {
+                  color: '#e5e5e5',
+                  font: { size: 13, weight: '600' },
+                  padding: 15,
+                  usePointStyle: true,
+                  pointStyle: 'circle'
+                }
+              },
+              tooltip: {
+                backgroundColor: 'rgba(26,26,26,0.95)',
+                titleColor: '#e5e5e5',
+                bodyColor: '#e5e5e5',
+                borderColor: '#2a2a2a',
+                borderWidth: 1,
+                padding: 12,
+                cornerRadius: 8,
+                displayColors: true
+              }
+            }, 
+            elements:{ line:{ tension:0.4 }}, 
             scales:{ 
-              y:{ beginAtZero:true },
-              y1:{ position:'right', beginAtZero:true }
+              y:{ 
+                beginAtZero:true,
+                grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
+                ticks: { color: '#888', font: { size: 11 } }
+              },
+              y1:{ 
+                position:'right', 
+                beginAtZero:true,
+                grid: { display: false },
+                ticks: { color: '#888', font: { size: 11 } }
+              },
+              x: {
+                grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
+                ticks: { color: '#888', font: { size: 11 }, maxRotation: 45, minRotation: 0 }
+              }
             }
           }
         });
@@ -236,7 +274,7 @@
       <div class="row">
         <div style="font-weight:800;letter-spacing:.5px;font-size:18px;color:var(--primary)">🖼️ Галерея изображений</div>
         <div class="search"><input id="q" placeholder="Поиск по имени или коду" onkeypress="if(event.key==='Enter'){onSearch()}" ></div>
-        <div id="count" style="color:var(--muted);font-weight:700;padding:6px 12px;background:var(--card);border-radius:8px;border:2px solid var(--border)">0</div>
+        <div id="count" style="color:var(--text);font-weight:700;padding:8px 16px;background:var(--card);border-radius:12px;border:1px solid var(--border);box-shadow:0 4px 12px rgba(0,0,0,.3)">0</div>
       </div>
     </div>
   </header>
@@ -256,9 +294,9 @@
           <div id="totals" style="color:var(--muted);font-weight:600"></div>
         </div>
       </div>
-      <div style="background:#fff;border:2px solid var(--border);border-radius:16px;padding:20px;margin:16px 0;box-shadow:0 2px 8px rgba(0,0,0,.04)">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:20px;padding:24px;margin:16px 0;box-shadow:0 8px 24px rgba(0,0,0,.4)">
         <canvas id="chart" height="120"></canvas>
-        <div id="totalsAll" style="color:var(--muted);margin-top:8px;font-weight:600"></div>
+        <div id="totalsAll" style="color:var(--muted);margin-top:12px;font-weight:600;font-size:13px"></div>
       </div>
     </div>
     <div id="grid" class="grid"></div>
