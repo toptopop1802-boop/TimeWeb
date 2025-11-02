@@ -3778,6 +3778,135 @@ def main() -> None:
                 ephemeral=True
             )
 
+    @bot.tree.command(name="tournament_applications", description="Показать список заявок на турнир.")
+    @app_commands.guild_only()
+    @app_commands.default_permissions(administrator=True)
+    @app_commands.describe(
+        status="Фильтр по статусу заявки (pending, approved, rejected).",
+    )
+    async def tournament_applications_command(
+        interaction: discord.Interaction,
+        status: Optional[str] = None,
+    ) -> None:
+        if interaction.guild is None:
+            await interaction.response.send_message("Команда доступна только на сервере.", ephemeral=True)
+            return
+        
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message(
+                "❌ У вас нет прав администратора для использования этой команды.",
+                ephemeral=True,
+            )
+            return
+        
+        await interaction.response.defer(ephemeral=True, thinking=True)
+        
+        if not bot.db:
+            await interaction.followup.send(
+                "❌ База данных не доступна. Проверьте подключение к БД.",
+                ephemeral=True,
+            )
+            return
+        
+        try:
+            # Получаем заявки из БД
+            applications = await bot.db.get_all_tournament_applications(status=status)
+            
+            if not applications:
+                await interaction.followup.send(
+                    f"📋 Заявок на турнир не найдено{f' со статусом `{status}`' if status else ''}.",
+                    ephemeral=True,
+                )
+                return
+            
+            # Группируем по статусу для статистики
+            status_counts = {}
+            for app in applications:
+                app_status = app.get('status', 'pending')
+                status_counts[app_status] = status_counts.get(app_status, 0) + 1
+            
+            # Создаем embed с информацией
+            embed = discord.Embed(
+                title="🏆 Заявки на турнир",
+                description=f"Всего заявок: **{len(applications)}**",
+                color=discord.Color.gold(),
+                timestamp=discord.utils.utcnow()
+            )
+            
+            # Добавляем статистику по статусам
+            if status_counts:
+                status_text = "\n".join([
+                    f"`{s}`: **{count}**" for s, count in sorted(status_counts.items())
+                ])
+                embed.add_field(name="📊 Статистика по статусам", value=status_text, inline=False)
+            
+            # Показываем последние 10 заявок (или все, если меньше 10)
+            display_apps = applications[:10]
+            apps_text = ""
+            
+            for app in display_apps:
+                discord_id = app.get('discord_id')
+                steam_id = app.get('steam_id', 'N/A')
+                app_status = app.get('status', 'pending')
+                created_at = app.get('created_at')
+                message_id = app.get('message_id')
+                
+                # Форматируем дату
+                date_str = "—"
+                if created_at:
+                    try:
+                        dt = datetime.datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+                        date_str = dt.strftime('%d.%m.%Y %H:%M')
+                    except:
+                        pass
+                
+                # Иконка статуса
+                status_emoji = {
+                    'pending': '⏳',
+                    'approved': '✅',
+                    'rejected': '❌'
+                }.get(app_status, '❓')
+                
+                # Упоминание пользователя
+                member = interaction.guild.get_member(int(discord_id)) if discord_id else None
+                user_mention = member.mention if member else f"<@{discord_id}>" if discord_id else "—"
+                
+                apps_text += f"{status_emoji} **{user_mention}**\n"
+                apps_text += f"   Steam ID: `{steam_id}` | Статус: `{app_status}`\n"
+                apps_text += f"   Дата: {date_str}"
+                if message_id:
+                    TOURNAMENT_CHANNEL_ID = 1434605264241164431
+                    apps_text += f" | [Сообщение](https://discord.com/channels/{interaction.guild.id}/{TOURNAMENT_CHANNEL_ID}/{message_id})"
+                apps_text += "\n\n"
+            
+            if len(applications) > 10:
+                apps_text += f"\n_... и еще {len(applications) - 10} заявок_"
+            
+            embed.add_field(name="📝 Последние заявки", value=apps_text or "—", inline=False)
+            
+            embed.set_footer(text=f"Использовано: {interaction.user.display_name}")
+            
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            
+            # Логируем использование команды
+            await send_log_embed(
+                interaction.guild,
+                title="🏆 Проверка заявок на турнир",
+                description=f"{interaction.user.mention} использовал(а) `/tournament_applications`.",
+                color=discord.Color.gold(),
+                fields=[
+                    ("Всего заявок", str(len(applications)), True),
+                    ("Фильтр", status if status else "Все", True),
+                ],
+            )
+            
+        except Exception as exc:
+            logging.error(f"Error in tournament_applications command: {exc}", exc_info=True)
+            await interaction.followup.send(
+                f"❌ Ошибка при получении заявок: {str(exc)}",
+                ephemeral=True,
+            )
+
     @bot.tree.command(name="rules_stats", description="Показать статистику использования правил.")
     @app_commands.guild_only()
     @app_commands.default_permissions(manage_messages=True)
