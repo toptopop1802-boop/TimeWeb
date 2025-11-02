@@ -38,7 +38,7 @@ function setupAuthRoutes(app, supabase) {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
                 body: new URLSearchParams({
-                    client_id: '1250017421121556510',
+                    client_id: process.env.DISCORD_CLIENT_ID || '1417959083704582224',
                     client_secret: process.env.DISCORD_CLIENT_SECRET || '',
                     grant_type: 'authorization_code',
                     code: code,
@@ -47,7 +47,8 @@ function setupAuthRoutes(app, supabase) {
             });
 
             if (!tokenResponse.ok) {
-                console.error('Discord token exchange failed:', await tokenResponse.text());
+                const errorText = await tokenResponse.text();
+                console.error('Discord token exchange failed:', errorText);
                 return res.redirect('/login.html?error=discord_token_failed');
             }
 
