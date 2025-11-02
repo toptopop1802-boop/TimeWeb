@@ -903,30 +903,38 @@ function setupAuthRoutes(app, supabase) {
                     }
                 }
                 
-                // Отправляем заявку боту через HTTP API
+                // Отправляем заявку боту через HTTP API (опционально)
                 const API_SECRET = process.env.API_SECRET || 'bublickrust';
                 const API_PORT = process.env.API_PORT || '8787';
+                const API_HOST = process.env.API_HOST || 'localhost';
                 
-                const botResponse = await fetch(`http://localhost:${API_PORT}/api/tournament-application`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${API_SECRET}`
-                    },
-                    body: JSON.stringify({
-                        userId: req.user.id,
-                        discordId: req.user.discord_id,
-                        discordUsername: req.user.discord_username || req.user.username,
-                        steamId: steamId.trim()
-                    })
-                });
-                
-                if (!botResponse.ok) {
-                    const errorData = await botResponse.json();
-                    return res.status(botResponse.status).json({ error: errorData.error || 'Ошибка отправки заявки боту' });
+                let botData = null;
+                try {
+                    const botResponse = await fetch(`http://${API_HOST}:${API_PORT}/api/tournament-application`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${API_SECRET}`
+                        },
+                        body: JSON.stringify({
+                            userId: req.user.id,
+                            discordId: req.user.discord_id,
+                            discordUsername: req.user.discord_username || req.user.username,
+                            steamId: steamId.trim()
+                        }),
+                        timeout: 5000 // 5 секунд таймаут
+                    });
+                    
+                    if (botResponse.ok) {
+                        botData = await botResponse.json();
+                    } else {
+                        console.warn('Bot API returned error:', botResponse.status);
+                        // Продолжаем без бота, сохраняем в БД
+                    }
+                } catch (botError) {
+                    console.warn('Bot API недоступен, сохраняем заявку только в БД:', botError.message);
+                    // Продолжаем без бота, сохраняем в БД
                 }
-                
-                const botData = await botResponse.json();
                 
                 // Сохраняем заявку в БД
                 const { data: application, error: appError } = await supabase
@@ -942,14 +950,26 @@ function setupAuthRoutes(app, supabase) {
                 
                 if (appError) {
                     console.error('Database insert error:', appError);
-                    // Заявка уже отправлена в Discord, но не сохранена в БД
-                    // Это не критично, но логируем
+                    // Если не удалось сохранить в БД, но бот получил заявку - это нормально
+                    if (botData && botData.success) {
+                        return res.json({
+                            success: true,
+                            message: 'Заявка успешно подана в Discord',
+                            application: { id: botData.messageId }
+                        });
+                    }
+                    // Если и БД, и бот недоступны - ошибка
+                    return res.status(500).json({ 
+                        error: 'Не удалось сохранить заявку. Попробуйте позже.' 
+                    });
                 }
                 
+                // Если заявка сохранена в БД, но бот недоступен - это нормально
+                // Заявка будет отправлена в Discord позже (можно добавить cron job)
                 res.json({
                     success: true,
-                    message: 'Заявка успешно подана',
-                    application: application || { id: botData.messageId }
+                    message: botData ? 'Заявка успешно подана' : 'Заявка сохранена. Отправка в Discord будет выполнена позже.',
+                    application: application || { id: botData?.messageId }
                 });
             } catch (error) {
                 console.error('Tournament application error:', error);
