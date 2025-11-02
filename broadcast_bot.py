@@ -1668,7 +1668,10 @@ def main() -> None:
             bot.members_scan_task = asyncio.create_task(members_scan_worker())
         # Запускаем фоновую задачу для обработки неотправленных заявок на турнир
         if DATABASE_ENABLED:
+            logging.info("🚀 [Tournament Worker] Starting tournament_applications_worker...")
             bot.tournament_applications_task = asyncio.create_task(tournament_applications_worker())
+        else:
+            logging.warning("⚠️ [Tournament Worker] Database not enabled, tournament worker will not start")
         # Запускаем HTTP API сервер для приема заявок с дашборда
         asyncio.create_task(start_http_server(bot, API_PORT, API_SECRET))
 
@@ -1679,9 +1682,12 @@ def main() -> None:
         
         TOURNAMENT_CHANNEL_ID = 1434605264241164431
         
+        logging.info("✅ [Tournament Worker] Worker started, checking every 30 seconds")
+        
         while not bot.is_closed():
             try:
                 if not bot.db:
+                    logging.warning("⚠️ [Tournament Worker] Database not available, skipping check")
                     await asyncio.sleep(interval)
                     continue
                 
