@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS tournament_applications (
     discord_id BIGINT NOT NULL,
     steam_id TEXT NOT NULL,
     message_id BIGINT,  -- ID сообщения в Discord (NULL если еще не отправлено)
+    team_number INTEGER,  -- Номер команды (1 или 2)
     status TEXT DEFAULT 'pending', -- pending, approved, rejected
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
@@ -23,6 +24,8 @@ CREATE TABLE IF NOT EXISTS tournament_registration_settings (
     is_open BOOLEAN DEFAULT TRUE,
     closes_at TIMESTAMPTZ,
     main_message_id BIGINT,  -- ID главного сообщения со списком участников
+    team1_message_id BIGINT,  -- ID сообщения с командой 1
+    team2_message_id BIGINT,  -- ID сообщения с командой 2
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );

@@ -1091,6 +1091,26 @@ function setupAuthRoutes(app, supabase) {
                         return res.status(400).json({ error: 'isOpen должен быть boolean' });
                     }
                     
+                    // Если открываем регистрацию - сбрасываем все заявки и сообщения для новой заявки
+                    if (isOpen) {
+                        // Удаляем все pending заявки
+                        await supabase
+                            .from('tournament_applications')
+                            .delete()
+                            .eq('status', 'pending');
+                        
+                        // Сбрасываем message_id в настройках
+                        await supabase
+                            .from('tournament_registration_settings')
+                            .update({
+                                main_message_id: null,
+                                team1_message_id: null,
+                                team2_message_id: null
+                            })
+                            .order('created_at', { ascending: false })
+                            .limit(1);
+                    }
+                    
                     const { data: settings, error } = await supabase
                         .from('tournament_registration_settings')
                         .insert({
