@@ -1224,6 +1224,7 @@ function navigateToPage(page) {
         }
     } else if (page === 'admin') {
         loadAdminChangelog();
+        loadTournamentAdminPanel();
     } else if (page === 'gradient-role') {
         // Инициализация страницы заявки на градиентную роль
         initGradientRolePage();
@@ -3203,14 +3204,408 @@ async function initTrainingRequestPage() {
                 </div>
             </div>
         </div>
-        <div style="background: var(--bg-secondary); border-radius: 12px; padding: 20px; border: 1px solid var(--border-color);">
-            <p style="margin: 0; color: var(--text-secondary); font-size: 14px; line-height: 1.6;">
-                Здесь будет форма для подачи заявки на турнир.
-            </p>
+        <div style="background: var(--bg-card); border-radius: 16px; padding: 32px; border: 1px solid var(--border-color); box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+            <h2 style="margin: 0 0 24px 0; font-size: 24px; font-weight: 700; color: var(--text-primary);">
+                🏆 Подача заявки на турнир
+            </h2>
+            
+            <div id="tournament-form-container">
+                <form id="tournament-application-form" style="display: flex; flex-direction: column; gap: 20px;">
+                    <!-- Discord ID (readonly) -->
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary); font-size: 14px;">
+                            Discord ID
+                        </label>
+                        <input 
+                            type="text" 
+                            id="discord-id-input" 
+                            value="${displayId}" 
+                            readonly 
+                            style="width: 100%; padding: 12px 16px; background: var(--bg-secondary); border: 2px solid var(--border-color); border-radius: 8px; font-size: 14px; color: var(--text-secondary); cursor: not-allowed;"
+                        >
+                        <p style="margin: 6px 0 0 0; font-size: 12px; color: var(--text-secondary);">
+                            Ваш Discord ID (изменить нельзя)
+                        </p>
+                    </div>
+                    
+                    <!-- Steam ID -->
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary); font-size: 14px;">
+                            Steam ID <span style="color: var(--danger);">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            id="steam-id-input" 
+                            placeholder="Введите ваш Steam ID (только цифры)" 
+                            required 
+                            pattern="[0-9]+"
+                            maxlength="20"
+                            style="width: 100%; padding: 12px 16px; background: var(--bg-secondary); border: 2px solid var(--border-color); border-radius: 8px; font-size: 14px; color: var(--text-primary); transition: border-color 0.2s;"
+                            onfocus="this.style.borderColor='var(--accent-primary)'"
+                            onblur="this.style.borderColor='var(--border-color)'"
+                        >
+                        <p style="margin: 6px 0 0 0; font-size: 12px; color: var(--text-secondary);">
+                            Укажите ваш Steam ID (только цифры, без пробелов)
+                        </p>
+                    </div>
+                    
+                    <!-- Submit Button -->
+                    <button 
+                        type="submit" 
+                        id="submit-application-btn"
+                        style="width: 100%; padding: 14px 24px; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 12px rgba(88, 101, 242, 0.3);"
+                        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(88, 101, 242, 0.4)'"
+                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(88, 101, 242, 0.3)'"
+                    >
+                        📝 Подать заявку
+                    </button>
+                </form>
+                
+                <!-- Status Message -->
+                <div id="tournament-status-message" style="margin-top: 20px; padding: 16px; border-radius: 8px; display: none;"></div>
+            </div>
         </div>
     `;
     
+    // Обработка формы заявки
+    const form = document.getElementById('tournament-application-form');
+    if (form) {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submit-application-btn');
+            const statusDiv = document.getElementById('tournament-status-message');
+            const steamIdInput = document.getElementById('steam-id-input');
+            const steamId = steamIdInput.value.trim();
+            
+            // Валидация Steam ID
+            if (!steamId) {
+                showTournamentStatus('error', 'Пожалуйста, укажите ваш Steam ID');
+                return;
+            }
+            
+            if (!/^\d+$/.test(steamId)) {
+                showTournamentStatus('error', 'Steam ID должен содержать только цифры');
+                return;
+            }
+            
+            // Отключаем кнопку
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Отправка...';
+            statusDiv.style.display = 'none';
+            
+            try {
+                const authData = getAuthData();
+                const response = await fetch('/api/tournament/apply', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authData.token}`
+                    },
+                    body: JSON.stringify({ steamId })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    showTournamentStatus('success', '✅ Заявка успешно подана! Она появится в Discord канале.');
+                    form.style.display = 'none';
+                    // Обновляем статус
+                    loadTournamentStatus();
+                } else {
+                    showTournamentStatus('error', data.error || 'Ошибка при подаче заявки');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = '📝 Подать заявку';
+                }
+            } catch (error) {
+                console.error('Application error:', error);
+                showTournamentStatus('error', 'Ошибка при отправке заявки. Попробуйте позже.');
+                submitBtn.disabled = false;
+                submitBtn.textContent = '📝 Подать заявку';
+            }
+        });
+    }
+    
+    // Загружаем статус заявки
+    await loadTournamentStatus();
+    
     console.log('✅ [Training Request] Контент загружен', { username, userId, hasAvatar: !!avatarUrl, discordId: user.discord_id });
+}
+
+async function loadTournamentStatus() {
+    try {
+        const authData = getAuthData();
+        const response = await fetch('/api/tournament/status', {
+            headers: { 'Authorization': `Bearer ${authData.token}` }
+        });
+        
+        if (!response.ok) return;
+        
+        const data = await response.json();
+        
+        // Если заявка уже подана, показываем статус
+        if (data.hasApplication) {
+            const formContainer = document.getElementById('tournament-form-container');
+            if (formContainer) {
+                const form = document.getElementById('tournament-application-form');
+                if (form) form.style.display = 'none';
+                
+                const statusMessages = {
+                    'pending': '⏳ Ожидание рассмотрения',
+                    'approved': '✅ Заявка одобрена',
+                    'rejected': '❌ Заявка отклонена'
+                };
+                
+                const statusText = statusMessages[data.application.status] || 'Неизвестный статус';
+                
+                formContainer.innerHTML = `
+                    <div style="padding: 24px; background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border-color); text-align: center;">
+                        <div style="font-size: 48px; margin-bottom: 16px;">${data.application.status === 'approved' ? '✅' : data.application.status === 'rejected' ? '❌' : '⏳'}</div>
+                        <h3 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 700; color: var(--text-primary);">
+                            ${statusText}
+                        </h3>
+                        <p style="margin: 0 0 8px 0; color: var(--text-secondary); font-size: 14px;">
+                            Steam ID: <strong>${data.application.steam_id}</strong>
+                        </p>
+                        <p style="margin: 0; color: var(--text-secondary); font-size: 12px;">
+                            Подана: ${new Date(data.application.created_at).toLocaleString('ru-RU')}
+                        </p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Если регистрация закрыта, показываем сообщение
+        if (!data.registrationOpen && !data.hasApplication) {
+            const formContainer = document.getElementById('tournament-form-container');
+            if (formContainer) {
+                const form = document.getElementById('tournament-application-form');
+                if (form) form.style.display = 'none';
+                
+                const closesAtText = data.closesAt ? 
+                    `Регистрация закрыта до ${new Date(data.closesAt).toLocaleString('ru-RU')}` : 
+                    'Регистрация закрыта';
+                
+                formContainer.innerHTML = `
+                    <div style="padding: 24px; background: rgba(239, 68, 68, 0.1); border-radius: 12px; border: 1px solid rgba(239, 68, 68, 0.3); text-align: center;">
+                        <div style="font-size: 48px; margin-bottom: 16px;">🔒</div>
+                        <h3 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 700; color: var(--danger);">
+                            Регистрация закрыта
+                        </h3>
+                        <p style="margin: 0; color: var(--text-secondary); font-size: 14px;">
+                            ${closesAtText}
+                        </p>
+                    </div>
+                `;
+            }
+        }
+    } catch (error) {
+        console.error('Load tournament status error:', error);
+    }
+}
+
+function showTournamentStatus(type, message) {
+    const statusDiv = document.getElementById('tournament-status-message');
+    if (!statusDiv) return;
+    
+    statusDiv.style.display = 'block';
+    statusDiv.style.padding = '16px';
+    statusDiv.style.borderRadius = '8px';
+    
+    if (type === 'success') {
+        statusDiv.style.background = 'rgba(34, 197, 94, 0.1)';
+        statusDiv.style.border = '1px solid rgba(34, 197, 94, 0.3)';
+        statusDiv.style.color = '#22c55e';
+    } else {
+        statusDiv.style.background = 'rgba(239, 68, 68, 0.1)';
+        statusDiv.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+        statusDiv.style.color = '#ef4444';
+    }
+    
+    statusDiv.textContent = message;
+}
+
+// ============================================
+// TOURNAMENT ADMIN PANEL
+// ============================================
+
+async function loadTournamentAdminPanel() {
+    const container = document.getElementById('tournament-admin-container');
+    if (!container) return;
+    
+    try {
+        const authData = getAuthData();
+        if (!authData || !isAdmin(authData)) {
+            container.innerHTML = '<p style="color: var(--danger);">⛔ Доступ запрещен</p>';
+            return;
+        }
+        
+        // Загружаем настройки и заявки
+        const [settingsRes, applicationsRes] = await Promise.all([
+            fetch('/api/tournament/settings', {
+                headers: { 'Authorization': `Bearer ${authData.token}` }
+            }),
+            fetch('/api/tournament/applications', {
+                headers: { 'Authorization': `Bearer ${authData.token}` }
+            })
+        ]);
+        
+        const settingsData = await settingsRes.json();
+        const applicationsData = await applicationsRes.json();
+        
+        const settings = settingsData.settings || { is_open: true, closes_at: null };
+        const applications = applicationsData.applications || [];
+        
+        // Формируем HTML
+        container.innerHTML = `
+            <div style="display: grid; gap: 24px;">
+                <!-- Настройки регистрации -->
+                <div style="background: var(--bg-card); border-radius: 12px; padding: 24px; border: 1px solid var(--border-color);">
+                    <h3 style="margin: 0 0 20px 0; font-size: 20px; font-weight: 700; color: var(--text-primary);">
+                        ⚙️ Управление регистрацией
+                    </h3>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 16px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <input 
+                                type="checkbox" 
+                                id="tournament-registration-open" 
+                                ${settings.is_open ? 'checked' : ''}
+                                style="width: 20px; height: 20px; cursor: pointer;"
+                            >
+                            <label for="tournament-registration-open" style="font-weight: 600; color: var(--text-primary); cursor: pointer;">
+                                Регистрация открыта
+                            </label>
+                        </div>
+                        
+                        <div id="tournament-close-time-container" style="${settings.is_open ? 'display: none;' : ''}">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary);">
+                                Закрыть до (необязательно)
+                            </label>
+                            <input 
+                                type="datetime-local" 
+                                id="tournament-close-time" 
+                                value="${settings.closes_at ? new Date(settings.closes_at).toISOString().slice(0, 16) : ''}"
+                                style="width: 100%; padding: 10px 12px; background: var(--bg-secondary); border: 2px solid var(--border-color); border-radius: 8px; font-size: 14px; color: var(--text-primary);"
+                            >
+                        </div>
+                        
+                        <button 
+                            id="save-tournament-settings-btn"
+                            style="padding: 12px 24px; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s;"
+                            onmouseover="this.style.transform='translateY(-2px)'"
+                            onmouseout="this.style.transform='translateY(0)'"
+                        >
+                            💾 Сохранить настройки
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Список заявок -->
+                <div style="background: var(--bg-card); border-radius: 12px; padding: 24px; border: 1px solid var(--border-color);">
+                    <h3 style="margin: 0 0 20px 0; font-size: 20px; font-weight: 700; color: var(--text-primary);">
+                        📋 Заявки на турнир (${applications.length})
+                    </h3>
+                    
+                    <div id="tournament-applications-list" style="display: flex; flex-direction: column; gap: 12px;">
+                        ${applications.length === 0 ? 
+                            '<p style="color: var(--text-secondary); text-align: center; padding: 40px;">Заявок пока нет</p>' :
+                            applications.map(app => {
+                                const statusColors = {
+                                    'pending': 'rgba(251, 191, 36, 0.2)',
+                                    'approved': 'rgba(34, 197, 94, 0.2)',
+                                    'rejected': 'rgba(239, 68, 68, 0.2)'
+                                };
+                                const statusTexts = {
+                                    'pending': '⏳ Ожидание',
+                                    'approved': '✅ Одобрено',
+                                    'rejected': '❌ Отклонено'
+                                };
+                                const createdDate = new Date(app.created_at).toLocaleString('ru-RU');
+                                const user = app.users || {};
+                                
+                                return `
+                                    <div style="padding: 16px; background: var(--bg-secondary); border-radius: 8px; border: 1px solid var(--border-color);">
+                                        <div style="display: flex; justify-content: space-between; align-items: start; gap: 16px;">
+                                            <div style="flex: 1;">
+                                                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                                                    <strong style="color: var(--text-primary);">${user.discord_username || user.username || 'Неизвестно'}</strong>
+                                                    <span style="padding: 4px 12px; background: ${statusColors[app.status] || statusColors.pending}; border-radius: 6px; font-size: 12px; font-weight: 600; color: var(--text-primary);">
+                                                        ${statusTexts[app.status] || app.status}
+                                                    </span>
+                                                </div>
+                                                <div style="display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--text-secondary);">
+                                                    <div>🆔 Discord ID: <code>${app.discord_id}</code></div>
+                                                    <div>🎮 Steam ID: <code>${app.steam_id}</code></div>
+                                                    <div>📅 Подана: ${createdDate}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')
+                        }
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Обработчики событий
+        const openCheckbox = document.getElementById('tournament-registration-open');
+        const closeTimeContainer = document.getElementById('tournament-close-time-container');
+        const saveBtn = document.getElementById('save-tournament-settings-btn');
+        
+        if (openCheckbox) {
+            openCheckbox.addEventListener('change', (e) => {
+                if (closeTimeContainer) {
+                    closeTimeContainer.style.display = e.target.checked ? 'none' : 'block';
+                }
+            });
+        }
+        
+        if (saveBtn) {
+            saveBtn.addEventListener('click', async () => {
+                const isOpen = openCheckbox.checked;
+                const closesAt = isOpen ? null : (document.getElementById('tournament-close-time')?.value || null);
+                
+                saveBtn.disabled = true;
+                saveBtn.textContent = 'Сохранение...';
+                
+                try {
+                    const response = await fetch('/api/tournament/settings', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${authData.token}`
+                        },
+                        body: JSON.stringify({
+                            isOpen,
+                            closesAt: closesAt ? new Date(closesAt).toISOString() : null
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        showToast('✅ Настройки сохранены', 'success');
+                        loadTournamentAdminPanel();
+                    } else {
+                        throw new Error(data.error || 'Ошибка сохранения');
+                    }
+                } catch (error) {
+                    showToast(`Ошибка: ${error.message}`);
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = '💾 Сохранить настройки';
+                }
+            });
+        }
+        
+    } catch (error) {
+        console.error('Load tournament admin panel error:', error);
+        if (container) {
+            container.innerHTML = `<p style="color: var(--danger);">Ошибка загрузки: ${error.message}</p>`;
+        }
+    }
 }
 
 // ================= API TOKENS (USER) =================

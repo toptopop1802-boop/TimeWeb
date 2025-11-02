@@ -847,6 +847,243 @@ function setupAuthRoutes(app, supabase) {
             }
         }, supabase);
     });
+
+    // ============================================
+    // TOURNAMENT APPLICATIONS API
+    // ============================================
+    
+    // Подать заявку на турнир
+    app.post('/api/tournament/apply', async (req, res) => {
+        await requireAuth(req, res, async () => {
+            try {
+                const { steamId } = req.body;
+                
+                if (!steamId || !steamId.trim()) {
+                    return res.status(400).json({ error: 'Steam ID обязателен' });
+                }
+                
+                // Проверка, что Steam ID содержит только цифры
+                if (!/^\d+$/.test(steamId.trim())) {
+                    return res.status(400).json({ error: 'Steam ID должен содержать только цифры' });
+                }
+                
+                // Проверяем, что пользователь авторизован через Discord
+                if (!req.user.discord_id) {
+                    return res.status(400).json({ error: 'Требуется авторизация через Discord' });
+                }
+                
+                // Проверяем, есть ли уже заявка
+                const { data: existingApp } = await supabase
+                    .from('tournament_applications')
+                    .select('*')
+                    .eq('discord_id', req.user.discord_id)
+                    .maybeSingle();
+                
+                if (existingApp) {
+                    return res.status(400).json({ error: 'Вы уже подали заявку на турнир' });
+                }
+                
+                // Проверяем, открыта ли регистрация
+                const { data: settings } = await supabase
+                    .from('tournament_registration_settings')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(1)
+                    .maybeSingle();
+                
+                if (settings && !settings.is_open) {
+                    const closesAt = settings.closes_at;
+                    if (closesAt) {
+                        const closeTime = new Date(closesAt);
+                        if (new Date() >= closeTime) {
+                            return res.status(400).json({ error: 'Регистрация на турнир закрыта' });
+                        }
+                    } else {
+                        return res.status(400).json({ error: 'Регистрация на турнир закрыта' });
+                    }
+                }
+                
+                // Отправляем заявку боту через HTTP API
+                const API_SECRET = process.env.API_SECRET || 'bublickrust';
+                const API_PORT = process.env.API_PORT || '8787';
+                
+                const botResponse = await fetch(`http://localhost:${API_PORT}/api/tournament-application`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_SECRET}`
+                    },
+                    body: JSON.stringify({
+                        userId: req.user.id,
+                        discordId: req.user.discord_id,
+                        discordUsername: req.user.discord_username || req.user.username,
+                        steamId: steamId.trim()
+                    })
+                });
+                
+                if (!botResponse.ok) {
+                    const errorData = await botResponse.json();
+                    return res.status(botResponse.status).json({ error: errorData.error || 'Ошибка отправки заявки боту' });
+                }
+                
+                const botData = await botResponse.json();
+                
+                // Сохраняем заявку в БД
+                const { data: application, error: appError } = await supabase
+                    .from('tournament_applications')
+                    .insert({
+                        user_id: req.user.id,
+                        discord_id: req.user.discord_id,
+                        steam_id: steamId.trim(),
+                        status: 'pending'
+                    })
+                    .select()
+                    .single();
+                
+                if (appError) {
+                    console.error('Database insert error:', appError);
+                    // Заявка уже отправлена в Discord, но не сохранена в БД
+                    // Это не критично, но логируем
+                }
+                
+                res.json({
+                    success: true,
+                    message: 'Заявка успешно подана',
+                    application: application || { id: botData.messageId }
+                });
+            } catch (error) {
+                console.error('Tournament application error:', error);
+                res.status(500).json({ error: error.message });
+            }
+        }, supabase);
+    });
+    
+    // Проверить статус заявки пользователя
+    app.get('/api/tournament/status', async (req, res) => {
+        await requireAuth(req, res, async () => {
+            try {
+                // Проверяем заявку пользователя
+                const { data: application } = await supabase
+                    .from('tournament_applications')
+                    .select('*')
+                    .eq('discord_id', req.user.discord_id)
+                    .maybeSingle();
+                
+                // Проверяем настройки регистрации
+                const { data: settings } = await supabase
+                    .from('tournament_registration_settings')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(1)
+                    .maybeSingle();
+                
+                const isOpen = settings ? settings.is_open : true;
+                let closesAt = settings?.closes_at || null;
+                
+                // Проверяем, не истекло ли время закрытия
+                if (closesAt && isOpen) {
+                    const closeTime = new Date(closesAt);
+                    if (new Date() >= closeTime) {
+                        closesAt = null; // Время истекло
+                    }
+                }
+                
+                res.json({
+                    hasApplication: !!application,
+                    application: application || null,
+                    registrationOpen: isOpen && (!closesAt || new Date() < new Date(closesAt)),
+                    closesAt: closesAt
+                });
+            } catch (error) {
+                console.error('Get tournament status error:', error);
+                res.status(500).json({ error: error.message });
+            }
+        }, supabase);
+    });
+    
+    // Получить все заявки (только для админа)
+    app.get('/api/tournament/applications', async (req, res) => {
+        await requireAdmin(req, res, async () => {
+            try {
+                const { status } = req.query;
+                
+                let query = supabase
+                    .from('tournament_applications')
+                    .select(`
+                        *,
+                        users:user_id (
+                            id,
+                            username,
+                            email,
+                            discord_username,
+                            discord_avatar
+                        )
+                    `)
+                    .order('created_at', { ascending: false });
+                
+                if (status) {
+                    query = query.eq('status', status);
+                }
+                
+                const { data: applications, error } = await query;
+                
+                if (error) throw error;
+                
+                res.json({ applications: applications || [] });
+            } catch (error) {
+                console.error('Get tournament applications error:', error);
+                res.status(500).json({ error: error.message });
+            }
+        }, supabase);
+    });
+    
+    // Управление настройками регистрации (только для админа)
+    app.post('/api/tournament/settings', async (req, res) => {
+        await requireAdmin(req, res, async () => {
+            try {
+                const { isOpen, closesAt } = req.body;
+                
+                if (typeof isOpen !== 'boolean') {
+                    return res.status(400).json({ error: 'isOpen должен быть boolean' });
+                }
+                
+                const { data: settings, error } = await supabase
+                    .from('tournament_registration_settings')
+                    .insert({
+                        is_open: isOpen,
+                        closes_at: closesAt || null
+                    })
+                    .select()
+                    .single();
+                
+                if (error) throw error;
+                
+                res.json({ success: true, settings });
+            } catch (error) {
+                console.error('Update tournament settings error:', error);
+                res.status(500).json({ error: error.message });
+            }
+        }, supabase);
+    });
+    
+    // Получить настройки регистрации (для админа)
+    app.get('/api/tournament/settings', async (req, res) => {
+        await requireAdmin(req, res, async () => {
+            try {
+                const { data: settings } = await supabase
+                    .from('tournament_registration_settings')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(1)
+                    .maybeSingle();
+                
+                res.json({ settings: settings || { is_open: true, closes_at: null } });
+            } catch (error) {
+                console.error('Get tournament settings error:', error);
+                res.status(500).json({ error: error.message });
+            }
+        }, supabase);
+    });
 }
 
 module.exports = { setupAuthRoutes };

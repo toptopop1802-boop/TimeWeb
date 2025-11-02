@@ -278,6 +278,149 @@ async def handle_gradient_role_request(request: web.Request) -> web.Response:
         }, status=500)
 
 
+async def handle_tournament_application_request(request: web.Request) -> web.Response:
+    """Обработчик HTTP запросов на создание заявки на турнир"""
+    global _bot_instance
+    
+    # Проверка секретного ключа
+    auth_header = request.headers.get('Authorization', '')
+    if not auth_header.startswith('Bearer '):
+        return web.json_response({'error': 'Missing authorization'}, status=401)
+    
+    token = auth_header[7:]  # Убираем 'Bearer '
+    if token != request.app['api_secret']:
+        return web.json_response({'error': 'Invalid token'}, status=403)
+    
+    try:
+        data = await request.json()
+        discord_id = data.get('discordId')
+        steam_id = data.get('steamId', '').strip()
+        discord_username = data.get('discordUsername', '')
+        
+        if not discord_id or not steam_id:
+            return web.json_response({'error': 'Missing required fields'}, status=400)
+        
+        # Проверка, что Steam ID содержит только цифры
+        if not steam_id.isdigit():
+            return web.json_response({'error': 'Steam ID должен содержать только цифры'}, status=400)
+        
+        # Получаем бота и гильдию
+        bot = _bot_instance
+        if not bot:
+            return web.json_response({'error': 'Bot not ready'}, status=503)
+        
+        guild_id = int(os.getenv("DISCORD_GUILD_ID", "1338592151293919354"))
+        guild = bot.get_guild(guild_id)
+        if not guild:
+            return web.json_response({'error': 'Guild not found'}, status=404)
+        
+        # Канал для заявок на турнир
+        TOURNAMENT_CHANNEL_ID = 1434605264241164431
+        channel = guild.get_channel(TOURNAMENT_CHANNEL_ID)
+        if not isinstance(channel, discord.TextChannel):
+            return web.json_response({'error': 'Tournament channel not found'}, status=404)
+        
+        # Проверяем, есть ли уже заявка от этого пользователя
+        if bot.db:
+            existing_app = await bot.db.get_tournament_application(discord_id=discord_id)
+            if existing_app:
+                return web.json_response({
+                    'success': False,
+                    'error': 'Вы уже подали заявку на турнир'
+                }, status=400)
+        
+        # Проверяем, открыта ли регистрация
+        if bot.db:
+            settings = await bot.db.get_tournament_registration_settings()
+            if settings and not settings.get('is_open', True):
+                closes_at = settings.get('closes_at')
+                if closes_at:
+                    from datetime import datetime
+                    try:
+                        close_time = datetime.fromisoformat(closes_at.replace('Z', '+00:00'))
+                        if datetime.now(close_time.tzinfo) >= close_time:
+                            return web.json_response({
+                                'success': False,
+                                'error': 'Регистрация на турнир закрыта'
+                            }, status=400)
+                    except:
+                        pass
+                else:
+                    return web.json_response({
+                        'success': False,
+                        'error': 'Регистрация на турнир закрыта'
+                    }, status=400)
+        
+        # Создаем embed с заявкой
+        embed = discord.Embed(
+            title="🏆 Заявка на турнир",
+            description=f"**Новая заявка на участие в турнире**",
+            color=discord.Color.gold(),
+            timestamp=discord.utils.utcnow()
+        )
+        
+        # Пытаемся получить участника для упоминания
+        member = guild.get_member(int(discord_id))
+        if member:
+            embed.add_field(name="👤 Участник", value=f"{member.mention}\n`{discord_id}`", inline=True)
+        else:
+            embed.add_field(name="👤 Участник", value=f"<@{discord_id}>\n`{discord_id}`", inline=True)
+        
+        embed.add_field(name="🆔 Steam ID", value=f"`{steam_id}`", inline=True)
+        embed.add_field(name="📋 Discord Username", value=f"`{discord_username}`", inline=True)
+        embed.add_field(name="📊 Статус", value="⏳ **Ожидание рассмотрения**", inline=False)
+        
+        # Отправляем embed в канал
+        msg = await channel.send(embed=embed)
+        
+        # Сохраняем заявку в БД
+        if bot.db:
+            user_id = data.get('userId')  # UUID пользователя с сайта
+            await bot.db.save_tournament_application(
+                user_id=user_id,
+                discord_id=int(discord_id),
+                steam_id=steam_id
+            )
+            
+            # Логируем событие
+            await bot.db.log_event(
+                guild_id=guild.id,
+                event_type="tournament_application_created",
+                event_data={
+                    "discord_id": discord_id,
+                    "steam_id": steam_id,
+                    "message_id": msg.id
+                }
+            )
+        
+        logging.info(f"✅ Created tournament application in channel: {channel.id} for Discord ID {discord_id}")
+        
+        return web.json_response({
+            'success': True,
+            'messageId': str(msg.id),
+            'channelId': str(channel.id)
+        })
+        
+    except discord.Forbidden as exc:
+        logging.error(f"❌ Permission denied when creating tournament application: {exc}")
+        return web.json_response({
+            'success': False,
+            'error': 'Бот не имеет прав для отправки сообщений в канал'
+        }, status=403)
+    except discord.HTTPException as exc:
+        logging.error(f"❌ Discord API error: {exc}")
+        return web.json_response({
+            'success': False,
+            'error': f'Ошибка Discord API: {exc}'
+        }, status=500)
+    except Exception as exc:
+        logging.error(f"❌ Error handling tournament application request: {exc}", exc_info=True)
+        return web.json_response({
+            'success': False,
+            'error': str(exc)
+        }, status=500)
+
+
 async def start_http_server(bot: commands.Bot, port: int, secret: str):
     """Запуск HTTP сервера для приема заявок с дашборда"""
     global _bot_instance
@@ -286,6 +429,7 @@ async def start_http_server(bot: commands.Bot, port: int, secret: str):
     app = web.Application()
     app['api_secret'] = secret
     app.router.add_post('/api/gradient-role', handle_gradient_role_request)
+    app.router.add_post('/api/tournament-application', handle_tournament_application_request)
     
     runner = web.AppRunner(app)
     await runner.setup()
@@ -3946,6 +4090,46 @@ def main() -> None:
         # Обработка канала записи на вайп
         if message.channel.id == WIPE_SIGNUP_CHANNEL_ID:
             await handle_wipe_signup_message(message)
+            return
+        
+        # Обработка канала заявок на турнир - обновляем embed при добавлении участников
+        TOURNAMENT_CHANNEL_ID = 1434605264241164431
+        if message.channel.id == TOURNAMENT_CHANNEL_ID:
+            # Если в сообщении есть упоминания участников, обновляем embed заявки
+            if message.mentions and not message.author.bot:
+                # Ищем последний embed от бота с заявкой
+                async for msg in message.channel.history(limit=10):
+                    if msg.author == bot.user and msg.embeds:
+                        embed = msg.embeds[0]
+                        if embed.title and "🏆 Заявка на турнир" in embed.title:
+                            # Обновляем embed с новыми участниками
+                            new_embed = embed.copy()
+                            
+                            # Собираем всех упомянутых участников
+                            mentioned_members = []
+                            for member in message.mentions:
+                                if not member.bot:
+                                    mentioned_members.append(member.mention)
+                            
+                            if mentioned_members:
+                                # Добавляем или обновляем поле с участниками
+                                has_participants_field = any(field.name == "👥 Участники" for field in new_embed.fields)
+                                
+                                if has_participants_field:
+                                    # Обновляем существующее поле
+                                    for i, field in enumerate(new_embed.fields):
+                                        if field.name == "👥 Участники":
+                                            existing_mentions = field.value.split('\n')[1:] if '\n' in field.value else []
+                                            all_mentions = list(set(existing_mentions + mentioned_members))
+                                            new_embed.set_field_at(i, name="👥 Участники", value=f"Всего: {len(all_mentions)}\n" + "\n".join(all_mentions), inline=False)
+                                            break
+                                else:
+                                    # Добавляем новое поле
+                                    new_embed.add_field(name="👥 Участники", value=f"Всего: {len(mentioned_members)}\n" + "\n".join(mentioned_members), inline=False)
+                                
+                                await msg.edit(embed=new_embed)
+                                logging.info(f"Updated tournament application embed with new participants: {len(mentioned_members)}")
+                            break
             return
         
         # Проверяем, является ли канал каналом заявки на роль (role-request-*)

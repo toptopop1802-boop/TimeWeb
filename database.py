@@ -651,6 +651,103 @@ class Database:
             return []
     
     # ============================================
+    # TOURNAMENT APPLICATIONS
+    # ============================================
+    
+    async def save_tournament_application(
+        self,
+        user_id: str,
+        discord_id: int,
+        steam_id: str
+    ) -> bool:
+        """Сохраняет заявку на турнир"""
+        try:
+            data = {
+                "user_id": user_id,
+                "discord_id": discord_id,
+                "steam_id": steam_id,
+                "status": "pending"
+            }
+            self.client.table("tournament_applications").insert(data).execute()
+            logging.info(f"Saved tournament application: user_id={user_id}, discord_id={discord_id}")
+            return True
+        except Exception as exc:
+            logging.error(f"Failed to save tournament application: {exc}")
+            return False
+    
+    async def get_tournament_application(self, user_id: str = None, discord_id: int = None) -> Optional[Dict[str, Any]]:
+        """Получает заявку на турнир по user_id или discord_id"""
+        try:
+            if user_id:
+                response = self.client.table("tournament_applications").select("*").eq("user_id", user_id).execute()
+            elif discord_id:
+                response = self.client.table("tournament_applications").select("*").eq("discord_id", discord_id).execute()
+            else:
+                return None
+            
+            if response.data:
+                return response.data[0]
+            return None
+        except Exception as exc:
+            logging.error(f"Failed to get tournament application: {exc}")
+            return None
+    
+    async def get_all_tournament_applications(self, status: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Получает все заявки на турнир"""
+        try:
+            query = self.client.table("tournament_applications").select("*")
+            if status:
+                query = query.eq("status", status)
+            response = query.order("created_at", desc=True).execute()
+            return response.data or []
+        except Exception as exc:
+            logging.error(f"Failed to get tournament applications: {exc}")
+            return []
+    
+    async def update_tournament_application_status(
+        self,
+        application_id: str,
+        status: str
+    ) -> bool:
+        """Обновляет статус заявки на турнир"""
+        try:
+            self.client.table("tournament_applications").update({"status": status}).eq("id", application_id).execute()
+            logging.info(f"Updated tournament application status: id={application_id}, status={status}")
+            return True
+        except Exception as exc:
+            logging.error(f"Failed to update tournament application status: {exc}")
+            return False
+    
+    async def get_tournament_registration_settings(self) -> Optional[Dict[str, Any]]:
+        """Получает настройки регистрации на турнир"""
+        try:
+            response = self.client.table("tournament_registration_settings").select("*").order("created_at", desc=True).limit(1).execute()
+            if response.data:
+                return response.data[0]
+            return None
+        except Exception as exc:
+            logging.error(f"Failed to get tournament registration settings: {exc}")
+            return None
+    
+    async def update_tournament_registration_settings(
+        self,
+        is_open: bool,
+        closes_at: Optional[str] = None
+    ) -> bool:
+        """Обновляет настройки регистрации на турнир"""
+        try:
+            data = {
+                "is_open": is_open,
+                "closes_at": closes_at
+            }
+            self.client.table("tournament_registration_settings").insert(data).execute()
+            logging.info(f"Updated tournament registration settings: is_open={is_open}, closes_at={closes_at}")
+            return True
+        except Exception as exc:
+            logging.error(f"Failed to update tournament registration settings: {exc}")
+            return False
+    
+    # ============================================
     # CLEANUP
     # ============================================
     
