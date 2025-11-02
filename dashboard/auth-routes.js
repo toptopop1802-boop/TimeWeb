@@ -906,7 +906,9 @@ function setupAuthRoutes(app, supabase) {
                 // Отправляем заявку боту через HTTP API (опционально)
                 const API_SECRET = process.env.API_SECRET || 'bublickrust';
                 const API_PORT = process.env.API_PORT || '8787';
-                const API_HOST = process.env.API_HOST || 'localhost';
+                const API_HOST = process.env.API_HOST || '127.0.0.1'; // Используем 127.0.0.1 вместо localhost для надежности
+                
+                console.log(`🔗 [Tournament Application] Attempting to connect to bot at http://${API_HOST}:${API_PORT}/api/tournament-application`);
                 
                 let botData = null;
                 try {
@@ -931,17 +933,21 @@ function setupAuthRoutes(app, supabase) {
                     
                     clearTimeout(timeoutId);
                     
+                    console.log(`📥 [Tournament Application] Bot response status: ${botResponse.status}`);
+                    
                     if (botResponse.ok) {
                         botData = await botResponse.json();
+                        console.log(`✅ [Tournament Application] Bot accepted application: ${JSON.stringify(botData)}`);
                     } else {
-                        console.warn('Bot API returned error:', botResponse.status);
+                        const errorText = await botResponse.text();
+                        console.warn(`⚠️ [Tournament Application] Bot API returned error ${botResponse.status}: ${errorText}`);
                         // Продолжаем без бота, сохраняем в БД
                     }
                 } catch (botError) {
                     if (botError.name === 'AbortError') {
-                        console.warn('Bot API timeout (5s), сохраняем заявку только в БД');
+                        console.warn('⏱️ [Tournament Application] Bot API timeout (5s), сохраняем заявку только в БД');
                     } else {
-                        console.warn('Bot API недоступен, сохраняем заявку только в БД:', botError.message);
+                        console.warn(`❌ [Tournament Application] Bot API недоступен: ${botError.message}, сохраняем заявку только в БД`);
                     }
                     // Продолжаем без бота, сохраняем в БД
                 }
