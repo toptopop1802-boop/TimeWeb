@@ -16,6 +16,140 @@ function getRealIP(req) {
 
 function setupAuthRoutes(app, supabase) {
     
+    // Discord OAuth callback
+    app.get('/signin-discord', async (req, res) => {
+        try {
+            const { code, state } = req.query;
+
+            if (!code) {
+                return res.redirect('/login.html?error=discord_auth_failed');
+            }
+
+            // Exchange code for access token
+            const tokenResponse = await fetch('https://discord.com/api/oauth2/token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    client_id: '1250017421121556510',
+                    client_secret: process.env.DISCORD_CLIENT_SECRET || '',
+                    grant_type: 'authorization_code',
+                    code: code,
+                    redirect_uri: 'http://figma.rustremote.com/signin-discord',
+                }),
+            });
+
+            if (!tokenResponse.ok) {
+                console.error('Discord token exchange failed:', await tokenResponse.text());
+                return res.redirect('/login.html?error=discord_token_failed');
+            }
+
+            const tokenData = await tokenResponse.json();
+            const accessToken = tokenData.access_token;
+
+            // Get user info from Discord
+            const userResponse = await fetch('https://discord.com/api/users/@me', {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+
+            if (!userResponse.ok) {
+                console.error('Discord user fetch failed:', await userResponse.text());
+                return res.redirect('/login.html?error=discord_user_failed');
+            }
+
+            const discordUser = await userResponse.json();
+
+            // Check if user exists in database
+            let { data: existingUser } = await supabase
+                .from('users')
+                .select('*')
+                .eq('email', `${discordUser.id}@discord.user`)
+                .or(`username.eq.${discordUser.username}`)
+                .maybeSingle();
+
+            let user;
+
+            if (existingUser) {
+                // Update existing user with Discord info
+                const { data: updatedUser, error: updateError } = await supabase
+                    .from('users')
+                    .update({
+                        username: discordUser.username,
+                        email: `${discordUser.id}@discord.user`,
+                        last_login: new Date().toISOString()
+                    })
+                    .eq('id', existingUser.id)
+                    .select()
+                    .single();
+
+                if (updateError) throw updateError;
+                user = updatedUser;
+            } else {
+                // Create new user from Discord
+                const { data: newUser, error: insertError } = await supabase
+                    .from('users')
+                    .insert({
+                        username: discordUser.username,
+                        email: `${discordUser.id}@discord.user`,
+                        password_hash: '', // No password for Discord users
+                        role: 'user',
+                        created_at: new Date().toISOString()
+                    })
+                    .select()
+                    .single();
+
+                if (insertError) throw insertError;
+                user = newUser;
+
+                // Log registration
+                await supabase
+                    .from('user_registrations')
+                    .insert({
+                        user_id: user.id,
+                        username: user.username,
+                        ip_address: getRealIP(req),
+                        user_agent: req.headers['user-agent']
+                    });
+            }
+
+            // Create session
+            const token = generateToken();
+            const expires_at = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+
+            await supabase
+                .from('sessions')
+                .insert({
+                    user_id: user.id,
+                    token,
+                    expires_at: expires_at.toISOString(),
+                    ip_address: getRealIP(req),
+                    user_agent: req.headers['user-agent']
+                });
+
+            // Log login action
+            await supabase
+                .from('user_actions')
+                .insert({
+                    user_id: user.id,
+                    action_type: 'login',
+                    action_details: {
+                        ip_address: getRealIP(req),
+                        user_agent: req.headers['user-agent'],
+                        login_type: 'discord'
+                    }
+                });
+
+            // Redirect to main page with token
+            res.redirect(`/?token=${token}`);
+        } catch (error) {
+            console.error('Discord OAuth error:', error);
+            res.redirect('/login.html?error=discord_error');
+        }
+    });
+
     // Простая регистрация - только имя пользователя
     app.post('/api/auth/simple-register', async (req, res) => {
         try {
@@ -565,6 +699,34 @@ function setupAuthRoutes(app, supabase) {
         }, supabase);
     });
     
+    // Получить статистику текущего пользователя
+    app.get('/api/user/stats', async (req, res) => {
+        await requireAuth(req, res, async () => {
+            try {
+                // Получаем количество действий пользователя
+                const { count: actionsCount } = await supabase
+                    .from('user_actions')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('user_id', req.user.id);
+
+                // Получаем количество входов
+                const { count: loginsCount } = await supabase
+                    .from('user_actions')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('user_id', req.user.id)
+                    .eq('action_type', 'login');
+
+                res.json({
+                    actions: actionsCount || 0,
+                    logins: loginsCount || 0
+                });
+            } catch (error) {
+                console.error('Get user stats error:', error);
+                res.status(500).json({ error: error.message });
+            }
+        }, supabase);
+    });
+
     // Получить действия текущего пользователя
     app.get('/api/user/actions', async (req, res) => {
         await requireAuth(req, res, async () => {
