@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS tournament_registration_settings (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     is_open BOOLEAN DEFAULT TRUE,
     closes_at TIMESTAMPTZ,
+    main_message_id BIGINT,  -- ID главного сообщения со списком участников
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );

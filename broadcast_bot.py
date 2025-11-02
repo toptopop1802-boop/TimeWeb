@@ -378,43 +378,6 @@ async def handle_tournament_application_request(request: web.Request) -> web.Res
                     }, status=400)
             logging.info("✅ [Tournament Application] Registration is open")
         
-        # Создаем embed с заявкой
-        embed = discord.Embed(
-            title="🏆 Заявка на турнир",
-            description=f"**Новая заявка на участие в турнире**",
-            color=discord.Color.gold(),
-            timestamp=discord.utils.utcnow()
-        )
-        
-        # Пытаемся получить участника для упоминания
-        member = guild.get_member(int(discord_id))
-        if member:
-            embed.add_field(name="👤 Участник", value=f"{member.mention}\n`{discord_id}`", inline=True)
-        else:
-            embed.add_field(name="👤 Участник", value=f"<@{discord_id}>\n`{discord_id}`", inline=True)
-        
-        embed.add_field(name="🆔 Steam ID", value=f"`{steam_id}`", inline=True)
-        embed.add_field(name="📋 Discord Username", value=f"`{discord_username}`", inline=True)
-        embed.add_field(name="📊 Статус", value="⏳ **Ожидание рассмотрения**", inline=False)
-        
-        # Отправляем embed в канал
-        logging.info(f"📤 [Tournament Application] Sending embed to channel {channel.id}")
-        try:
-            msg = await channel.send(embed=embed)
-            logging.info(f"✅ [Tournament Application] Message sent successfully: {msg.id}")
-        except discord.Forbidden as e:
-            logging.error(f"❌ [Tournament Application] Permission denied: {e}")
-            return web.json_response({
-                'success': False,
-                'error': 'Бот не имеет прав для отправки сообщений в канал'
-            }, status=403)
-        except discord.HTTPException as e:
-            logging.error(f"❌ [Tournament Application] Discord API error: {e}")
-            return web.json_response({
-                'success': False,
-                'error': f'Ошибка Discord API: {e}'
-            }, status=500)
-        
         # Сохраняем заявку в БД
         if bot.db:
             logging.info("💾 [Tournament Application] Saving to database")
@@ -431,17 +394,92 @@ async def handle_tournament_application_request(request: web.Request) -> web.Res
                 event_type="tournament_application_created",
                 event_data={
                     "discord_id": discord_id,
-                    "steam_id": steam_id,
-                    "message_id": msg.id
+                    "steam_id": steam_id
                 }
             )
+            
+            # Обновляем главное сообщение со списком участников
+            # Получаем все заявки pending
+            applications = await bot.db.get_all_tournament_applications(status='pending')
+            settings = await bot.db.get_tournament_registration_settings()
+            main_message_id = settings.get('main_message_id') if settings else None
+            
+            if main_message_id:
+                try:
+                    main_message = await channel.fetch_message(main_message_id)
+                    
+                    # Формируем список всех участников
+                    participants_list = []
+                    for app in applications:
+                        app_discord_id = app.get('discord_id')
+                        app_steam_id = app.get('steam_id', 'N/A')
+                        app_user_id = app.get('user_id')
+                        
+                        # Получаем данные пользователя
+                        app_user_data = None
+                        if app_user_id:
+                            try:
+                                from supabase import create_client
+                                supabase_url = os.getenv("SUPABASE_URL")
+                                supabase_key = os.getenv("SUPABASE_KEY")
+                                if supabase_url and supabase_key:
+                                    supabase_client = create_client(supabase_url, supabase_key)
+                                    user_response = supabase_client.table("users").select("username, discord_username").eq("id", app_user_id).maybe_single().execute()
+                                    if user_response.data:
+                                        app_user_data = user_response.data
+                            except Exception:
+                                pass
+                        
+                        app_discord_username = app_user_data.get('discord_username') if app_user_data else None
+                        app_member = guild.get_member(int(app_discord_id)) if app_discord_id else None
+                        app_mention = app_member.mention if app_member else f"<@{app_discord_id}>" if app_discord_id else "—"
+                        
+                        participants_list.append({
+                            'mention': app_mention,
+                            'steam_id': app_steam_id,
+                            'discord_username': app_discord_username
+                        })
+                    
+                    # Формируем текст списка участников
+                    participants_text = ""
+                    if participants_list:
+                        for i, participant in enumerate(participants_list, 1):
+                            participants_text += f"{i}. {participant['mention']}\n"
+                            participants_text += f"   Steam ID: `{participant['steam_id']}`"
+                            if participant['discord_username']:
+                                participants_text += f" | Discord: `{participant['discord_username']}`"
+                            participants_text += "\n\n"
+                    else:
+                        participants_text = "Пока нет заявок"
+                    
+                    # Обновляем embed
+                    embed = discord.Embed(
+                        title="🏆 Заявки на турнир",
+                        description=f"**Список участников турнира**\n\nВсего заявок: **{len(participants_list)}**",
+                        color=discord.Color.gold(),
+                        timestamp=discord.utils.utcnow()
+                    )
+                    
+                    embed.add_field(
+                        name="👥 Участники",
+                        value=participants_text[:1024] if len(participants_text) <= 1024 else participants_text[:1021] + "...",
+                        inline=False
+                    )
+                    
+                    embed.add_field(name="📊 Статус", value="⏳ **Ожидание рассмотрения**", inline=False)
+                    
+                    await main_message.edit(embed=embed)
+                    logging.info(f"✅ [Tournament Application] Updated main message with {len(participants_list)} participants")
+                except discord.NotFound:
+                    logging.warning(f"⚠️ [Tournament Application] Main message {main_message_id} not found, worker will create new")
+                except Exception as e:
+                    logging.error(f"❌ [Tournament Application] Error updating main message: {e}", exc_info=True)
         
-        logging.info(f"✅ [Tournament Application] Successfully created application in channel {channel.id} for Discord ID {discord_id}, message ID: {msg.id}")
+        logging.info(f"✅ [Tournament Application] Successfully saved application for Discord ID {discord_id}")
         
         return web.json_response({
             'success': True,
-            'messageId': str(msg.id),
-            'channelId': str(channel.id)
+            'message': 'Заявка сохранена. Сообщение будет обновлено через worker.'
         })
         
     except discord.Forbidden as exc:
@@ -1703,74 +1741,121 @@ def main() -> None:
                     await asyncio.sleep(interval)
                     continue
                 
-                # Получаем все заявки без message_id (не отправленные в Discord)
+                # Получаем все заявки pending
                 applications = await bot.db.get_all_tournament_applications(status='pending')
                 
-                pending_apps = [app for app in applications if not app.get('message_id')]
+                if not applications:
+                    await asyncio.sleep(interval)
+                    continue
                 
-                if pending_apps:
-                    logging.info(f"🔍 [Tournament Worker] Found {len(pending_apps)} pending applications without Discord message")
+                # Получаем настройки турнира
+                settings = await bot.db.get_tournament_registration_settings()
+                main_message_id = settings.get('main_message_id') if settings else None
                 
-                for app in pending_apps:
+                # Получаем или создаем главное сообщение
+                main_message = None
+                if main_message_id:
                     try:
-                        discord_id = app.get('discord_id')
-                        steam_id = app.get('steam_id')
-                        user_id = app.get('user_id')
-                        
-                        # Получаем данные пользователя из БД
-                        user_data = None
-                        if user_id:
-                            try:
-                                # Пытаемся получить username из users таблицы
-                                from supabase import create_client
-                                supabase_url = os.getenv("SUPABASE_URL")
-                                supabase_key = os.getenv("SUPABASE_KEY")
-                                if supabase_url and supabase_key:
-                                    supabase_client = create_client(supabase_url, supabase_key)
-                                    user_response = supabase_client.table("users").select("username, discord_username").eq("id", user_id).maybe_single().execute()
-                                    if user_response.data:
-                                        user_data = user_response.data
-                            except Exception as e:
-                                logging.warning(f"⚠️ [Tournament Worker] Could not fetch user data: {e}")
-                        
-                        discord_username = user_data.get('discord_username') if user_data else None
-                        
-                        # Создаем embed с заявкой
-                        embed = discord.Embed(
-                            title="🏆 Заявка на турнир",
-                            description=f"**Новая заявка на участие в турнире**",
-                            color=discord.Color.gold(),
-                            timestamp=discord.utils.utcnow()
-                        )
-                        
-                        # Пытаемся получить участника для упоминания
-                        member = guild.get_member(int(discord_id))
-                        if member:
-                            embed.add_field(name="👤 Участник", value=f"{member.mention}\n`{discord_id}`", inline=True)
-                        else:
-                            embed.add_field(name="👤 Участник", value=f"<@{discord_id}>\n`{discord_id}`", inline=True)
-                        
-                        embed.add_field(name="🆔 Steam ID", value=f"`{steam_id}`", inline=True)
-                        if discord_username:
-                            embed.add_field(name="📋 Discord Username", value=f"`{discord_username}`", inline=True)
-                        embed.add_field(name="📊 Статус", value="⏳ **Ожидание рассмотрения**", inline=False)
-                        
-                        # Отправляем embed в канал
-                        logging.info(f"📤 [Tournament Worker] Sending pending application for Discord ID {discord_id}")
-                        msg = await channel.send(embed=embed)
-                        
-                        # Обновляем заявку в БД, добавляя message_id
-                        await bot.db.update_tournament_application_message_id(
-                            application_id=str(app.get('id')),
-                            message_id=msg.id
-                        )
-                        logging.info(f"✅ [Tournament Worker] Application sent, message ID: {msg.id}")
-                        
-                        # Небольшая задержка между отправками
-                        await asyncio.sleep(1)
+                        main_message = await channel.fetch_message(main_message_id)
+                        logging.info(f"📋 [Tournament Worker] Found existing main message: {main_message_id}")
+                    except discord.NotFound:
+                        logging.warning(f"⚠️ [Tournament Worker] Main message {main_message_id} not found, will create new")
+                        main_message = None
                     except Exception as e:
-                        logging.error(f"❌ [Tournament Worker] Error processing application {app.get('id')}: {e}", exc_info=True)
-                        continue
+                        logging.error(f"❌ [Tournament Worker] Error fetching main message: {e}")
+                        main_message = None
+                
+                # Собираем данные всех участников
+                participants_list = []
+                for app in applications:
+                    discord_id = app.get('discord_id')
+                    steam_id = app.get('steam_id', 'N/A')
+                    user_id = app.get('user_id')
+                    
+                    # Получаем данные пользователя из БД
+                    user_data = None
+                    if user_id:
+                        try:
+                            from supabase import create_client
+                            supabase_url = os.getenv("SUPABASE_URL")
+                            supabase_key = os.getenv("SUPABASE_KEY")
+                            if supabase_url and supabase_key:
+                                supabase_client = create_client(supabase_url, supabase_key)
+                                user_response = supabase_client.table("users").select("username, discord_username").eq("id", user_id).maybe_single().execute()
+                                if user_response.data:
+                                    user_data = user_response.data
+                        except Exception as e:
+                            logging.warning(f"⚠️ [Tournament Worker] Could not fetch user data: {e}")
+                    
+                    discord_username = user_data.get('discord_username') if user_data else None
+                    
+                    # Пытаемся получить участника для упоминания
+                    member = guild.get_member(int(discord_id)) if discord_id else None
+                    user_mention = member.mention if member else f"<@{discord_id}>" if discord_id else "—"
+                    
+                    participants_list.append({
+                        'discord_id': discord_id,
+                        'discord_username': discord_username,
+                        'steam_id': steam_id,
+                        'mention': user_mention
+                    })
+                
+                # Формируем список участников для embed
+                participants_text = ""
+                if participants_list:
+                    for i, participant in enumerate(participants_list, 1):
+                        participants_text += f"{i}. {participant['mention']}\n"
+                        participants_text += f"   Steam ID: `{participant['steam_id']}`"
+                        if participant['discord_username']:
+                            participants_text += f" | Discord: `{participant['discord_username']}`"
+                        participants_text += "\n\n"
+                else:
+                    participants_text = "Пока нет заявок"
+                
+                # Создаем или обновляем embed
+                embed = discord.Embed(
+                    title="🏆 Заявки на турнир",
+                    description=f"**Список участников турнира**\n\nВсего заявок: **{len(participants_list)}**",
+                    color=discord.Color.gold(),
+                    timestamp=discord.utils.utcnow()
+                )
+                
+                embed.add_field(
+                    name="👥 Участники",
+                    value=participants_text[:1024] if len(participants_text) <= 1024 else participants_text[:1021] + "...",
+                    inline=False
+                )
+                
+                embed.add_field(name="📊 Статус", value="⏳ **Ожидание рассмотрения**", inline=False)
+                
+                # Отправляем или обновляем сообщение
+                if main_message:
+                    try:
+                        await main_message.edit(embed=embed)
+                        logging.info(f"✅ [Tournament Worker] Updated main message with {len(participants_list)} participants")
+                    except Exception as e:
+                        logging.error(f"❌ [Tournament Worker] Error updating message: {e}", exc_info=True)
+                        # Если не удалось обновить, создаем новое
+                        main_message = None
+                
+                if not main_message:
+                    try:
+                        msg = await channel.send(embed=embed)
+                        logging.info(f"✅ [Tournament Worker] Created new main message: {msg.id}")
+                        
+                        # Сохраняем ID главного сообщения в настройках
+                        if bot.db:
+                            from supabase import create_client
+                            supabase_url = os.getenv("SUPABASE_URL")
+                            supabase_key = os.getenv("SUPABASE_KEY")
+                            if supabase_url and supabase_key:
+                                supabase_client = create_client(supabase_url, supabase_key)
+                                # Обновляем настройки
+                                supabase_client.table("tournament_registration_settings").update({
+                                    "main_message_id": msg.id
+                                }).order("created_at", desc=True).limit(1).execute()
+                    except Exception as e:
+                        logging.error(f"❌ [Tournament Worker] Error creating message: {e}", exc_info=True)
                 
             except Exception as exc:
                 logging.error(f"❌ [Tournament Worker] Error: {exc}", exc_info=True)
