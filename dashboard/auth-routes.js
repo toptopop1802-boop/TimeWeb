@@ -1105,13 +1105,12 @@ function setupAuthRoutes(app, supabase) {
         await requireAuth(req, res, async () => {
             requireAdmin(req, res, async () => {
                 try {
-                    const { isOpen, closesAt } = req.body;
+                    const { closesAt } = req.body;
                     
-                    if (typeof isOpen !== 'boolean') {
-                        return res.status(400).json({ error: 'isOpen должен быть boolean' });
-                    }
+                    // Логика: если указана дата - регистрация открыта, если нет - закрыта
+                    const isOpen = !!closesAt;
                     
-                    // Если открываем регистрацию - сбрасываем все заявки и сообщения для новой заявки
+                    // Если открываем регистрацию (устанавливаем дату) - сбрасываем все заявки и сообщения
                     if (isOpen) {
                         // Удаляем все pending заявки
                         await supabase

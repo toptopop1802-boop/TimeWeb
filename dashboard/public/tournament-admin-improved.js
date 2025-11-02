@@ -86,16 +86,17 @@ async function loadImprovedTournamentAdminPanel() {
                 </h3>
                 
                 <div style="display: flex; flex-direction: column; gap: 24px;">
-                    <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 16px; background: var(--bg-secondary); border-radius: 12px; transition: all 0.2s;">
-                        <input type="checkbox" id="tournament-registration-open" ${settings.is_open ? 'checked' : ''} 
-                            style="width: 24px; height: 24px; cursor: pointer; accent-color: var(--accent-primary);">
-                        <div style="flex: 1;">
-                            <div style="font-weight: 600; font-size: 16px; color: var(--text-primary); margin-bottom: 4px;">Регистрация открыта</div>
-                            <div style="font-size: 13px; color: var(--text-secondary);">Участники могут подавать заявки на турнир</div>
+                    <div style="padding: 16px; background: var(--bg-secondary); border-radius: 12px; border-left: 4px solid #667eea;">
+                        <div style="font-weight: 600; font-size: 15px; color: var(--text-primary); margin-bottom: 8px;">
+                            📌 Логика работы
                         </div>
-                    </label>
+                        <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: var(--text-secondary); line-height: 1.8;">
+                            <li><strong>Дата указана</strong> → Регистрация открыта до указанного времени</li>
+                            <li><strong>Дата НЕ указана</strong> → Регистрация закрыта</li>
+                        </ul>
+                    </div>
                     
-                    <div id="tournament-close-time-container" style="display: ${settings.is_open ? 'none' : 'block'};">
+                    <div>
                         <label style="display: block; margin-bottom: 12px; font-weight: 600; font-size: 15px; color: var(--text-primary);">
                             ⏰ Дата и время закрытия регистрации
                         </label>
@@ -106,7 +107,7 @@ async function loadImprovedTournamentAdminPanel() {
                             onblur="this.style.borderColor='var(--border-color)'">
                         <p style="margin: 12px 0 0 0; font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; gap: 8px;">
                             <span style="font-size: 18px;">💡</span>
-                            <span>Игроки увидят обратный отсчет до указанного времени в реальном времени (дни, часы, минуты, секунды)</span>
+                            <span>Игроки увидят обратный отсчет в реальном времени. Оставьте пустым для закрытия регистрации.</span>
                         </p>
                     </div>
                     
@@ -301,22 +302,12 @@ async function loadImprovedTournamentAdminPanel() {
         }
         
         // Обработчики событий
-        const openCheckbox = document.getElementById('tournament-registration-open');
-        const closeTimeContainer = document.getElementById('tournament-close-time-container');
         const saveBtn = document.getElementById('save-tournament-settings-btn');
-        
-        if (openCheckbox) {
-            openCheckbox.addEventListener('change', (e) => {
-                if (closeTimeContainer) {
-                    closeTimeContainer.style.display = e.target.checked ? 'none' : 'block';
-                }
-            });
-        }
         
         if (saveBtn) {
             saveBtn.addEventListener('click', async () => {
-                const isOpen = openCheckbox.checked;
-                const closesAt = isOpen ? null : (document.getElementById('tournament-close-time')?.value || null);
+                const closesAt = document.getElementById('tournament-close-time')?.value || null;
+                const isOpen = !!closesAt; // Регистрация открыта, если указана дата
                 
                 saveBtn.disabled = true;
                 saveBtn.textContent = '⏳ Сохранение...';
