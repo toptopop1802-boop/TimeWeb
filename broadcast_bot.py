@@ -513,6 +513,7 @@ async def start_http_server(bot: commands.Bot, port: int, secret: str):
     app.router.add_post('/api/tournament-application', handle_tournament_application_request)
     
     # Добавляем логирование для всех запросов
+    @web.middleware
     async def log_middleware(request, handler):
         logging.info(f"📥 [HTTP API] {request.method} {request.path} from {request.remote}")
         try:
