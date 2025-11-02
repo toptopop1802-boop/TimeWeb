@@ -11,9 +11,12 @@
 ### Шаг 1: Загрузите файлы на сервер
 
 ```bash
-# Убедитесь что файлы env-template.txt и setup-env.sh загружены в папку dashboard/
+# Убедитесь что файлы загружены в папку dashboard/
 cd /path/to/dsbot/dashboard
-ls -la env-template.txt setup-env.sh
+ls -la env-production.txt setup-env.sh
+
+# Если env-production.txt нет, используйте env-template.txt
+# (потребуется добавить Discord Bot Token вручную)
 ```
 
 ### Шаг 2: Запустите скрипт установки

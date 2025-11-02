@@ -10,11 +10,17 @@ echo ""
 # Путь к директории скрипта
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENV_FILE="$SCRIPT_DIR/.env"
-TEMPLATE_FILE="$SCRIPT_DIR/env-template.txt"
+TEMPLATE_FILE="$SCRIPT_DIR/env-production.txt"
+
+# Fallback to env-template.txt if production file not found
+if [ ! -f "$TEMPLATE_FILE" ]; then
+    TEMPLATE_FILE="$SCRIPT_DIR/env-template.txt"
+    echo "⚠️  Используется env-template.txt (нужно будет добавить Discord Bot Token)"
+fi
 
 # Проверяем наличие шаблона
 if [ ! -f "$TEMPLATE_FILE" ]; then
-    echo "❌ Файл env-template.txt не найден!"
+    echo "❌ Файл шаблона не найден!"
     exit 1
 fi
 
