@@ -1039,85 +1039,91 @@ function setupAuthRoutes(app, supabase) {
     
     // Получить все заявки (только для админа)
     app.get('/api/tournament/applications', async (req, res) => {
-        await requireAdmin(req, res, async () => {
-            try {
-                const { status } = req.query;
-                
-                let query = supabase
-                    .from('tournament_applications')
-                    .select(`
-                        *,
-                        users:user_id (
-                            id,
-                            username,
-                            email,
-                            discord_username,
-                            discord_avatar
-                        )
-                    `)
-                    .order('created_at', { ascending: false });
-                
-                if (status) {
-                    query = query.eq('status', status);
+        await requireAuth(req, res, async () => {
+            requireAdmin(req, res, async () => {
+                try {
+                    const { status } = req.query;
+                    
+                    let query = supabase
+                        .from('tournament_applications')
+                        .select(`
+                            *,
+                            users:user_id (
+                                id,
+                                username,
+                                email,
+                                discord_username,
+                                discord_avatar
+                            )
+                        `)
+                        .order('created_at', { ascending: false });
+                    
+                    if (status) {
+                        query = query.eq('status', status);
+                    }
+                    
+                    const { data: applications, error } = await query;
+                    
+                    if (error) throw error;
+                    
+                    res.json({ applications: applications || [] });
+                } catch (error) {
+                    console.error('Get tournament applications error:', error);
+                    res.status(500).json({ error: error.message });
                 }
-                
-                const { data: applications, error } = await query;
-                
-                if (error) throw error;
-                
-                res.json({ applications: applications || [] });
-            } catch (error) {
-                console.error('Get tournament applications error:', error);
-                res.status(500).json({ error: error.message });
-            }
+            });
         }, supabase);
     });
     
     // Управление настройками регистрации (только для админа)
     app.post('/api/tournament/settings', async (req, res) => {
-        await requireAdmin(req, res, async () => {
-            try {
-                const { isOpen, closesAt } = req.body;
-                
-                if (typeof isOpen !== 'boolean') {
-                    return res.status(400).json({ error: 'isOpen должен быть boolean' });
+        await requireAuth(req, res, async () => {
+            requireAdmin(req, res, async () => {
+                try {
+                    const { isOpen, closesAt } = req.body;
+                    
+                    if (typeof isOpen !== 'boolean') {
+                        return res.status(400).json({ error: 'isOpen должен быть boolean' });
+                    }
+                    
+                    const { data: settings, error } = await supabase
+                        .from('tournament_registration_settings')
+                        .insert({
+                            is_open: isOpen,
+                            closes_at: closesAt || null
+                        })
+                        .select()
+                        .single();
+                    
+                    if (error) throw error;
+                    
+                    res.json({ success: true, settings });
+                } catch (error) {
+                    console.error('Update tournament settings error:', error);
+                    res.status(500).json({ error: error.message });
                 }
-                
-                const { data: settings, error } = await supabase
-                    .from('tournament_registration_settings')
-                    .insert({
-                        is_open: isOpen,
-                        closes_at: closesAt || null
-                    })
-                    .select()
-                    .single();
-                
-                if (error) throw error;
-                
-                res.json({ success: true, settings });
-            } catch (error) {
-                console.error('Update tournament settings error:', error);
-                res.status(500).json({ error: error.message });
-            }
+            });
         }, supabase);
     });
     
     // Получить настройки регистрации (для админа)
     app.get('/api/tournament/settings', async (req, res) => {
-        await requireAdmin(req, res, async () => {
-            try {
-                const { data: settings } = await supabase
-                    .from('tournament_registration_settings')
-                    .select('*')
-                    .order('created_at', { ascending: false })
-                    .limit(1)
-                    .maybeSingle();
-                
-                res.json({ settings: settings || { is_open: true, closes_at: null } });
-            } catch (error) {
-                console.error('Get tournament settings error:', error);
-                res.status(500).json({ error: error.message });
-            }
+        await requireAuth(req, res, async () => {
+            requireAdmin(req, res, async () => {
+                try {
+                    const { data: settings } = await supabase
+                        .from('tournament_registration_settings')
+                        .select('*')
+                        .order('created_at', { ascending: false })
+                        .limit(1)
+                        .maybeSingle();
+                    
+                    res.json({ settings: settings || { is_open: true, closes_at: null } });
+                } catch (error) {
+                    console.error('Get tournament settings error:', error);
+                    res.status(500).json({ error: error.message });
+                }
+            });
         }, supabase);
     });
 }
