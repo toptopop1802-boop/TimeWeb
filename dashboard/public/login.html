@@ -400,7 +400,7 @@
         document.getElementById('discord-login-btn').addEventListener('click', (e) => {
             e.preventDefault();
             const redirectUri = encodeURIComponent(`${window.location.origin}/signin-discord`);
-            const discordAuthUrl = `https://discord.com/oauth2/authorize?client_id=1250017421121556510&scope=identify%20email&response_type=code&redirect_uri=${redirectUri}&state=discord_auth`;
+            const discordAuthUrl = `https://discord.com/oauth2/authorize?client_id=1417959083704582224&scope=identify%20email&response_type=code&redirect_uri=${redirectUri}&state=discord_auth`;
             window.location.href = discordAuthUrl;
         });
 
