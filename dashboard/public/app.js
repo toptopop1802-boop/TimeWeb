@@ -1227,6 +1227,9 @@ function navigateToPage(page) {
     } else if (page === 'gradient-role') {
         // Инициализация страницы заявки на градиентную роль
         initGradientRolePage();
+    } else if (page === 'training-request') {
+        // Инициализация страницы заявки на турнир
+        initTrainingRequestPage();
     } else if (page === 'server') {
         loadServerPlayers();
     }
@@ -3005,6 +3008,141 @@ function initGradientRolePage() {
     
     gradientRoleFormInitialized = true;
     console.log('✅ [Gradient Role] Обработчик формы установлен');
+}
+
+// ============================================
+// TRAINING REQUEST FORM
+// ============================================
+
+// Флаг инициализации формы
+let trainingRequestFormInitialized = false;
+
+function initTrainingRequestPage() {
+    console.log('🏆 [Training Request] Инициализация страницы заявки на турнир');
+    
+    // Если форма уже инициализирована, не добавляем обработчик повторно
+    if (trainingRequestFormInitialized) {
+        console.log('🏆 [Training Request] Форма уже инициализирована');
+        return;
+    }
+    
+    const form = document.getElementById('training-request-form');
+    if (!form) {
+        console.warn('⚠️ [Training Request] Форма не найдена!');
+        return;
+    }
+    
+    console.log('✅ [Training Request] Форма найдена, добавляем обработчик');
+    
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        console.log('🏆 [Training Request] Форма отправлена');
+        
+        const teamName = document.getElementById('team-name').value.trim();
+        const teamMembers = document.getElementById('team-members').value.trim();
+        const additionalInfo = document.getElementById('additional-info').value.trim();
+        const statusDiv = document.getElementById('training-request-status');
+        
+        console.log('📝 [Training Request] Данные формы:', {
+            teamName,
+            teamMembers,
+            additionalInfo
+        });
+        
+        if (!teamName || !teamMembers) {
+            console.warn('⚠️ [Training Request] Не заполнены обязательные поля');
+            if (statusDiv) {
+                statusDiv.style.display = 'block';
+                statusDiv.style.background = 'rgba(239,68,68,0.1)';
+                statusDiv.style.borderLeft = '4px solid #ef4444';
+                statusDiv.style.color = '#ef4444';
+                statusDiv.textContent = '❌ Заполните все обязательные поля';
+            }
+            return;
+        }
+        
+        // Получаем данные пользователя
+        const authData = getAuthData();
+        console.log('👤 [Training Request] Auth данные:', authData);
+        
+        if (!authData || !authData.user) {
+            console.error('❌ [Training Request] Пользователь не авторизован');
+            if (statusDiv) {
+                statusDiv.style.display = 'block';
+                statusDiv.style.background = 'rgba(239,68,68,0.1)';
+                statusDiv.style.borderLeft = '4px solid #ef4444';
+                statusDiv.style.color = '#ef4444';
+                statusDiv.textContent = '❌ Необходимо войти в систему';
+            }
+            return;
+        }
+        
+        // Показываем загрузку
+        if (statusDiv) {
+            statusDiv.style.display = 'block';
+            statusDiv.style.background = 'rgba(59,155,249,0.1)';
+            statusDiv.style.borderLeft = '4px solid #3b9bf9';
+            statusDiv.style.color = '#3b9bf9';
+            statusDiv.textContent = '⏳ Отправка заявки...';
+        }
+        
+        try {
+            console.log('📤 [Training Request] Отправка запроса на сервер');
+            
+            const response = await fetch('/api/training-request', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    teamName,
+                    teamMembers,
+                    additionalInfo,
+                    userId: authData.user.id,
+                    username: authData.user.username
+                })
+            });
+            
+            console.log('📥 [Training Request] Ответ сервера:', response.status);
+            
+            const result = await response.json();
+            console.log('📦 [Training Request] Результат:', result);
+            
+            if (!response.ok || !result.success) {
+                const responseText = await response.text();
+                console.error(`❌ [Training Request] Ошибка сервера (${response.status}): ${responseText.substring(0, 100)}`);
+            }
+            
+            if (response.ok && result.success) {
+                console.log('✅ [Training Request] Заявка успешно отправлена!');
+                if (statusDiv) {
+                    statusDiv.style.display = 'block';
+                    statusDiv.style.background = 'rgba(16,185,129,0.1)';
+                    statusDiv.style.borderLeft = '4px solid #10b981';
+                    statusDiv.style.color = '#10b981';
+                    statusDiv.innerHTML = `✅ Заявка успешно отправлена!<br><small>С вами свяжется администрация для дальнейшего согласования</small>`;
+                }
+                form.reset();
+                showToast('Заявка отправлена! С вами свяжется администрация', 'success');
+            } else {
+                throw new Error(result.error || 'Ошибка отправки');
+            }
+        } catch (error) {
+            console.error('❌ [Training Request] Ошибка запроса:', error);
+            console.error('❌ [Training Request] Stack trace:', error.stack);
+            if (statusDiv) {
+                statusDiv.style.display = 'block';
+                statusDiv.style.background = 'rgba(239,68,68,0.1)';
+                statusDiv.style.borderLeft = '4px solid #ef4444';
+                statusDiv.style.color = '#ef4444';
+                statusDiv.textContent = `❌ Ошибка: ${error.message}`;
+            }
+            showToast('Ошибка отправки заявки', 'error');
+        }
+    });
+    
+    trainingRequestFormInitialized = true;
+    console.log('✅ [Training Request] Обработчик формы установлен');
 }
 
 // ================= API TOKENS (USER) =================

@@ -59,12 +59,18 @@
                     <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
                     <span class="nav-text">Хостинг фото</span>
                 </a>
-                <a href="#gradient-role" class="nav-link" data-page="gradient-role" style="position: relative;">
+                <a href="#gradient-role" class="nav-link" data-page="gradient-role">
                     <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width: 24px; height: 24px;">
                         <path d="M9 12h6M9 16h6M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
                         <path d="M9 8h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
                     </svg>
                     <span class="nav-text">Заявка</span>
+                </a>
+                <a href="#training-request" class="nav-link" data-page="training-request" style="position: relative;">
+                    <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width: 24px; height: 24px;">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    </svg>
+                    <span class="nav-text">Заявка на турнир</span>
                     <span style="
                         position: absolute;
                         right: 8px;
@@ -740,6 +746,76 @@
 
                     <!-- Статус отправки -->
                     <div id="gradient-role-status" style="margin-top: 20px; padding: 16px; border-radius: 10px; display: none;"></div>
+                </div>
+            </div>
+
+            <!-- Training Request Page -->
+            <div id="page-training-request" class="page" style="display:none;">
+                <header class="page-header">
+                    <h2>
+                        <svg class="h2-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:28px;height:28px;vertical-align:-6px;margin-right:8px;">
+                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                        </svg>
+                        Заявка на турнир
+                    </h2>
+                </header>
+
+                <div style="max-width: 800px; margin: 0 auto;">
+                    <!-- Информация -->
+                    <div style="background: linear-gradient(135deg, rgba(59,155,249,0.1), rgba(106,193,255,0.1)); border-left: 4px solid #3b9bf9; border-radius: 12px; padding: 20px; margin-bottom: 30px;">
+                        <h3 style="margin: 0 0 12px 0; color: #3b9bf9; display: flex; align-items: center; gap: 10px;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                            Информация
+                        </h3>
+                        <p style="margin: 0; color: var(--text-secondary); line-height: 1.6;">
+                            Здесь вы можете подать заявку на участие в турнире. Заполните все необходимые данные о вашей команде.
+                            После отправки заявки с вами свяжется администрация для дальнейшего согласования.
+                        </p>
+                    </div>
+
+                    <!-- Форма заявки -->
+                    <div style="background: var(--bg-card); border-radius: 12px; padding: 30px; border: 1px solid var(--border-color);">
+                        <form id="training-request-form" style="display: flex; flex-direction: column; gap: 24px;">
+                            <!-- Название команды -->
+                            <div>
+                                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary);">
+                                    👥 Название команды <span style="color: var(--danger);">*</span>
+                                </label>
+                                <input type="text" id="team-name" required maxlength="100" placeholder="Например: Elite Squad" style="width: 100%; padding: 12px 16px; background: var(--bg-secondary); border: 2px solid var(--border-color); border-radius: 8px; font-size: 14px; color: var(--text-primary); transition: border-color 0.2s;">
+                            </div>
+
+                            <!-- Участники команды -->
+                            <div>
+                                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary);">
+                                    🎮 Участники команды <span style="color: var(--danger);">*</span>
+                                </label>
+                                <textarea id="team-members" required rows="4" placeholder="@user1 @user2 @user3 или укажите ID через пробел" style="width: 100%; padding: 12px 16px; background: var(--bg-secondary); border: 2px solid var(--border-color); border-radius: 8px; font-size: 14px; color: var(--text-primary); resize: vertical; font-family: inherit;"></textarea>
+                                <small style="display: block; margin-top: 6px; color: var(--text-secondary);">
+                                    Укажите участников через @упоминание, ID или ники через запятую/пробел
+                                </small>
+                            </div>
+
+                            <!-- Дополнительная информация -->
+                            <div>
+                                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary);">
+                                    📝 Дополнительная информация
+                                </label>
+                                <textarea id="additional-info" rows="3" placeholder="Дополнительные сведения о вашей команде, опыт участия в турнирах и т.д." style="width: 100%; padding: 12px 16px; background: var(--bg-secondary); border: 2px solid var(--border-color); border-radius: 8px; font-size: 14px; color: var(--text-primary); resize: vertical; font-family: inherit;"></textarea>
+                            </div>
+
+                            <!-- Кнопка отправки -->
+                            <button type="submit" style="padding: 16px; background: linear-gradient(135deg, #3b9bf9, #6ac1ff); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 4px 12px rgba(59,155,249,0.3);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(59,155,249,0.4)'" onmouseout="this.style.transform=''; this.style.boxShadow='0 4px 12px rgba(59,155,249,0.3)'">
+                                📤 Отправить заявку
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Статус отправки -->
+                    <div id="training-request-status" style="margin-top: 20px; padding: 16px; border-radius: 10px; display: none;"></div>
                 </div>
             </div>
 
