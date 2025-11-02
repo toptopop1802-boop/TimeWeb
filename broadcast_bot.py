@@ -282,55 +282,78 @@ async def handle_tournament_application_request(request: web.Request) -> web.Res
     """Обработчик HTTP запросов на создание заявки на турнир"""
     global _bot_instance
     
+    logging.info("📥 [Tournament Application] Received request")
+    
     # Проверка секретного ключа
     auth_header = request.headers.get('Authorization', '')
     if not auth_header.startswith('Bearer '):
+        logging.warning("❌ [Tournament Application] Missing authorization header")
         return web.json_response({'error': 'Missing authorization'}, status=401)
     
     token = auth_header[7:]  # Убираем 'Bearer '
     if token != request.app['api_secret']:
+        logging.warning(f"❌ [Tournament Application] Invalid token (expected: {request.app['api_secret'][:10]}...)")
         return web.json_response({'error': 'Invalid token'}, status=403)
+    
+    logging.info("✅ [Tournament Application] Authorization passed")
     
     try:
         data = await request.json()
+        logging.info(f"📋 [Tournament Application] Received data: discordId={data.get('discordId')}, steamId={data.get('steamId', '')[:10]}...")
+        
         discord_id = data.get('discordId')
         steam_id = data.get('steamId', '').strip()
         discord_username = data.get('discordUsername', '')
         
         if not discord_id or not steam_id:
+            logging.warning(f"❌ [Tournament Application] Missing required fields: discordId={discord_id}, steamId={steam_id}")
             return web.json_response({'error': 'Missing required fields'}, status=400)
         
         # Проверка, что Steam ID содержит только цифры
         if not steam_id.isdigit():
+            logging.warning(f"❌ [Tournament Application] Invalid Steam ID format: {steam_id}")
             return web.json_response({'error': 'Steam ID должен содержать только цифры'}, status=400)
         
         # Получаем бота и гильдию
         bot = _bot_instance
         if not bot:
+            logging.error("❌ [Tournament Application] Bot instance not available")
             return web.json_response({'error': 'Bot not ready'}, status=503)
         
         guild_id = int(os.getenv("DISCORD_GUILD_ID", "1338592151293919354"))
+        logging.info(f"🔍 [Tournament Application] Looking for guild: {guild_id}")
         guild = bot.get_guild(guild_id)
         if not guild:
+            logging.error(f"❌ [Tournament Application] Guild {guild_id} not found")
             return web.json_response({'error': 'Guild not found'}, status=404)
+        
+        logging.info(f"✅ [Tournament Application] Guild found: {guild.name}")
         
         # Канал для заявок на турнир
         TOURNAMENT_CHANNEL_ID = 1434605264241164431
+        logging.info(f"🔍 [Tournament Application] Looking for channel: {TOURNAMENT_CHANNEL_ID}")
         channel = guild.get_channel(TOURNAMENT_CHANNEL_ID)
         if not isinstance(channel, discord.TextChannel):
+            logging.error(f"❌ [Tournament Application] Channel {TOURNAMENT_CHANNEL_ID} not found or not a text channel")
             return web.json_response({'error': 'Tournament channel not found'}, status=404)
+        
+        logging.info(f"✅ [Tournament Application] Channel found: {channel.name}")
         
         # Проверяем, есть ли уже заявка от этого пользователя
         if bot.db:
+            logging.info(f"🔍 [Tournament Application] Checking for existing application for Discord ID: {discord_id}")
             existing_app = await bot.db.get_tournament_application(discord_id=discord_id)
             if existing_app:
+                logging.warning(f"⚠️ [Tournament Application] User {discord_id} already has an application")
                 return web.json_response({
                     'success': False,
                     'error': 'Вы уже подали заявку на турнир'
                 }, status=400)
+            logging.info("✅ [Tournament Application] No existing application found")
         
         # Проверяем, открыта ли регистрация
         if bot.db:
+            logging.info("🔍 [Tournament Application] Checking registration settings")
             settings = await bot.db.get_tournament_registration_settings()
             if settings and not settings.get('is_open', True):
                 closes_at = settings.get('closes_at')
@@ -339,17 +362,21 @@ async def handle_tournament_application_request(request: web.Request) -> web.Res
                     try:
                         close_time = datetime.fromisoformat(closes_at.replace('Z', '+00:00'))
                         if datetime.now(close_time.tzinfo) >= close_time:
+                            logging.warning("⚠️ [Tournament Application] Registration closed (time expired)")
                             return web.json_response({
                                 'success': False,
                                 'error': 'Регистрация на турнир закрыта'
                             }, status=400)
-                    except:
+                    except Exception as e:
+                        logging.warning(f"⚠️ [Tournament Application] Error parsing closes_at: {e}")
                         pass
                 else:
+                    logging.warning("⚠️ [Tournament Application] Registration closed (no time specified)")
                     return web.json_response({
                         'success': False,
                         'error': 'Регистрация на турнир закрыта'
                     }, status=400)
+            logging.info("✅ [Tournament Application] Registration is open")
         
         # Создаем embed с заявкой
         embed = discord.Embed(
@@ -371,10 +398,26 @@ async def handle_tournament_application_request(request: web.Request) -> web.Res
         embed.add_field(name="📊 Статус", value="⏳ **Ожидание рассмотрения**", inline=False)
         
         # Отправляем embed в канал
-        msg = await channel.send(embed=embed)
+        logging.info(f"📤 [Tournament Application] Sending embed to channel {channel.id}")
+        try:
+            msg = await channel.send(embed=embed)
+            logging.info(f"✅ [Tournament Application] Message sent successfully: {msg.id}")
+        except discord.Forbidden as e:
+            logging.error(f"❌ [Tournament Application] Permission denied: {e}")
+            return web.json_response({
+                'success': False,
+                'error': 'Бот не имеет прав для отправки сообщений в канал'
+            }, status=403)
+        except discord.HTTPException as e:
+            logging.error(f"❌ [Tournament Application] Discord API error: {e}")
+            return web.json_response({
+                'success': False,
+                'error': f'Ошибка Discord API: {e}'
+            }, status=500)
         
         # Сохраняем заявку в БД
         if bot.db:
+            logging.info("💾 [Tournament Application] Saving to database")
             user_id = data.get('userId')  # UUID пользователя с сайта
             await bot.db.save_tournament_application(
                 user_id=user_id,
@@ -393,7 +436,7 @@ async def handle_tournament_application_request(request: web.Request) -> web.Res
                 }
             )
         
-        logging.info(f"✅ Created tournament application in channel: {channel.id} for Discord ID {discord_id}")
+        logging.info(f"✅ [Tournament Application] Successfully created application in channel {channel.id} for Discord ID {discord_id}, message ID: {msg.id}")
         
         return web.json_response({
             'success': True,
@@ -431,12 +474,28 @@ async def start_http_server(bot: commands.Bot, port: int, secret: str):
     app.router.add_post('/api/gradient-role', handle_gradient_role_request)
     app.router.add_post('/api/tournament-application', handle_tournament_application_request)
     
+    # Добавляем логирование для всех запросов
+    async def log_middleware(request, handler):
+        logging.info(f"📥 [HTTP API] {request.method} {request.path} from {request.remote}")
+        try:
+            response = await handler(request)
+            logging.info(f"✅ [HTTP API] {request.method} {request.path} -> {response.status}")
+            return response
+        except Exception as e:
+            logging.error(f"❌ [HTTP API] {request.method} {request.path} -> Error: {e}")
+            raise
+    
+    app.middlewares.append(log_middleware)
+    
     runner = web.AppRunner(app)
     await runner.setup()
-    site = web.TCPSite(runner, 'localhost', port)
+    site = web.TCPSite(runner, '0.0.0.0', port)  # Слушаем на всех интерфейсах, а не только localhost
     await site.start()
     
-    logging.info(f"🌐 HTTP API server started on http://localhost:{port}")
+    logging.info(f"🌐 HTTP API server started on http://0.0.0.0:{port}")
+    logging.info(f"📋 Available endpoints:")
+    logging.info(f"   - POST /api/gradient-role")
+    logging.info(f"   - POST /api/tournament-application")
     return runner
 
 
