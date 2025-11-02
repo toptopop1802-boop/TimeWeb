@@ -718,6 +718,20 @@ class Database:
             logging.error(f"Failed to update tournament application status: {exc}")
             return False
     
+    async def update_tournament_application_message_id(
+        self,
+        application_id: str,
+        message_id: int
+    ) -> bool:
+        """Обновляет message_id заявки на турнир после отправки в Discord"""
+        try:
+            self.client.table("tournament_applications").update({"message_id": message_id}).eq("id", application_id).execute()
+            logging.info(f"Updated tournament application message_id: id={application_id}, message_id={message_id}")
+            return True
+        except Exception as exc:
+            logging.error(f"Failed to update tournament application message_id: {exc}")
+            return False
+    
     async def get_tournament_registration_settings(self) -> Optional[Dict[str, Any]]:
         """Получает настройки регистрации на турнир"""
         try:

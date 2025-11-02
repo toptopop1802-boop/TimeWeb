@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS tournament_applications (
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     discord_id BIGINT NOT NULL,
     steam_id TEXT NOT NULL,
+    message_id BIGINT,  -- ID сообщения в Discord (NULL если еще не отправлено)
     status TEXT DEFAULT 'pending', -- pending, approved, rejected
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),

@@ -791,6 +791,7 @@ def main() -> None:
     bot.tree_synced = False
     bot.rust_status_task: asyncio.Task | None = None
     bot.members_scan_task: asyncio.Task | None = None
+    bot.tournament_applications_task: asyncio.Task | None = None
     bot.wipe_announcement_count: dict[int, int] = {}  # user_id -> count
     bot.rules_usage_stats: dict[int, dict[str, int]] = {}  # user_id -> {category: count}
     
@@ -1665,8 +1666,113 @@ def main() -> None:
             bot.rust_status_task = asyncio.create_task(rust_presence_worker())
         if DATABASE_ENABLED and bot.members_scan_task is None:
             bot.members_scan_task = asyncio.create_task(members_scan_worker())
+        # Запускаем фоновую задачу для обработки неотправленных заявок на турнир
+        if DATABASE_ENABLED:
+            bot.tournament_applications_task = asyncio.create_task(tournament_applications_worker())
         # Запускаем HTTP API сервер для приема заявок с дашборда
         asyncio.create_task(start_http_server(bot, API_PORT, API_SECRET))
+
+    async def tournament_applications_worker() -> None:
+        """Периодически проверяет БД на наличие неотправленных заявок и отправляет их в Discord"""
+        await bot.wait_until_ready()
+        interval = 30  # Проверяем каждые 30 секунд
+        
+        TOURNAMENT_CHANNEL_ID = 1434605264241164431
+        
+        while not bot.is_closed():
+            try:
+                if not bot.db:
+                    await asyncio.sleep(interval)
+                    continue
+                
+                guild_id = int(os.getenv("DISCORD_GUILD_ID", "1338592151293919354"))
+                guild = bot.get_guild(guild_id)
+                if not guild:
+                    await asyncio.sleep(interval)
+                    continue
+                
+                channel = guild.get_channel(TOURNAMENT_CHANNEL_ID)
+                if not isinstance(channel, discord.TextChannel):
+                    logging.warning(f"⚠️ [Tournament Worker] Channel {TOURNAMENT_CHANNEL_ID} not found")
+                    await asyncio.sleep(interval)
+                    continue
+                
+                # Получаем все заявки без message_id (не отправленные в Discord)
+                applications = await bot.db.get_all_tournament_applications(status='pending')
+                
+                pending_apps = [app for app in applications if not app.get('message_id')]
+                
+                if pending_apps:
+                    logging.info(f"🔍 [Tournament Worker] Found {len(pending_apps)} pending applications without Discord message")
+                
+                for app in pending_apps:
+                    try:
+                        discord_id = app.get('discord_id')
+                        steam_id = app.get('steam_id')
+                        user_id = app.get('user_id')
+                        
+                        # Получаем данные пользователя из БД
+                        user_data = None
+                        if user_id:
+                            try:
+                                # Пытаемся получить username из users таблицы
+                                from supabase import create_client
+                                supabase_url = os.getenv("SUPABASE_URL")
+                                supabase_key = os.getenv("SUPABASE_KEY")
+                                if supabase_url and supabase_key:
+                                    supabase_client = create_client(supabase_url, supabase_key)
+                                    user_response = supabase_client.table("users").select("username, discord_username").eq("id", user_id).maybe_single().execute()
+                                    if user_response.data:
+                                        user_data = user_response.data
+                            except Exception as e:
+                                logging.warning(f"⚠️ [Tournament Worker] Could not fetch user data: {e}")
+                        
+                        discord_username = user_data.get('discord_username') if user_data else None
+                        
+                        # Создаем embed с заявкой
+                        embed = discord.Embed(
+                            title="🏆 Заявка на турнир",
+                            description=f"**Новая заявка на участие в турнире**",
+                            color=discord.Color.gold(),
+                            timestamp=discord.utils.utcnow()
+                        )
+                        
+                        # Пытаемся получить участника для упоминания
+                        member = guild.get_member(int(discord_id))
+                        if member:
+                            embed.add_field(name="👤 Участник", value=f"{member.mention}\n`{discord_id}`", inline=True)
+                        else:
+                            embed.add_field(name="👤 Участник", value=f"<@{discord_id}>\n`{discord_id}`", inline=True)
+                        
+                        embed.add_field(name="🆔 Steam ID", value=f"`{steam_id}`", inline=True)
+                        if discord_username:
+                            embed.add_field(name="📋 Discord Username", value=f"`{discord_username}`", inline=True)
+                        embed.add_field(name="📊 Статус", value="⏳ **Ожидание рассмотрения**", inline=False)
+                        
+                        # Отправляем embed в канал
+                        logging.info(f"📤 [Tournament Worker] Sending pending application for Discord ID {discord_id}")
+                        msg = await channel.send(embed=embed)
+                        
+                        # Обновляем заявку в БД, добавляя message_id
+                        await bot.db.update_tournament_application_message_id(
+                            application_id=str(app.get('id')),
+                            message_id=msg.id
+                        )
+                        logging.info(f"✅ [Tournament Worker] Application sent, message ID: {msg.id}")
+                        
+                        # Небольшая задержка между отправками
+                        await asyncio.sleep(1)
+                    except Exception as e:
+                        logging.error(f"❌ [Tournament Worker] Error processing application {app.get('id')}: {e}", exc_info=True)
+                        continue
+                
+            except Exception as exc:
+                logging.error(f"❌ [Tournament Worker] Error: {exc}", exc_info=True)
+            
+            try:
+                await asyncio.sleep(interval)
+            except asyncio.CancelledError:
+                break
 
     async def members_scan_worker() -> None:
         """Периодически сканирует участников гильдии и логирует их количество."""
