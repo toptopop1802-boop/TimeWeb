@@ -910,6 +910,10 @@ function setupAuthRoutes(app, supabase) {
                 
                 let botData = null;
                 try {
+                    // Используем AbortController для таймаута
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 секунд таймаут
+                    
                     const botResponse = await fetch(`http://${API_HOST}:${API_PORT}/api/tournament-application`, {
                         method: 'POST',
                         headers: {
@@ -922,8 +926,10 @@ function setupAuthRoutes(app, supabase) {
                             discordUsername: req.user.discord_username || req.user.username,
                             steamId: steamId.trim()
                         }),
-                        timeout: 5000 // 5 секунд таймаут
+                        signal: controller.signal
                     });
+                    
+                    clearTimeout(timeoutId);
                     
                     if (botResponse.ok) {
                         botData = await botResponse.json();
@@ -932,7 +938,11 @@ function setupAuthRoutes(app, supabase) {
                         // Продолжаем без бота, сохраняем в БД
                     }
                 } catch (botError) {
-                    console.warn('Bot API недоступен, сохраняем заявку только в БД:', botError.message);
+                    if (botError.name === 'AbortError') {
+                        console.warn('Bot API timeout (5s), сохраняем заявку только в БД');
+                    } else {
+                        console.warn('Bot API недоступен, сохраняем заявку только в БД:', botError.message);
+                    }
                     // Продолжаем без бота, сохраняем в БД
                 }
                 
