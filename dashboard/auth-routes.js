@@ -25,6 +25,12 @@ function setupAuthRoutes(app, supabase) {
                 return res.redirect('/login.html?error=discord_auth_failed');
             }
 
+            // Получаем текущий домен для redirect_uri
+            const baseUrl = req.headers['x-forwarded-proto'] 
+                ? `${req.headers['x-forwarded-proto']}://${req.headers.host}`
+                : `${req.protocol}://${req.get('host')}`;
+            const redirectUri = `${baseUrl}/signin-discord`;
+
             // Exchange code for access token
             const tokenResponse = await fetch('https://discord.com/api/oauth2/token', {
                 method: 'POST',
@@ -36,7 +42,7 @@ function setupAuthRoutes(app, supabase) {
                     client_secret: process.env.DISCORD_CLIENT_SECRET || '',
                     grant_type: 'authorization_code',
                     code: code,
-                    redirect_uri: 'http://figma.rustremote.com/signin-discord',
+                    redirect_uri: redirectUri,
                 }),
             });
 
