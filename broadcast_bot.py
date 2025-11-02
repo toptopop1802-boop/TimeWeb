@@ -1862,10 +1862,14 @@ def main() -> None:
                                 supabase_key = os.getenv("SUPABASE_KEY")
                                 if supabase_url and supabase_key:
                                     supabase_client = create_client(supabase_url, supabase_key)
-                                    # Обновляем настройки
-                                    supabase_client.table("tournament_registration_settings").update({
-                                        "main_message_id": msg.id
-                                    }).order("created_at", desc=True).limit(1).execute()
+                                    # Получаем последнюю запись settings
+                                    settings_response = supabase_client.table("tournament_registration_settings").select("id").order("created_at", desc=True).limit(1).execute()
+                                    if settings_response.data:
+                                        settings_id = settings_response.data[0]['id']
+                                        # Обновляем настройки
+                                        supabase_client.table("tournament_registration_settings").update({
+                                            "main_message_id": msg.id
+                                        }).eq("id", settings_id).execute()
                         except Exception as e:
                             logging.error(f"❌ [Tournament Worker] Error creating message: {e}", exc_info=True)
                 
@@ -2041,11 +2045,15 @@ def main() -> None:
             # Сохраняем ID сообщений команд в настройках
             if supabase_client:
                 try:
-                    supabase_client.table("tournament_registration_settings").update({
-                        "team1_message_id": msg1.id,
-                        "team2_message_id": msg2.id
-                    }).order("created_at", desc=True).limit(1).execute()
-                    logging.info(f"✅ [Tournament Teams] Saved team message IDs: {msg1.id}, {msg2.id}")
+                    # Получаем последнюю запись settings
+                    settings_response = supabase_client.table("tournament_registration_settings").select("id").order("created_at", desc=True).limit(1).execute()
+                    if settings_response.data:
+                        settings_id = settings_response.data[0]['id']
+                        supabase_client.table("tournament_registration_settings").update({
+                            "team1_message_id": msg1.id,
+                            "team2_message_id": msg2.id
+                        }).eq("id", settings_id).execute()
+                        logging.info(f"✅ [Tournament Teams] Saved team message IDs: {msg1.id}, {msg2.id}")
                 except Exception as e:
                     logging.error(f"❌ [Tournament Teams] Failed to save message IDs: {e}")
             

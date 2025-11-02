@@ -1099,16 +1099,25 @@ function setupAuthRoutes(app, supabase) {
                             .delete()
                             .eq('status', 'pending');
                         
-                        // Сбрасываем message_id в настройках
-                        await supabase
+                        // Получаем последнюю запись settings
+                        const { data: latestSettings } = await supabase
                             .from('tournament_registration_settings')
-                            .update({
-                                main_message_id: null,
-                                team1_message_id: null,
-                                team2_message_id: null
-                            })
+                            .select('id')
                             .order('created_at', { ascending: false })
-                            .limit(1);
+                            .limit(1)
+                            .single();
+                        
+                        if (latestSettings) {
+                            // Сбрасываем message_id в настройках
+                            await supabase
+                                .from('tournament_registration_settings')
+                                .update({
+                                    main_message_id: null,
+                                    team1_message_id: null,
+                                    team2_message_id: null
+                                })
+                                .eq('id', latestSettings.id);
+                        }
                     }
                     
                     const { data: settings, error } = await supabase
