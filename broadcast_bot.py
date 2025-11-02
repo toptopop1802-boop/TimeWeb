@@ -1825,11 +1825,15 @@ def main() -> None:
                         participants_text = "Пока нет заявок"
                     
                     # Создаем или обновляем embed
+                    import datetime
+                    now = datetime.datetime.now(datetime.timezone.utc)
+                    time_str = now.strftime("%d.%m.%Y %H:%M:%S UTC")
+                    
                     embed = discord.Embed(
                         title="🏆 Заявки на турнир",
                         description=f"**Список участников турнира**\n\nВсего заявок: **{len(participants_list)}**",
                         color=discord.Color.gold(),
-                        timestamp=discord.utils.utcnow()
+                        timestamp=now
                     )
                     
                     embed.add_field(
@@ -1839,12 +1843,16 @@ def main() -> None:
                     )
                     
                     embed.add_field(name="📊 Статус", value="⏳ **Ожидание рассмотрения**", inline=False)
+                    embed.set_footer(text=f"Последнее обновление: {time_str}")
+                    
+                    # Создаем View с кнопкой
+                    view = TournamentClosureView()
                     
                     # Отправляем или обновляем сообщение
                     if main_message:
                         try:
-                            await main_message.edit(embed=embed)
-                            logging.info(f"✅ [Tournament Worker] Updated main message with {len(participants_list)} participants")
+                            await main_message.edit(embed=embed, view=view)
+                            logging.info(f"✅ [Tournament Worker] Updated main message with {len(participants_list)} participants at {time_str}")
                         except Exception as e:
                             logging.error(f"❌ [Tournament Worker] Error updating message: {e}", exc_info=True)
                             # Если не удалось обновить, создаем новое
@@ -1852,7 +1860,7 @@ def main() -> None:
                     
                     if not main_message:
                         try:
-                            msg = await channel.send(embed=embed)
+                            msg = await channel.send(embed=embed, view=view)
                             logging.info(f"✅ [Tournament Worker] Created new main message: {msg.id}")
                             
                             # Сохраняем ID главного сообщения в настройках
@@ -1880,6 +1888,62 @@ def main() -> None:
                 await asyncio.sleep(interval)
             except asyncio.CancelledError:
                 break
+
+    class TournamentClosureView(discord.ui.View):
+        """View с кнопкой для закрытия заявок и подведения итогов"""
+        def __init__(self):
+            super().__init__(timeout=None)
+        
+        @discord.ui.button(
+            label="Подвести итоги",
+            style=discord.ButtonStyle.success,
+            emoji="🏁",
+            custom_id="tournament_close_button"
+        )
+        async def close_tournament_button(
+            self,
+            interaction: discord.Interaction,
+            button: discord.ui.Button
+        ) -> None:
+            # Проверяем права администратора
+            if not interaction.user.guild_permissions.administrator:
+                await interaction.response.send_message(
+                    "❌ У вас нет прав администратора для закрытия заявок",
+                    ephemeral=True
+                )
+                return
+            
+            await interaction.response.send_message(
+                "⏳ Закрываю заявки и создаю команды...",
+                ephemeral=True
+            )
+            
+            try:
+                # Закрываем регистрацию через БД
+                if bot.db:
+                    from supabase import create_client
+                    supabase_url = os.getenv("SUPABASE_URL")
+                    supabase_key = os.getenv("SUPABASE_KEY")
+                    if supabase_url and supabase_key:
+                        supabase_client = create_client(supabase_url, supabase_key)
+                        # Добавляем новую запись с закрытой регистрацией
+                        supabase_client.table("tournament_registration_settings").insert({
+                            "is_open": False,
+                            "closes_at": None
+                        }).execute()
+                        
+                        logging.info(f"🏁 [Tournament Closure] Registration closed by {interaction.user.display_name}")
+                        
+                        await interaction.followup.send(
+                            "✅ Заявки закрыты! Команды будут созданы через несколько секунд.",
+                            ephemeral=True
+                        )
+            except Exception as e:
+                logging.error(f"❌ [Tournament Closure] Error closing registration: {e}", exc_info=True)
+                await interaction.followup.send(
+                    f"❌ Ошибка при закрытии заявок: {str(e)}",
+                    ephemeral=True
+                )
 
     async def create_tournament_teams(bot: commands.Bot, guild: discord.Guild, channel: discord.TextChannel, applications: list, settings: dict):
         """Создает команды из участников турнира"""
