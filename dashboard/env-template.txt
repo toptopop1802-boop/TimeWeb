@@ -1,6 +1,6 @@
 # Supabase Configuration
 SUPABASE_URL=https://svlgzmgkodwcufypyeec.supabase.co
-SUPABASE_KEY=your_service_role_key_here
+SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN2bGd6bWdrb2R3Y3VmeXB5ZWVjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MTY4MTA0MiwiZXhwIjoyMDc3MjU3MDQyfQ.WwXIWh6MmHz0YJiLoSngd5f0T3snVVzMvnXf9g74WEE
 
 # Discord Bot Token (для отправки сообщений)
 DISCORD_BOT_TOKEN=your_bot_token_here
