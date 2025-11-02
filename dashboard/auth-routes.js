@@ -953,6 +953,8 @@ function setupAuthRoutes(app, supabase) {
                 }
                 
                 // Сохраняем заявку в БД
+                console.log(`💾 [Tournament Application] Saving to DB: user_id=${req.user.id}, discord_id=${req.user.discord_id}, steam_id=${steamId.trim()}`);
+                
                 const { data: application, error: appError } = await supabase
                     .from('tournament_applications')
                     .insert({
@@ -965,7 +967,7 @@ function setupAuthRoutes(app, supabase) {
                     .single();
                 
                 if (appError) {
-                    console.error('Database insert error:', appError);
+                    console.error('❌ [Tournament Application] Database insert error:', appError);
                     // Если не удалось сохранить в БД, но бот получил заявку - это нормально
                     if (botData && botData.success) {
                         return res.json({
@@ -976,9 +978,12 @@ function setupAuthRoutes(app, supabase) {
                     }
                     // Если и БД, и бот недоступны - ошибка
                     return res.status(500).json({ 
-                        error: 'Не удалось сохранить заявку. Попробуйте позже.' 
+                        error: 'Не удалось сохранить заявку. Попробуйте позже.',
+                        details: appError.message 
                     });
                 }
+                
+                console.log(`✅ [Tournament Application] Application saved to DB: id=${application.id}`);
                 
                 // Если заявка сохранена в БД, но бот недоступен - это нормально
                 // Заявка будет отправлена в Discord позже (можно добавить cron job)
