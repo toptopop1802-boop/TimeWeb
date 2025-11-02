@@ -3044,7 +3044,7 @@ function initGradientRolePage() {
 // TRAINING REQUEST PAGE
 // ============================================
 
-function initTrainingRequestPage() {
+async function initTrainingRequestPage() {
     console.log('🏆 [Training Request] Инициализация страницы');
     
     const contentDiv = document.getElementById('training-request-content');
