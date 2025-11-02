@@ -1224,7 +1224,12 @@ function navigateToPage(page) {
         }
     } else if (page === 'admin') {
         loadAdminChangelog();
-        loadTournamentAdminPanel();
+        // Используем улучшенную панель если она доступна
+        if (typeof loadImprovedTournamentAdminPanel === 'function') {
+            loadImprovedTournamentAdminPanel();
+        } else {
+            loadTournamentAdminPanel();
+        }
     } else if (page === 'gradient-role') {
         // Инициализация страницы заявки на градиентную роль
         initGradientRolePage();
@@ -3209,6 +3214,9 @@ async function initTrainingRequestPage() {
                 🏆 Подача заявки на турнир
             </h2>
             
+            <!-- Countdown Timer -->
+            <div id="tournament-countdown-container" style="display: none; margin-bottom: 24px;"></div>
+            
             <div id="tournament-form-container">
                 <form id="tournament-application-form" style="display: flex; flex-direction: column; gap: 20px;">
                     <!-- Discord ID (readonly) -->
@@ -3326,11 +3334,106 @@ async function initTrainingRequestPage() {
         });
     }
     
-    // Загружаем статус заявки
-    await loadTournamentStatus();
+    // Загружаем статус заявки и настройки турнира
+    await Promise.all([
+        loadTournamentStatus(),
+        loadTournamentCountdown()
+    ]);
     
     console.log('✅ [Training Request] Контент загружен', { username, userId, hasAvatar: !!avatarUrl, discordId: user.discord_id });
 }
+
+// Countdown Timer для игроков
+async function loadTournamentCountdown() {
+    try {
+        const response = await fetch('/api/tournament/public-settings');
+        if (!response.ok) return;
+        
+        const data = await response.json();
+        const container = document.getElementById('tournament-countdown-container');
+        if (!container) return;
+        
+        // Если регистрация закрыта или нет дедлайна - скрываем таймер
+        if (!data.isOpen || !data.closesAt) {
+            container.style.display = 'none';
+            return;
+        }
+        
+        const deadline = new Date(data.closesAt);
+        
+        // Функция обновления таймера
+        function updateCountdown() {
+            const now = new Date();
+            const diff = deadline - now;
+            
+            if (diff <= 0) {
+                container.innerHTML = `
+                    <div style="padding: 20px; background: linear-gradient(135deg, #ef4444, #dc2626); border-radius: 12px; color: white; text-align: center;">
+                        <div style="font-size: 20px; font-weight: 700;">⏱️ Регистрация закрыта</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            const milliseconds = Math.floor((diff % 1000) / 10); // Показываем в сотых долях
+            
+            container.innerHTML = `
+                <div style="padding: 28px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 16px; color: white; box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);">
+                    <div style="text-align: center; margin-bottom: 16px;">
+                        <div style="font-size: 14px; opacity: 0.9; margin-bottom: 4px;">⏰ Регистрация закрывается через</div>
+                        <div style="font-size: 12px; opacity: 0.8;">${deadline.toLocaleString('ru-RU')}</div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+                        <div style="background: rgba(255,255,255,0.15); border-radius: 12px; padding: 16px; text-align: center; backdrop-filter: blur(10px);">
+                            <div style="font-size: 32px; font-weight: 700; line-height: 1; margin-bottom: 8px;">${days}</div>
+                            <div style="font-size: 12px; opacity: 0.9; font-weight: 600;">Дней</div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.15); border-radius: 12px; padding: 16px; text-align: center; backdrop-filter: blur(10px);">
+                            <div style="font-size: 32px; font-weight: 700; line-height: 1; margin-bottom: 8px;">${hours.toString().padStart(2, '0')}</div>
+                            <div style="font-size: 12px; opacity: 0.9; font-weight: 600;">Часов</div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.15); border-radius: 12px; padding: 16px; text-align: center; backdrop-filter: blur(10px);">
+                            <div style="font-size: 32px; font-weight: 700; line-height: 1; margin-bottom: 8px;">${minutes.toString().padStart(2, '0')}</div>
+                            <div style="font-size: 12px; opacity: 0.9; font-weight: 600;">Минут</div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.15); border-radius: 12px; padding: 16px; text-align: center; backdrop-filter: blur(10px);">
+                            <div style="font-size: 32px; font-weight: 700; line-height: 1; margin-bottom: 8px;">${seconds.toString().padStart(2, '0')}</div>
+                            <div style="font-size: 10px; opacity: 0.7; margin-top: 4px;">.${milliseconds.toString().padStart(2, '0')}</div>
+                            <div style="font-size: 12px; opacity: 0.9; font-weight: 600; margin-top: 2px;">Секунд</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        container.style.display = 'block';
+        updateCountdown();
+        
+        // Обновляем каждые 50 мс для плавности
+        const intervalId = setInterval(updateCountdown, 50);
+        
+        // Сохраняем ID интервала для очистки при навигации
+        if (!window.tournamentCountdownIntervals) {
+            window.tournamentCountdownIntervals = [];
+        }
+        window.tournamentCountdownIntervals.push(intervalId);
+        
+    } catch (error) {
+        console.error('Load countdown error:', error);
+    }
+}
+
+// Очистка интервалов при выходе со страницы
+window.addEventListener('hashchange', () => {
+    if (window.tournamentCountdownIntervals) {
+        window.tournamentCountdownIntervals.forEach(id => clearInterval(id));
+        window.tournamentCountdownIntervals = [];
+    }
+});
 
 async function loadTournamentStatus() {
     try {

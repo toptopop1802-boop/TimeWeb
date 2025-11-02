@@ -852,6 +852,26 @@ function setupAuthRoutes(app, supabase) {
     // TOURNAMENT APPLICATIONS API
     // ============================================
     
+    // Public endpoint для получения настроек турнира (для countdown таймера)
+    app.get('/api/tournament/public-settings', async (req, res) => {
+        try {
+            const { data: settings } = await supabase
+                .from('tournament_registration_settings')
+                .select('is_open, closes_at')
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .single();
+            
+            res.json({
+                isOpen: settings?.is_open || false,
+                closesAt: settings?.closes_at || null
+            });
+        } catch (error) {
+            console.error('Get public tournament settings error:', error);
+            res.status(500).json({ error: error.message });
+        }
+    });
+    
     // Подать заявку на турнир
     app.post('/api/tournament/apply', async (req, res) => {
         await requireAuth(req, res, async () => {
