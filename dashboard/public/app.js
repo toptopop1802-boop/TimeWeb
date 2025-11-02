@@ -1227,6 +1227,9 @@ function navigateToPage(page) {
     } else if (page === 'gradient-role') {
         // Инициализация страницы заявки на градиентную роль
         initGradientRolePage();
+    } else if (page === 'training-request') {
+        // Инициализация страницы заявки на турнир
+        initTrainingRequestPage();
     } else if (page === 'server') {
         loadServerPlayers();
     }
@@ -3005,6 +3008,94 @@ function initGradientRolePage() {
     
     gradientRoleFormInitialized = true;
     console.log('✅ [Gradient Role] Обработчик формы установлен');
+}
+
+// ============================================
+// TRAINING REQUEST PAGE
+// ============================================
+
+function initTrainingRequestPage() {
+    console.log('🏆 [Training Request] Инициализация страницы');
+    
+    const contentDiv = document.getElementById('training-request-content');
+    if (!contentDiv) {
+        console.warn('⚠️ [Training Request] Контейнер не найден');
+        return;
+    }
+    
+    // Проверяем авторизацию
+    const authData = getAuthData();
+    
+    if (!authData || !authData.user) {
+        // Пользователь не авторизован - показываем кнопку входа через Discord
+        const discordAuthUrl = `https://discord.com/oauth2/authorize?client_id=1417959083704582224&response_type=code&redirect_uri=${encodeURIComponent('https://bublickrust.ru/signin-discord')}&scope=identify+email`;
+        
+        contentDiv.innerHTML = `
+            <div style="background: var(--bg-card); border-radius: 16px; padding: 60px 40px; border: 1px solid var(--border-color); box-shadow: 0 8px 32px rgba(0,0,0,0.1); text-align: center;">
+                <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin: 0 auto 30px; display: block; color: #5865F2;">
+                    <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/>
+                </svg>
+                <h3 style="margin: 0 0 16px 0; font-size: 28px; font-weight: 700; color: var(--text-primary);">
+                    Войдите через Discord
+                </h3>
+                <p style="margin: 0 0 40px 0; color: var(--text-secondary); font-size: 16px; line-height: 1.6;">
+                    Для доступа к разделу "Заявка на турнир" необходимо авторизоваться через Discord
+                </p>
+                <a href="${discordAuthUrl}" style="display: inline-flex; align-items: center; gap: 12px; padding: 16px 40px; background: #5865F2; color: white; text-decoration: none; border-radius: 10px; font-size: 16px; font-weight: 700; transition: all 0.2s; box-shadow: 0 4px 12px rgba(88, 101, 242, 0.3);" onmouseover="this.style.background='#4752C4'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(88, 101, 242, 0.4)'" onmouseout="this.style.background='#5865F2'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(88, 101, 242, 0.3)'">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                        <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/>
+                    </svg>
+                    Войти через Discord
+                </a>
+            </div>
+        `;
+        return;
+    }
+    
+    // Пользователь авторизован - показываем его данные
+    const user = authData.user;
+    const username = user.username || 'Пользователь';
+    const userId = user.id || user.discord_id || 'ID не указан';
+    
+    // Получаем аватарку Discord если есть
+    let avatarUrl = '';
+    if (user.discord_avatar) {
+        const avatarHash = user.discord_avatar;
+        const discordId = user.discord_id || userId;
+        avatarUrl = `https://cdn.discordapp.com/avatars/${discordId}/${avatarHash}.png?size=256`;
+    } else if (user.avatar_url) {
+        avatarUrl = user.avatar_url;
+    }
+    
+    // Определяем отображаемый ID (Discord ID или обычный ID)
+    const displayId = user.discord_id || userId;
+    
+    contentDiv.innerHTML = `
+        <div style="background: var(--bg-card); border-radius: 16px; padding: 40px; border: 1px solid var(--border-color); box-shadow: 0 8px 32px rgba(0,0,0,0.1);">
+            <div style="text-align: center; margin-bottom: 30px;">
+                ${avatarUrl ? 
+                    `<img src="${avatarUrl}" alt="${username}" style="width: 120px; height: 120px; border-radius: 50%; border: 4px solid var(--border-color); margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">` :
+                    `<div style="width: 120px; height: 120px; border-radius: 50%; background: linear-gradient(135deg, #5865F2, #4752C4); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 48px; font-weight: 700; color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">${username.charAt(0).toUpperCase()}</div>`
+                }
+                <h3 style="margin: 0 0 8px 0; font-size: 28px; font-weight: 700; color: var(--text-primary);">
+                    ${username}
+                </h3>
+                <div style="display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--text-secondary); font-size: 16px;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/>
+                    </svg>
+                    <span>Discord ID: ${displayId}</span>
+                </div>
+            </div>
+            <div style="background: var(--bg-secondary); border-radius: 12px; padding: 20px; margin-top: 30px;">
+                <p style="margin: 0; color: var(--text-secondary); font-size: 14px; line-height: 1.6;">
+                    Вы успешно авторизованы через Discord. Здесь будет форма для подачи заявки на турнир.
+                </p>
+            </div>
+        </div>
+    `;
+    
+    console.log('✅ [Training Request] Контент загружен', { username, userId, hasAvatar: !!avatarUrl });
 }
 
 // ================= API TOKENS (USER) =================
