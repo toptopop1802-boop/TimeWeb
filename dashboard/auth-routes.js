@@ -114,6 +114,66 @@ function setupAuthRoutes(app, supabase) {
                 
                 console.log('✅ Existing Discord user logged in:', discordUser.username);
             } else {
+                // Проверяем, есть ли пользователь с таким email (если он был создан через простую регистрацию)
+                // Пытаемся найти пользователя по email или username
+                const { data: existingLocalUser } = await supabase
+                    .from('users')
+                    .select('*')
+                    .or(`email.eq.discord_${discordUser.id}@discord.user,username.eq.${discordUser.username}`)
+                    .maybeSingle();
+                
+                if (existingLocalUser && !existingLocalUser.discord_id) {
+                    // Найден существующий пользователь без Discord ID - привязываем Discord
+                    const { data: updatedUser, error: updateError } = await supabase
+                        .from('users')
+                        .update({
+                            discord_id: discordUser.id,
+                            discord_username: discordUser.username,
+                            discord_avatar: discordUser.avatar,
+                            last_login: new Date().toISOString(),
+                        })
+                        .eq('id', existingLocalUser.id)
+                        .select()
+                        .single();
+                    
+                    if (updateError) {
+                        console.error('❌ Failed to link Discord to existing user:', updateError);
+                        // Продолжаем создавать нового пользователя
+                    } else {
+                        user = updatedUser;
+                        console.log('✅ Discord linked to existing user:', existingLocalUser.username);
+                        
+                        // Создаем сессию
+                        const token = generateToken();
+                        const expires_at = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+                        
+                        await supabase
+                            .from('sessions')
+                            .insert({
+                                user_id: user.id,
+                                token,
+                                expires_at: expires_at.toISOString(),
+                                ip_address: getRealIP(req),
+                                user_agent: req.headers['user-agent']
+                            });
+                        
+                        // Log login action
+                        await supabase
+                            .from('user_actions')
+                            .insert({
+                                user_id: user.id,
+                                action_type: 'login',
+                                action_details: {
+                                    ip_address: getRealIP(req),
+                                    user_agent: req.headers['user-agent'],
+                                    login_type: 'discord_oauth_linked'
+                                }
+                            });
+                        
+                        return res.redirect(`/?discord_token=${token}`);
+                    }
+                }
+                
                 // Пользователь не существует - создаем нового
                 const discordUsername = discordUser.username || `discord_${discordUser.id}`;
                 const uniqueEmail = `discord_${discordUser.id}@discord.user`;
