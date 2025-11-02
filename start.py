@@ -186,6 +186,19 @@ class Launcher:
         """Запустить Discord бота"""
         self.print_info("🚀 Запуск Discord Bot...")
         
+        # Загружаем переменные окружения из .env файла
+        env = os.environ.copy()
+        env_file = self.project_root / '.env'
+        if env_file.exists():
+            with open(env_file, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith('#') and '=' in line:
+                        key, value = line.split('=', 1)
+                        env[key.strip()] = value.strip()
+        else:
+            self.print_warning("Файл .env не найден в корне проекта. Бот может не запуститься без DISCORD_BOT_TOKEN!")
+        
         python_path = self.get_venv_python_path('python')
         bot_script = self.project_root / 'broadcast_bot.py'
         
@@ -193,7 +206,8 @@ class Launcher:
             # Запускаем без перехвата stdout/stderr, чтобы видеть все логи и команды
             process = subprocess.Popen(
                 [python_path, str(bot_script)],
-                cwd=str(self.project_root)
+                cwd=str(self.project_root),
+                env=env
             )
             self.processes.append(('bot', process))
             return process
