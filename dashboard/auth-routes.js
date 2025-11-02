@@ -16,7 +16,176 @@ function getRealIP(req) {
 
 function setupAuthRoutes(app, supabase) {
     
-    // Discord OAuth removed - simple nickname login only
+    // Discord OAuth callback handler
+    app.get('/signin-discord', async (req, res) => {
+        try {
+            const { code, error } = req.query;
+            
+            if (error) {
+                console.error('❌ Discord OAuth error:', error);
+                return res.redirect('/login.html?error=discord_auth_failed');
+            }
+            
+            if (!code) {
+                return res.redirect('/login.html?error=no_code');
+            }
+            
+            const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID;
+            const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
+            const REDIRECT_URI = process.env.DISCORD_REDIRECT_URI || 'https://bublickrust.ru/signin-discord';
+            
+            if (!DISCORD_CLIENT_ID || !DISCORD_CLIENT_SECRET) {
+                console.error('❌ Discord OAuth credentials not configured');
+                return res.redirect('/login.html?error=discord_not_configured');
+            }
+            
+            // Обмениваем код на access token
+            const tokenResponse = await fetch('https://discord.com/api/oauth2/token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    client_id: DISCORD_CLIENT_ID,
+                    client_secret: DISCORD_CLIENT_SECRET,
+                    grant_type: 'authorization_code',
+                    code: code,
+                    redirect_uri: REDIRECT_URI,
+                }),
+            });
+            
+            if (!tokenResponse.ok) {
+                const errorText = await tokenResponse.text();
+                console.error('❌ Discord token exchange failed:', errorText);
+                return res.redirect('/login.html?error=token_exchange_failed');
+            }
+            
+            const tokenData = await tokenResponse.json();
+            const accessToken = tokenData.access_token;
+            
+            // Получаем данные пользователя из Discord
+            const userResponse = await fetch('https://discord.com/api/users/@me', {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+            
+            if (!userResponse.ok) {
+                const errorText = await userResponse.text();
+                console.error('❌ Discord user fetch failed:', errorText);
+                return res.redirect('/login.html?error=user_fetch_failed');
+            }
+            
+            const discordUser = await userResponse.json();
+            
+            // Проверяем существование пользователя по Discord ID
+            let { data: existingUser, error: checkError } = await supabase
+                .from('users')
+                .select('*')
+                .eq('discord_id', discordUser.id)
+                .maybeSingle();
+            
+            if (checkError && checkError.code !== 'PGRST116') {
+                console.error('❌ Database check error:', checkError);
+                return res.redirect('/login.html?error=database_error');
+            }
+            
+            let user;
+            
+            if (existingUser) {
+                // Пользователь существует - обновляем данные Discord
+                const { data: updatedUser, error: updateError } = await supabase
+                    .from('users')
+                    .update({
+                        discord_username: discordUser.username,
+                        discord_avatar: discordUser.avatar,
+                        last_login: new Date().toISOString(),
+                    })
+                    .eq('id', existingUser.id)
+                    .select()
+                    .single();
+                
+                if (updateError) {
+                    console.error('❌ Failed to update user:', updateError);
+                    user = existingUser; // Используем существующие данные
+                } else {
+                    user = updatedUser;
+                }
+                
+                console.log('✅ Existing Discord user logged in:', discordUser.username);
+            } else {
+                // Пользователь не существует - создаем нового
+                const discordUsername = discordUser.username || `discord_${discordUser.id}`;
+                const uniqueEmail = `discord_${discordUser.id}@discord.user`;
+                
+                const { data: newUser, error: insertError } = await supabase
+                    .from('users')
+                    .insert({
+                        username: discordUsername,
+                        email: uniqueEmail,
+                        password_hash: '', // Пустой хеш для Discord пользователей
+                        role: 'user',
+                        discord_id: discordUser.id,
+                        discord_username: discordUser.username,
+                        discord_avatar: discordUser.avatar,
+                    })
+                    .select()
+                    .single();
+                
+                if (insertError) {
+                    console.error('❌ Failed to create Discord user:', insertError);
+                    return res.redirect('/login.html?error=user_creation_failed');
+                }
+                
+                user = newUser;
+                
+                console.log('✅ New Discord user created:', discordUser.username);
+                
+                // Записываем аналитику регистрации
+                await supabase
+                    .from('user_registrations')
+                    .insert({
+                        user_id: user.id,
+                        username: user.username,
+                        ip_address: getRealIP(req),
+                        user_agent: req.headers['user-agent']
+                    });
+            }
+            
+            // Создаем сессию
+            const token = generateToken();
+            const expires_at = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 дней
+            
+            await supabase
+                .from('sessions')
+                .insert({
+                    user_id: user.id,
+                    token,
+                    expires_at: expires_at.toISOString(),
+                    ip_address: getRealIP(req),
+                    user_agent: req.headers['user-agent']
+                });
+            
+            // Log login action
+            await supabase
+                .from('user_actions')
+                .insert({
+                    user_id: user.id,
+                    action_type: 'login',
+                    action_details: {
+                        ip_address: getRealIP(req),
+                        user_agent: req.headers['user-agent'],
+                        login_type: 'discord_oauth'
+                    }
+                });
+            
+            // Редиректим на главную страницу с токеном в URL (который будет сохранен в localStorage)
+            return res.redirect(`/?discord_token=${token}`);
+        } catch (error) {
+            console.error('❌ Discord OAuth error:', error);
+            return res.redirect('/login.html?error=oauth_error');
+        }
+    });
 
     // Простая регистрация - только имя пользователя
     app.post('/api/auth/simple-register', async (req, res) => {
@@ -462,7 +631,10 @@ function setupAuthRoutes(app, supabase) {
                     username: req.user.username,
                     email: req.user.email,
                     role: req.user.role,
-                    created_at: req.user.created_at
+                    created_at: req.user.created_at,
+                    discord_id: req.user.discord_id || null,
+                    discord_username: req.user.discord_username || null,
+                    discord_avatar: req.user.discord_avatar || null
                 }
             });
         }, supabase);
