@@ -40,6 +40,10 @@ dashboard/node_modules/
 dashboard/uploads/
 dashboard/package-lock.json
 dashboard/.env
+dashboard/env-full.txt
+dashboard/env-production.txt
+dashboard/*-full.txt
+dashboard/*-production.txt
 
 # Misc
 *.bak
