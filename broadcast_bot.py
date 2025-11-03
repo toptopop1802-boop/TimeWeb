@@ -5020,6 +5020,7 @@ def main() -> None:
         # Обработка канала записи на вайп
         if message.channel.id == WIPE_SIGNUP_CHANNEL_ID:
             await handle_wipe_signup_message(message)
+            await bot.process_commands(message)
             return
         
         # Обработка канала заявок на турнир - обновляем embed при добавлении участников
