@@ -4183,16 +4183,22 @@ def main() -> None:
             
             supabase_client = create_client(supabase_url, supabase_key)
             
-            # Назначаем команды и роли
+            # Назначаем команды и роли (используем существующие ID ролей)
             guild = interaction.guild
-            role1 = discord.utils.get(guild.roles, name="Команда 1")
-            role2 = discord.utils.get(guild.roles, name="Команда 2")
+            TEAM1_ROLE_ID = 1434619300978884752
+            TEAM2_ROLE_ID = 1434619302694223933
             
-            # Создаем роли если их нет
+            role1 = guild.get_role(TEAM1_ROLE_ID)
+            role2 = guild.get_role(TEAM2_ROLE_ID)
+            
             if not role1:
-                role1 = await guild.create_role(name="Команда 1", color=discord.Color.red())
+                logging.error(f"❌ Role with ID {TEAM1_ROLE_ID} not found!")
+                await interaction.followup.send("❌ Роль 'Команда 1' не найдена на сервере", ephemeral=True)
+                return
             if not role2:
-                role2 = await guild.create_role(name="Команда 2", color=discord.Color.blue())
+                logging.error(f"❌ Role with ID {TEAM2_ROLE_ID} not found!")
+                await interaction.followup.send("❌ Роль 'Команда 2' не найдена на сервере", ephemeral=True)
+                return
             
             # Обновляем команду 1
             for app in new_team1:
@@ -4601,16 +4607,20 @@ def main() -> None:
                 
                 supabase_client = create_client(supabase_url, supabase_key)
                 
-                # Назначаем команды и роли
+                # Назначаем команды и роли (используем существующие ID ролей)
                 guild = ctx.guild
-                role1 = discord.utils.get(guild.roles, name="Команда 1")
-                role2 = discord.utils.get(guild.roles, name="Команда 2")
+                TEAM1_ROLE_ID = 1434619300978884752
+                TEAM2_ROLE_ID = 1434619302694223933
                 
-                # Создаем роли если их нет
+                role1 = guild.get_role(TEAM1_ROLE_ID)
+                role2 = guild.get_role(TEAM2_ROLE_ID)
+                
                 if not role1:
-                    role1 = await guild.create_role(name="Команда 1", color=discord.Color.red())
+                    await ctx.send("❌ Роль 'Команда 1' не найдена на сервере")
+                    return
                 if not role2:
-                    role2 = await guild.create_role(name="Команда 2", color=discord.Color.blue())
+                    await ctx.send("❌ Роль 'Команда 2' не найдена на сервере")
+                    return
                 
                 # Обновляем команду 1
                 for app in new_team1:
