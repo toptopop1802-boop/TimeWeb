@@ -1965,27 +1965,22 @@ def main() -> None:
             
             logging.info(f"🏆 [Tournament Teams] Creating teams: Team 1 ({len(team1_apps)} players), Team 2 ({len(team2_apps)} players)")
             
-            # Создаем или получаем роли для команд
-            team1_role = discord.utils.get(guild.roles, name="Команда 1")
-            team2_role = discord.utils.get(guild.roles, name="Команда 2")
+            # Получаем существующие роли по ID
+            TEAM1_ROLE_ID = 1434619300978884752
+            TEAM2_ROLE_ID = 1434619302694223933
+            
+            team1_role = guild.get_role(TEAM1_ROLE_ID)
+            team2_role = guild.get_role(TEAM2_ROLE_ID)
             
             if not team1_role:
-                team1_role = await guild.create_role(
-                    name="Команда 1",
-                    colour=discord.Color.red(),
-                    mentionable=True,
-                    reason="Создание роли для команды 1 турнира"
-                )
-                logging.info(f"✅ [Tournament Teams] Created role: Команда 1")
+                logging.error(f"❌ [Tournament Teams] Role 'Команда 1' with ID {TEAM1_ROLE_ID} not found!")
+                return
             
             if not team2_role:
-                team2_role = await guild.create_role(
-                    name="Команда 2",
-                    colour=discord.Color.blue(),
-                    mentionable=True,
-                    reason="Создание роли для команды 2 турнира"
-                )
-                logging.info(f"✅ [Tournament Teams] Created role: Команда 2")
+                logging.error(f"❌ [Tournament Teams] Role 'Команда 2' with ID {TEAM2_ROLE_ID} not found!")
+                return
+            
+            logging.info(f"✅ [Tournament Teams] Using roles: {team1_role.name} and {team2_role.name}")
             
             # Получаем главное сообщение для размещения команд под ним
             main_message_id = settings.get('main_message_id')
