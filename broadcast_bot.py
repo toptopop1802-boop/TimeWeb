@@ -4370,23 +4370,32 @@ def main() -> None:
                 )
                 
                 if added:
+                    added_text = "\n".join(added[:5])
+                    if len(added) > 5:
+                        added_text += f"\n... и еще {len(added) - 5}"
                     embed.add_field(
                         name=f"✅ Добавлено ({len(added)})",
-                        value="\n".join(added[:10]) + (f"\n... и еще {len(added) - 10}" if len(added) > 10 else ""),
+                        value=added_text[:1024],
                         inline=False
                     )
                 
                 if skipped:
+                    skipped_text = "\n".join(skipped[:5])
+                    if len(skipped) > 5:
+                        skipped_text += f"\n... и еще {len(skipped) - 5}"
                     embed.add_field(
                         name=f"⏭️ Пропущено ({len(skipped)})",
-                        value="\n".join(skipped[:10]) + (f"\n... и еще {len(skipped) - 10}" if len(skipped) > 10 else ""),
+                        value=skipped_text[:1024],
                         inline=False
                     )
                 
                 if errors:
+                    errors_text = "\n".join(errors[:5])
+                    if len(errors) > 5:
+                        errors_text += f"\n... и еще {len(errors) - 5}"
                     embed.add_field(
                         name=f"❌ Ошибки ({len(errors)})",
-                        value="\n".join(errors[:10]) + (f"\n... и еще {len(errors) - 10}" if len(errors) > 10 else ""),
+                        value=errors_text[:1024],
                         inline=False
                     )
                 
