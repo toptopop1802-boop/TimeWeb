@@ -4266,6 +4266,145 @@ def main() -> None:
             logging.error(f"❌ [Tournament Distribute] Error: {e}", exc_info=True)
             await interaction.followup.send(f"❌ Ошибка: {str(e)}", ephemeral=True)
     
+    # Команда для добавления игроков в турнир
+    @bot.command(name="tournament_add", aliases=["tadd", "add_players"])
+    @commands.has_permissions(administrator=True)
+    async def tournament_add_players(ctx: commands.Context, *, players_data: str) -> None:
+        """
+        Добавить игроков в турнир массово
+        Формат: !tournament_add <@user1> steam_id1 <@user2> steam_id2 ...
+        Пример: !tournament_add <@123> 76561198973338906 <@456> 76561198820411252
+        """
+        async with ctx.typing():
+            try:
+                if not bot.db:
+                    await ctx.send("❌ База данных недоступна")
+                    return
+                
+                # Парсим данные
+                parts = players_data.strip().split()
+                
+                # Проверяем что данные идут парами (упоминание + steam_id)
+                if len(parts) % 2 != 0:
+                    await ctx.send("❌ Неверный формат! Используйте: `!tournament_add <@user> steam_id <@user> steam_id ...`")
+                    return
+                
+                players = []
+                for i in range(0, len(parts), 2):
+                    mention = parts[i]
+                    steam_id = parts[i + 1]
+                    
+                    # Извлекаем Discord ID из упоминания
+                    if mention.startswith('<@') and mention.endswith('>'):
+                        discord_id = mention.strip('<@!>')
+                        
+                        # Проверяем что это число
+                        if not discord_id.isdigit():
+                            await ctx.send(f"❌ Неверный формат упоминания: {mention}")
+                            return
+                        
+                        # Проверяем Steam ID (только цифры)
+                        if not steam_id.isdigit():
+                            await ctx.send(f"❌ Steam ID должен содержать только цифры: {steam_id}")
+                            return
+                        
+                        players.append({
+                            'discord_id': int(discord_id),
+                            'steam_id': steam_id,
+                            'mention': mention
+                        })
+                    else:
+                        await ctx.send(f"❌ Неверный формат упоминания: {mention}")
+                        return
+                
+                if not players:
+                    await ctx.send("❌ Не найдено игроков для добавления")
+                    return
+                
+                # Добавляем игроков в БД
+                from supabase import create_client
+                supabase_url = os.getenv("SUPABASE_URL")
+                supabase_key = os.getenv("SUPABASE_KEY")
+                
+                if not supabase_url or not supabase_key:
+                    await ctx.send("❌ Ошибка конфигурации БД")
+                    return
+                
+                supabase_client = create_client(supabase_url, supabase_key)
+                
+                added = []
+                skipped = []
+                errors = []
+                
+                for player in players:
+                    try:
+                        # Получаем user_id из таблицы users по discord_id
+                        user_response = supabase_client.table("users").select("id").eq("discord_id", player['discord_id']).maybe_single().execute()
+                        
+                        if not user_response.data:
+                            errors.append(f"{player['mention']} - не найден в системе")
+                            continue
+                        
+                        user_id = user_response.data['id']
+                        
+                        # Проверяем есть ли уже заявка
+                        existing = supabase_client.table("tournament_applications").select("id").eq("user_id", user_id).eq("status", "pending").maybe_single().execute()
+                        
+                        if existing.data:
+                            skipped.append(f"{player['mention']} - уже подал заявку")
+                            continue
+                        
+                        # Добавляем заявку
+                        supabase_client.table("tournament_applications").insert({
+                            "user_id": user_id,
+                            "discord_id": player['discord_id'],
+                            "steam_id": player['steam_id'],
+                            "status": "pending"
+                        }).execute()
+                        
+                        added.append(f"{player['mention']} - `{player['steam_id']}`")
+                        logging.info(f"✅ [Tournament Add] Added player {player['discord_id']} with Steam ID {player['steam_id']}")
+                        
+                    except Exception as e:
+                        errors.append(f"{player['mention']} - ошибка: {str(e)}")
+                        logging.error(f"❌ [Tournament Add] Error adding player {player['discord_id']}: {e}")
+                
+                # Формируем отчет
+                embed = discord.Embed(
+                    title="📝 Добавление игроков в турнир",
+                    color=discord.Color.blue(),
+                    timestamp=discord.utils.utcnow()
+                )
+                
+                if added:
+                    embed.add_field(
+                        name=f"✅ Добавлено ({len(added)})",
+                        value="\n".join(added[:10]) + (f"\n... и еще {len(added) - 10}" if len(added) > 10 else ""),
+                        inline=False
+                    )
+                
+                if skipped:
+                    embed.add_field(
+                        name=f"⏭️ Пропущено ({len(skipped)})",
+                        value="\n".join(skipped[:10]) + (f"\n... и еще {len(skipped) - 10}" if len(skipped) > 10 else ""),
+                        inline=False
+                    )
+                
+                if errors:
+                    embed.add_field(
+                        name=f"❌ Ошибки ({len(errors)})",
+                        value="\n".join(errors[:10]) + (f"\n... и еще {len(errors) - 10}" if len(errors) > 10 else ""),
+                        inline=False
+                    )
+                
+                embed.set_footer(text=f"Добавил {ctx.author.display_name}")
+                
+                await ctx.send(embed=embed)
+                
+            except Exception as e:
+                logging.error(f"❌ [Tournament Add] Error: {e}", exc_info=True)
+                await ctx.send(f"❌ Ошибка: {str(e)}")
+    
     # Префиксная команда (альтернатива slash команде)
     @bot.command(name="tournament_distribute", aliases=["td", "distribute"])
     @commands.has_permissions(administrator=True)
