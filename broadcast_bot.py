@@ -4407,6 +4407,143 @@ def main() -> None:
                 logging.error(f"❌ [Tournament Add] Error: {e}", exc_info=True)
                 await ctx.send(f"❌ Ошибка: {str(e)}")
     
+    # Команда для просмотра списка участников турнира
+    @bot.command(name="tournament_list", aliases=["tlist", "list_players"])
+    @commands.has_permissions(administrator=True)
+    async def tournament_list_players(ctx: commands.Context) -> None:
+        """Показать полный список участников с командами и Steam ID"""
+        async with ctx.typing():
+            try:
+                if not bot.db:
+                    await ctx.send("❌ База данных недоступна")
+                    return
+                
+                # Получаем все pending заявки
+                applications = await bot.db.get_all_tournament_applications(status='pending')
+                
+                if not applications:
+                    await ctx.send("❌ Нет зарегистрированных участников")
+                    return
+                
+                # Разделяем по командам
+                team1 = [app for app in applications if app.get('team_number') == 1]
+                team2 = [app for app in applications if app.get('team_number') == 2]
+                unassigned = [app for app in applications if not app.get('team_number')]
+                
+                # Формируем текст для команды 1
+                team1_text = ""
+                if team1:
+                    team1_steam_ids = []
+                    for i, app in enumerate(team1, 1):
+                        discord_id = app.get('discord_id')
+                        steam_id = app.get('steam_id')
+                        team1_text += f"{i}. <@{discord_id}> - `{steam_id}`\n"
+                        team1_steam_ids.append(steam_id)
+                    team1_text += f"\n**Steam ID список:**\n```\n{' '.join(team1_steam_ids)}\n```"
+                else:
+                    team1_text = "Нет участников"
+                
+                # Формируем текст для команды 2
+                team2_text = ""
+                if team2:
+                    team2_steam_ids = []
+                    for i, app in enumerate(team2, 1):
+                        discord_id = app.get('discord_id')
+                        steam_id = app.get('steam_id')
+                        team2_text += f"{i}. <@{discord_id}> - `{steam_id}`\n"
+                        team2_steam_ids.append(steam_id)
+                    team2_text += f"\n**Steam ID список:**\n```\n{' '.join(team2_steam_ids)}\n```"
+                else:
+                    team2_text = "Нет участников"
+                
+                # Формируем текст для неназначенных
+                unassigned_text = ""
+                if unassigned:
+                    for i, app in enumerate(unassigned, 1):
+                        discord_id = app.get('discord_id')
+                        steam_id = app.get('steam_id')
+                        unassigned_text += f"{i}. <@{discord_id}> - `{steam_id}`\n"
+                else:
+                    unassigned_text = "Нет участников"
+                
+                # Создаем embed
+                embed = discord.Embed(
+                    title="🏆 Список участников турнира",
+                    description=f"**Всего участников: {len(applications)}**",
+                    color=discord.Color.gold(),
+                    timestamp=discord.utils.utcnow()
+                )
+                
+                # Добавляем команду 1 (разбиваем если слишком длинно)
+                if len(team1_text) > 1024:
+                    # Разбиваем на части
+                    team1_players = "\n".join([f"{i}. <@{app['discord_id']}> - `{app['steam_id']}`" for i, app in enumerate(team1[:10], 1)])
+                    if len(team1) > 10:
+                        team1_players += f"\n... и еще {len(team1) - 10}"
+                    embed.add_field(
+                        name=f"🔴 Команда 1 ({len(team1)} игроков)",
+                        value=team1_players[:1024],
+                        inline=False
+                    )
+                else:
+                    embed.add_field(
+                        name=f"🔴 Команда 1 ({len(team1)} игроков)",
+                        value=team1_text[:1024] if team1_text else "Нет участников",
+                        inline=False
+                    )
+                
+                # Добавляем команду 2 (разбиваем если слишком длинно)
+                if len(team2_text) > 1024:
+                    team2_players = "\n".join([f"{i}. <@{app['discord_id']}> - `{app['steam_id']}`" for i, app in enumerate(team2[:10], 1)])
+                    if len(team2) > 10:
+                        team2_players += f"\n... и еще {len(team2) - 10}"
+                    embed.add_field(
+                        name=f"🔵 Команда 2 ({len(team2)} игроков)",
+                        value=team2_players[:1024],
+                        inline=False
+                    )
+                else:
+                    embed.add_field(
+                        name=f"🔵 Команда 2 ({len(team2)} игроков)",
+                        value=team2_text[:1024] if team2_text else "Нет участников",
+                        inline=False
+                    )
+                
+                # Добавляем неназначенных если есть
+                if unassigned:
+                    if len(unassigned_text) > 1024:
+                        unassigned_players = "\n".join([f"{i}. <@{app['discord_id']}> - `{app['steam_id']}`" for i, app in enumerate(unassigned[:10], 1)])
+                        if len(unassigned) > 10:
+                            unassigned_players += f"\n... и еще {len(unassigned) - 10}"
+                        embed.add_field(
+                            name=f"⚪ Без команды ({len(unassigned)} игроков)",
+                            value=unassigned_players[:1024],
+                            inline=False
+                        )
+                    else:
+                        embed.add_field(
+                            name=f"⚪ Без команды ({len(unassigned)} игроков)",
+                            value=unassigned_text[:1024],
+                            inline=False
+                        )
+                
+                embed.set_footer(text=f"Запросил {ctx.author.display_name}")
+                
+                await ctx.send(embed=embed)
+                
+                # Отправляем отдельно полные списки Steam ID если команды большие
+                if team1 and len(team1) > 5:
+                    team1_steam_ids = [app['steam_id'] for app in team1]
+                    await ctx.send(f"**🔴 Команда 1 - полный список Steam ID:**\n```\n{' '.join(team1_steam_ids)}\n```")
+                
+                if team2 and len(team2) > 5:
+                    team2_steam_ids = [app['steam_id'] for app in team2]
+                    await ctx.send(f"**🔵 Команда 2 - полный список Steam ID:**\n```\n{' '.join(team2_steam_ids)}\n```")
+                
+            except Exception as e:
+                logging.error(f"❌ [Tournament List] Error: {e}", exc_info=True)
+                await ctx.send(f"❌ Ошибка: {str(e)}")
+    
     # Префиксная команда (альтернатива slash команде)
     @bot.command(name="tournament_distribute", aliases=["td", "distribute"])
     @commands.has_permissions(administrator=True)
