@@ -4338,56 +4338,25 @@ def main() -> None:
                 
                 for player in players:
                     try:
-                        # Получаем данные участника из Discord
-                        member = ctx.guild.get_member(player['discord_id'])
-                        if not member:
-                            try:
-                                member = await ctx.guild.fetch_member(player['discord_id'])
-                            except:
-                                errors.append(f"{player['mention']} - не найден на сервере")
-                                continue
+                        # Проверяем есть ли уже заявка от этого Discord ID
+                        existing_check = supabase_client.table("tournament_applications").select("id").eq("discord_id", player['discord_id']).eq("status", "pending").execute()
                         
-                        # Получаем или создаем пользователя в БД
-                        user_response = supabase_client.table("users").select("id").eq("discord_id", player['discord_id']).maybe_single().execute()
-                        
-                        if user_response.data:
-                            user_id = user_response.data['id']
-                        else:
-                            # Создаем нового пользователя
-                            username = member.display_name or member.name
-                            new_user = supabase_client.table("users").insert({
-                                "discord_id": player['discord_id'],
-                                "username": username,
-                                "discord_username": f"{member.name}#{member.discriminator}" if member.discriminator != "0" else member.name,
-                                "discord_avatar": str(member.avatar.key) if member.avatar else None,
-                                "email": f"{player['discord_id']}@discord.user",
-                                "role": "user"
-                            }).execute()
-                            
-                            if new_user.data:
-                                user_id = new_user.data[0]['id']
-                                logging.info(f"✅ [Tournament Add] Created new user for Discord ID {player['discord_id']}")
-                            else:
-                                errors.append(f"{player['mention']} - не удалось создать пользователя")
-                                continue
-                        
-                        # Проверяем есть ли уже заявка
-                        existing = supabase_client.table("tournament_applications").select("id").eq("user_id", user_id).eq("status", "pending").maybe_single().execute()
-                        
-                        if existing.data:
+                        if existing_check.data and len(existing_check.data) > 0:
                             skipped.append(f"{player['mention']} - уже подал заявку")
                             continue
                         
-                        # Добавляем заявку
-                        supabase_client.table("tournament_applications").insert({
-                            "user_id": user_id,
+                        # Добавляем заявку напрямую (без user_id, только discord_id и steam_id)
+                        insert_result = supabase_client.table("tournament_applications").insert({
                             "discord_id": player['discord_id'],
                             "steam_id": player['steam_id'],
                             "status": "pending"
                         }).execute()
                         
-                        added.append(f"{player['mention']} - `{player['steam_id']}`")
-                        logging.info(f"✅ [Tournament Add] Added player {player['discord_id']} with Steam ID {player['steam_id']}")
+                        if insert_result.data:
+                            added.append(f"{player['mention']} - `{player['steam_id']}`")
+                            logging.info(f"✅ [Tournament Add] Added player {player['discord_id']} with Steam ID {player['steam_id']}")
+                        else:
+                            errors.append(f"{player['mention']} - не удалось добавить")
                         
                     except Exception as e:
                         errors.append(f"{player['mention']} - ошибка: {str(e)}")
