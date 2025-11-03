@@ -4338,14 +4338,38 @@ def main() -> None:
                 
                 for player in players:
                     try:
-                        # Получаем user_id из таблицы users по discord_id
+                        # Получаем данные участника из Discord
+                        member = ctx.guild.get_member(player['discord_id'])
+                        if not member:
+                            try:
+                                member = await ctx.guild.fetch_member(player['discord_id'])
+                            except:
+                                errors.append(f"{player['mention']} - не найден на сервере")
+                                continue
+                        
+                        # Получаем или создаем пользователя в БД
                         user_response = supabase_client.table("users").select("id").eq("discord_id", player['discord_id']).maybe_single().execute()
                         
-                        if not user_response.data:
-                            errors.append(f"{player['mention']} - не найден в системе")
-                            continue
-                        
-                        user_id = user_response.data['id']
+                        if user_response.data:
+                            user_id = user_response.data['id']
+                        else:
+                            # Создаем нового пользователя
+                            username = member.display_name or member.name
+                            new_user = supabase_client.table("users").insert({
+                                "discord_id": player['discord_id'],
+                                "username": username,
+                                "discord_username": f"{member.name}#{member.discriminator}" if member.discriminator != "0" else member.name,
+                                "discord_avatar": str(member.avatar.key) if member.avatar else None,
+                                "email": f"{player['discord_id']}@discord.user",
+                                "role": "user"
+                            }).execute()
+                            
+                            if new_user.data:
+                                user_id = new_user.data[0]['id']
+                                logging.info(f"✅ [Tournament Add] Created new user for Discord ID {player['discord_id']}")
+                            else:
+                                errors.append(f"{player['mention']} - не удалось создать пользователя")
+                                continue
                         
                         # Проверяем есть ли уже заявка
                         existing = supabase_client.table("tournament_applications").select("id").eq("user_id", user_id).eq("status", "pending").maybe_single().execute()
@@ -4367,7 +4391,7 @@ def main() -> None:
                         
                     except Exception as e:
                         errors.append(f"{player['mention']} - ошибка: {str(e)}")
-                        logging.error(f"❌ [Tournament Add] Error adding player {player['discord_id']}: {e}")
+                        logging.error(f"❌ [Tournament Add] Error adding player {player['discord_id']}: {e}", exc_info=True)
                 
                 # Формируем отчет
                 embed = discord.Embed(
