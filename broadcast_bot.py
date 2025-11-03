@@ -502,7 +502,7 @@ async def handle_tournament_application_request(request: web.Request) -> web.Res
         }, status=500)
 
 
-    async def start_http_server(bot: commands.Bot, port: int, secret: str):
+async def start_http_server(bot: commands.Bot, port: int, secret: str):
     """Запуск HTTP сервера для приема заявок с дашборда"""
     global _bot_instance
     _bot_instance = bot
