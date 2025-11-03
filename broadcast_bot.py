@@ -4125,6 +4125,147 @@ def main() -> None:
                 ephemeral=True
             )
 
+    @bot.tree.command(name="tournament_distribute", description="🎲 Распределить игроков поровну по командам")
+    @app_commands.guild_only()
+    @app_commands.default_permissions(administrator=True)
+    async def tournament_distribute_command(interaction: discord.Interaction) -> None:
+        """Распределяет неназначенных игроков поровну между командами"""
+        await interaction.response.defer(ephemeral=True)
+        
+        try:
+            if not bot.db:
+                await interaction.followup.send("❌ База данных недоступна", ephemeral=True)
+                return
+            
+            # Получаем все pending заявки
+            applications = await bot.db.get_all_tournament_applications(status='pending')
+            
+            if not applications:
+                await interaction.followup.send("❌ Нет заявок для распределения", ephemeral=True)
+                return
+            
+            # Разделяем на уже назначенных и неназначенных
+            team1_assigned = [app for app in applications if app.get('team_number') == 1]
+            team2_assigned = [app for app in applications if app.get('team_number') == 2]
+            unassigned = [app for app in applications if not app.get('team_number')]
+            
+            if not unassigned:
+                await interaction.followup.send("✅ Все игроки уже распределены по командам", ephemeral=True)
+                return
+            
+            # Вычисляем сколько нужно добавить в каждую команду
+            total_team1 = len(team1_assigned)
+            total_team2 = len(team2_assigned)
+            
+            # Перемешиваем неназначенных
+            import random
+            random.shuffle(unassigned)
+            
+            # Распределяем поровну
+            new_team1 = []
+            new_team2 = []
+            
+            for app in unassigned:
+                # Добавляем в ту команду, где меньше игроков
+                if total_team1 + len(new_team1) <= total_team2 + len(new_team2):
+                    new_team1.append(app)
+                else:
+                    new_team2.append(app)
+            
+            # Обновляем в БД
+            from supabase import create_client
+            supabase_url = os.getenv("SUPABASE_URL")
+            supabase_key = os.getenv("SUPABASE_KEY")
+            
+            if not supabase_url or not supabase_key:
+                await interaction.followup.send("❌ Ошибка конфигурации БД", ephemeral=True)
+                return
+            
+            supabase_client = create_client(supabase_url, supabase_key)
+            
+            # Назначаем команды и роли
+            guild = interaction.guild
+            role1 = discord.utils.get(guild.roles, name="Команда 1")
+            role2 = discord.utils.get(guild.roles, name="Команда 2")
+            
+            # Создаем роли если их нет
+            if not role1:
+                role1 = await guild.create_role(name="Команда 1", color=discord.Color.red())
+            if not role2:
+                role2 = await guild.create_role(name="Команда 2", color=discord.Color.blue())
+            
+            # Обновляем команду 1
+            for app in new_team1:
+                supabase_client.table("tournament_applications").update({
+                    "team_number": 1
+                }).eq("id", app['id']).execute()
+                
+                # Назначаем роль
+                member = guild.get_member(int(app['discord_id']))
+                if member:
+                    await member.add_roles(role1)
+                    logging.info(f"🔴 Assigned Team 1 role to {member.display_name}")
+            
+            # Обновляем команду 2
+            for app in new_team2:
+                supabase_client.table("tournament_applications").update({
+                    "team_number": 2
+                }).eq("id", app['id']).execute()
+                
+                # Назначаем роль
+                member = guild.get_member(int(app['discord_id']))
+                if member:
+                    await member.add_roles(role2)
+                    logging.info(f"🔵 Assigned Team 2 role to {member.display_name}")
+            
+            # Формируем отчет
+            total_team1_final = total_team1 + len(new_team1)
+            total_team2_final = total_team2 + len(new_team2)
+            
+            embed = discord.Embed(
+                title="🎲 Распределение по командам завершено",
+                description=f"Распределено игроков: **{len(unassigned)}**",
+                color=discord.Color.green(),
+                timestamp=discord.utils.utcnow()
+            )
+            
+            embed.add_field(
+                name="🔴 Команда 1",
+                value=f"Было: {total_team1}\nДобавлено: {len(new_team1)}\n**Всего: {total_team1_final}**",
+                inline=True
+            )
+            
+            embed.add_field(
+                name="🔵 Команда 2",
+                value=f"Было: {total_team2}\nДобавлено: {len(new_team2)}\n**Всего: {total_team2_final}**",
+                inline=True
+            )
+            
+            embed.add_field(name="\u200b", value="\u200b", inline=False)
+            
+            # Списки новых участников
+            if new_team1:
+                team1_list = "\n".join([f"• <@{app['discord_id']}> — `{app['steam_id']}`" for app in new_team1[:10]])
+                if len(new_team1) > 10:
+                    team1_list += f"\n... и еще {len(new_team1) - 10}"
+                embed.add_field(name="➕ Новые в команде 1", value=team1_list, inline=False)
+            
+            if new_team2:
+                team2_list = "\n".join([f"• <@{app['discord_id']}> — `{app['steam_id']}`" for app in new_team2[:10]])
+                if len(new_team2) > 10:
+                    team2_list += f"\n... и еще {len(new_team2) - 10}"
+                embed.add_field(name="➕ Новые в команде 2", value=team2_list, inline=False)
+            
+            embed.set_footer(text=f"Распределил {interaction.user.display_name}")
+            
+            await interaction.followup.send(embed=embed, ephemeral=True)
+            
+            logging.info(f"🎲 [Tournament Distribute] {interaction.user.display_name} распределил {len(unassigned)} игроков (Team1: +{len(new_team1)}, Team2: +{len(new_team2)})")
+            
+        except Exception as e:
+            logging.error(f"❌ [Tournament Distribute] Error: {e}", exc_info=True)
+            await interaction.followup.send(f"❌ Ошибка: {str(e)}", ephemeral=True)
+    
     @bot.tree.command(name="tournament_applications", description="Показать список заявок на турнир.")
     @app_commands.guild_only()
     @app_commands.default_permissions(administrator=True)
