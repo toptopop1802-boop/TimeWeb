@@ -1393,14 +1393,60 @@ async function loadUsers() {
             return;
         }
         
-        // Sort by registration date (newest first)
-        users.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+        // Загружаем Steam ID и Discord тег для каждого пользователя
+        const usersWithSteamId = await Promise.all(users.map(async (user) => {
+            if (!user.discord_id) return { ...user, steam_id: null, discord_tag: null };
+            
+            const result = { ...user, steam_id: null, discord_tag: null };
+            
+            // Получаем Steam ID
+            try {
+                const steamResponse = await fetchWithAuth(`/api/admin/users/${user.discord_id}/steam-id`);
+                if (steamResponse.ok) {
+                    const steamData = await steamResponse.json();
+                    result.steam_id = steamData.steam_id || null;
+                }
+            } catch (e) {
+                console.warn(`Failed to get Steam ID for user ${user.discord_id}:`, e);
+            }
+            
+            // Получаем Discord тег если нет discord_username
+            if (!user.discord_username) {
+                try {
+                    const tagResponse = await fetchWithAuth(`/api/admin/users/${user.discord_id}/discord-tag`);
+                    if (tagResponse.ok) {
+                        const tagData = await tagResponse.json();
+                        result.discord_tag = tagData.tag || null;
+                    }
+                } catch (e) {
+                    console.warn(`Failed to get Discord tag for user ${user.discord_id}:`, e);
+                }
+            }
+            
+            return result;
+        }));
         
-        // Render users
+        // Сортировка по умолчанию (по дате регистрации, новые сверху)
+        let sortedUsers = [...usersWithSteamId];
+        let currentSort = 'date_desc';
+        
+        // Render users with sorting
         usersList.innerHTML = `
             ${dbStatusHtml}
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px;">
-                ${users.map(user => `
+            <div style="background: var(--bg-card); border-radius: 16px; padding: 20px; margin-bottom: 24px; border: 2px solid var(--border-color);">
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                    <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: var(--text-primary);">Сортировка</h3>
+                    <select id="users-sort-select" style="padding: 10px 16px; background: var(--bg-secondary); border: 2px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-size: 14px; cursor: pointer; font-weight: 600;">
+                        <option value="date_desc">📅 Дата регистрации (новые → старые)</option>
+                        <option value="date_asc">📅 Дата регистрации (старые → новые)</option>
+                        <option value="username_asc">👤 Имя (А → Я)</option>
+                        <option value="username_desc">👤 Имя (Я → А)</option>
+                        <option value="role">👑 Роль (Admin → User)</option>
+                    </select>
+                </div>
+            </div>
+            <div id="users-grid-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px;">
+                ${usersWithSteamId.map(user => `
                     <div style="
                         background: var(--bg-card);
                         border-radius: 16px;
@@ -1455,25 +1501,25 @@ async function loadUsers() {
                         
                         <!-- Details -->
                         <div style="display: flex; flex-direction: column; gap: 12px;">
-                            ${user.discord_username ? `
-                                <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-secondary); border-radius: 8px;">
-                                    <span style="font-size: 18px;">💬</span>
-                                    <div style="flex: 1; min-width: 0;">
-                                        <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 2px;">Discord</div>
-                                        <div style="font-size: 14px; font-weight: 600; color: var(--text-primary); word-break: break-word;">${user.discord_username}</div>
-                                    </div>
+                        ${user.discord_username || user.discord_tag ? `
+                            <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-secondary); border-radius: 8px;">
+                                <span style="font-size: 18px;">💬</span>
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 2px;">Discord</div>
+                                    <div style="font-size: 14px; font-weight: 600; color: var(--text-primary); word-break: break-word;">${user.discord_username || user.discord_tag || 'Неизвестно'}</div>
                                 </div>
-                            ` : ''}
-                            
-                            ${user.discord_id ? `
-                                <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-secondary); border-radius: 8px;">
-                                    <span style="font-size: 18px;">🆔</span>
-                                    <div style="flex: 1; min-width: 0;">
-                                        <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 2px;">Discord ID</div>
-                                        <code style="font-size: 13px; font-weight: 600; color: var(--text-primary); word-break: break-all;">${user.discord_id}</code>
-                                    </div>
+                            </div>
+                        ` : ''}
+                        
+                        ${user.discord_id ? `
+                            <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-secondary); border-radius: 8px;">
+                                <span style="font-size: 18px;">🆔</span>
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 2px;">Discord ID</div>
+                                    <code style="font-size: 13px; font-weight: 600; color: var(--text-primary); word-break: break-all;">${user.discord_id}</code>
                                 </div>
-                            ` : ''}
+                            </div>
+                        ` : ''}
                             
                             ${user.email ? `
                                 <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-secondary); border-radius: 8px;">
@@ -1484,11 +1530,164 @@ async function loadUsers() {
                                     </div>
                                 </div>
                             ` : ''}
+                            
+                            ${user.steam_id ? `
+                                <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-secondary); border-radius: 8px;">
+                                    <span style="font-size: 18px;">🎮</span>
+                                    <div style="flex: 1; min-width: 0;">
+                                        <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 2px;">Steam ID</div>
+                                        <code style="font-size: 13px; font-weight: 600; color: var(--text-primary); word-break: break-all; background: rgba(102, 126, 234, 0.1); padding: 4px 8px; border-radius: 6px; display: inline-block;">${user.steam_id}</code>
+                                    </div>
+                                </div>
+                            ` : ''}
                         </div>
                     </div>
                 `).join('')}
             </div>
         `;
+        
+        // Обработчик сортировки
+        const sortSelect = document.getElementById('users-sort-select');
+        const usersGrid = document.getElementById('users-grid-container');
+        
+        function sortAndRenderUsers(sortType) {
+            let sorted = [...usersWithSteamId];
+            
+            switch(sortType) {
+                case 'date_desc':
+                    sorted.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+                    break;
+                case 'date_asc':
+                    sorted.sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
+                    break;
+                case 'username_asc':
+                    sorted.sort((a, b) => {
+                        const nameA = (a.username || a.discord_username || '').toLowerCase();
+                        const nameB = (b.username || b.discord_username || '').toLowerCase();
+                        return nameA.localeCompare(nameB, 'ru');
+                    });
+                    break;
+                case 'username_desc':
+                    sorted.sort((a, b) => {
+                        const nameA = (a.username || a.discord_username || '').toLowerCase();
+                        const nameB = (b.username || b.discord_username || '').toLowerCase();
+                        return nameB.localeCompare(nameA, 'ru');
+                    });
+                    break;
+                case 'role':
+                    sorted.sort((a, b) => {
+                        if (a.role === 'admin' && b.role !== 'admin') return -1;
+                        if (a.role !== 'admin' && b.role === 'admin') return 1;
+                        return 0;
+                    });
+                    break;
+            }
+            
+            // Перерисовываем только сетку
+            usersGrid.innerHTML = sorted.map(user => `
+                <div style="
+                    background: var(--bg-card);
+                    border-radius: 16px;
+                    padding: 24px;
+                    border: 2px solid var(--border-color);
+                    transition: all 0.3s;
+                    position: relative;
+                    overflow: hidden;
+                " onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 24px rgba(0,0,0,0.15)'" onmouseout="this.style.transform=''; this.style.boxShadow=''">
+                    <!-- Role badge -->
+                    <div style="
+                        position: absolute;
+                        top: 16px;
+                        right: 16px;
+                        padding: 6px 12px;
+                        border-radius: 8px;
+                        font-size: 11px;
+                        font-weight: 700;
+                        text-transform: uppercase;
+                        ${user.role === 'admin' ? 'background: linear-gradient(135deg, #ef4444, #dc2626); color: white;' : 'background: var(--bg-secondary); color: var(--text-secondary);'}
+                    ">
+                        ${user.role === 'admin' ? '👑 Admin' : '👤 User'}
+                    </div>
+                    
+                    <!-- User info -->
+                    <div style="display: flex; align-items: start; gap: 16px; margin-bottom: 20px;">
+                        <div style="
+                            width: 64px;
+                            height: 64px;
+                            border-radius: 50%;
+                            background: linear-gradient(135deg, #667eea, #764ba2);
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            color: white;
+                            font-size: 28px;
+                            font-weight: 700;
+                            flex-shrink: 0;
+                        ">
+                            ${(user.username || user.discord_username || 'U')[0].toUpperCase()}
+                        </div>
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; word-break: break-word;">
+                                ${user.username || user.discord_username || 'Неизвестный'}
+                            </div>
+                            <div style="font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
+                                <span>📅</span>
+                                <span>${new Date(user.created_at).toLocaleDateString('ru-RU')}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Details -->
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        ${user.discord_username || user.discord_tag ? `
+                            <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-secondary); border-radius: 8px;">
+                                <span style="font-size: 18px;">💬</span>
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 2px;">Discord</div>
+                                    <div style="font-size: 14px; font-weight: 600; color: var(--text-primary); word-break: break-word;">${user.discord_username || user.discord_tag || 'Неизвестно'}</div>
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        ${user.discord_id ? `
+                            <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-secondary); border-radius: 8px;">
+                                <span style="font-size: 18px;">🆔</span>
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 2px;">Discord ID</div>
+                                    <code style="font-size: 13px; font-weight: 600; color: var(--text-primary); word-break: break-all;">${user.discord_id}</code>
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        ${user.email ? `
+                            <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-secondary); border-radius: 8px;">
+                                <span style="font-size: 18px;">📧</span>
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 2px;">Email</div>
+                                    <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); word-break: break-word;">${user.email}</div>
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        ${user.steam_id ? `
+                            <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-secondary); border-radius: 8px;">
+                                <span style="font-size: 18px;">🎮</span>
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 2px;">Steam ID</div>
+                                    <code style="font-size: 13px; font-weight: 600; color: var(--text-primary); word-break: break-all; background: rgba(102, 126, 234, 0.1); padding: 4px 8px; border-radius: 6px; display: inline-block;">${user.steam_id}</code>
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        if (sortSelect) {
+            sortSelect.addEventListener('change', (e) => {
+                sortAndRenderUsers(e.target.value);
+            });
+        }
         
     } catch (error) {
         console.error('❌ Error loading users:', error);
@@ -3770,9 +3969,9 @@ async function loadTournamentStatus() {
                 
                 // Если заявка одобрена или отклонена - показываем форму для создания новой
                 if (data.application.status === 'approved' || data.application.status === 'rejected') {
-                    if (form) form.style.display = 'flex';
-                    
-                    formContainer.innerHTML = `
+                    // Создаем контейнер для старого статуса
+                    const statusDiv = document.createElement('div');
+                    statusDiv.innerHTML = `
                         <div style="padding: 24px; background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border-color); text-align: center; margin-bottom: 24px;">
                             <div style="font-size: 48px; margin-bottom: 16px;">${data.application.status === 'approved' ? '✅' : '❌'}</div>
                             <h3 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 700; color: var(--text-primary);">
@@ -3789,6 +3988,16 @@ async function loadTournamentStatus() {
                             </p>
                         </div>
                     `;
+                    
+                    // Очищаем контейнер и добавляем статус + форму
+                    formContainer.innerHTML = '';
+                    formContainer.appendChild(statusDiv);
+                    
+                    // Показываем форму
+                    if (form) {
+                        form.style.display = 'flex';
+                        formContainer.appendChild(form);
+                    }
                 } else {
                     // Если pending - скрываем форму
                     if (form) form.style.display = 'none';

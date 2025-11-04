@@ -759,6 +759,72 @@ function setupAuthRoutes(app, supabase) {
         }, supabase);
     });
     
+    // Получить Steam ID пользователя по Discord ID (только для админа)
+    app.get('/api/admin/users/:discordId/steam-id', async (req, res) => {
+        await requireAuth(req, res, async () => {
+            requireAdmin(req, res, async () => {
+                try {
+                    const { discordId } = req.params;
+                    
+                    // Ищем последнюю заявку этого пользователя
+                    const { data: application, error } = await supabase
+                        .from('tournament_applications')
+                        .select('steam_id')
+                        .eq('discord_id', discordId)
+                        .order('created_at', { ascending: false })
+                        .limit(1)
+                        .maybeSingle();
+                    
+                    if (error) throw error;
+                    
+                    res.json({ steam_id: application?.steam_id || null });
+                } catch (error) {
+                    console.error('Get user Steam ID error:', error);
+                    res.status(500).json({ error: error.message });
+                }
+            });
+        }, supabase);
+    });
+    
+    // Получить Discord тег пользователя по Discord ID (только для админа)
+    app.get('/api/admin/users/:discordId/discord-tag', async (req, res) => {
+        await requireAuth(req, res, async () => {
+            requireAdmin(req, res, async () => {
+                try {
+                    const { discordId } = req.params;
+                    const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
+                    
+                    if (!DISCORD_BOT_TOKEN) {
+                        return res.json({ tag: null, error: 'Bot token not configured' });
+                    }
+                    
+                    // Получаем информацию о пользователе через Discord API
+                    try {
+                        const discordResponse = await fetch(`https://discord.com/api/v10/users/${discordId}`, {
+                            headers: {
+                                'Authorization': `Bot ${DISCORD_BOT_TOKEN}`
+                            }
+                        });
+                        
+                        if (discordResponse.ok) {
+                            const discordUser = await discordResponse.json();
+                            const tag = discordUser.username ? `${discordUser.username}#${discordUser.discriminator || '0000'}` : null;
+                            res.json({ tag, username: discordUser.username, discriminator: discordUser.discriminator });
+                        } else {
+                            res.json({ tag: null, error: 'User not found' });
+                        }
+                    } catch (fetchError) {
+                        console.error('Discord API error:', fetchError);
+                        res.json({ tag: null, error: fetchError.message });
+                    }
+                } catch (error) {
+                    console.error('Get Discord tag error:', error);
+                    res.status(500).json({ error: error.message });
+                }
+            });
+        }, supabase);
+    });
+    
     // Статус БД (только для админа)
     app.get('/api/admin/database-status', async (req, res) => {
         await requireAuth(req, res, async () => {
