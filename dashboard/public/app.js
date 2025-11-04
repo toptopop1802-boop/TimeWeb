@@ -1281,8 +1281,172 @@ function navigateToPage(page) {
         initTrainingRequestPage();
     } else if (page === 'server') {
         loadServerPlayers();
+    } else if (page === 'members') {
+        loadMembers();
     }
 }
+
+// ============================================
+// MEMBERS PAGE
+// ============================================
+
+async function loadMembers() {
+    console.log('👥 Loading members page');
+    const membersList = document.getElementById('members-list');
+    
+    if (!membersList) {
+        console.error('❌ Members list container not found');
+        return;
+    }
+    
+    try {
+        membersList.innerHTML = '<div class="admin-loading">Загрузка участников...</div>';
+        
+        const response = await fetchWithAuth('/api/users');
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const data = await response.json();
+        const users = data.users || [];
+        
+        console.log(`✅ Loaded ${users.length} users`);
+        
+        // Update stats
+        document.getElementById('total-users').textContent = users.length;
+        document.getElementById('total-admins').textContent = users.filter(u => u.role === 'admin').length;
+        
+        // Count today's registrations
+        const today = new Date().toDateString();
+        const todayRegs = users.filter(u => {
+            if (!u.created_at) return false;
+            return new Date(u.created_at).toDateString() === today;
+        }).length;
+        document.getElementById('total-registrations-today').textContent = todayRegs;
+        
+        if (users.length === 0) {
+            membersList.innerHTML = `
+                <div style="text-align: center; padding: 60px 20px; color: var(--text-secondary);">
+                    <div style="font-size: 48px; margin-bottom: 16px;">👥</div>
+                    <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Нет зарегистрированных пользователей</div>
+                    <div style="font-size: 14px;">Пользователи появятся здесь после регистрации</div>
+                </div>
+            `;
+            return;
+        }
+        
+        // Sort by registration date (newest first)
+        users.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+        
+        // Render users
+        membersList.innerHTML = `
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px;">
+                ${users.map(user => `
+                    <div style="
+                        background: var(--bg-card);
+                        border-radius: 16px;
+                        padding: 24px;
+                        border: 2px solid var(--border-color);
+                        transition: all 0.3s;
+                        position: relative;
+                        overflow: hidden;
+                    " onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 24px rgba(0,0,0,0.15)'" onmouseout="this.style.transform=''; this.style.boxShadow=''">
+                        <!-- Role badge -->
+                        <div style="
+                            position: absolute;
+                            top: 16px;
+                            right: 16px;
+                            padding: 6px 12px;
+                            border-radius: 8px;
+                            font-size: 11px;
+                            font-weight: 700;
+                            text-transform: uppercase;
+                            ${user.role === 'admin' ? 'background: linear-gradient(135deg, #ef4444, #dc2626); color: white;' : 'background: var(--bg-secondary); color: var(--text-secondary);'}
+                        ">
+                            ${user.role === 'admin' ? '👑 Admin' : '👤 User'}
+                        </div>
+                        
+                        <!-- User info -->
+                        <div style="display: flex; align-items: start; gap: 16px; margin-bottom: 20px;">
+                            <div style="
+                                width: 64px;
+                                height: 64px;
+                                border-radius: 50%;
+                                background: linear-gradient(135deg, #667eea, #764ba2);
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                color: white;
+                                font-size: 28px;
+                                font-weight: 700;
+                                flex-shrink: 0;
+                            ">
+                                ${(user.username || user.discord_username || 'U')[0].toUpperCase()}
+                            </div>
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; word-break: break-word;">
+                                    ${user.username || user.discord_username || 'Неизвестный'}
+                                </div>
+                                <div style="font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
+                                    <span>📅</span>
+                                    <span>${new Date(user.created_at).toLocaleDateString('ru-RU')}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Details -->
+                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                            ${user.discord_username ? `
+                                <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-secondary); border-radius: 8px;">
+                                    <span style="font-size: 18px;">💬</span>
+                                    <div style="flex: 1; min-width: 0;">
+                                        <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 2px;">Discord</div>
+                                        <div style="font-size: 14px; font-weight: 600; color: var(--text-primary); word-break: break-word;">${user.discord_username}</div>
+                                    </div>
+                                </div>
+                            ` : ''}
+                            
+                            ${user.discord_id ? `
+                                <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-secondary); border-radius: 8px;">
+                                    <span style="font-size: 18px;">🆔</span>
+                                    <div style="flex: 1; min-width: 0;">
+                                        <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 2px;">Discord ID</div>
+                                        <code style="font-size: 13px; font-weight: 600; color: var(--text-primary); word-break: break-all;">${user.discord_id}</code>
+                                    </div>
+                                </div>
+                            ` : ''}
+                            
+                            ${user.email ? `
+                                <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-secondary); border-radius: 8px;">
+                                    <span style="font-size: 18px;">📧</span>
+                                    <div style="flex: 1; min-width: 0;">
+                                        <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 2px;">Email</div>
+                                        <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); word-break: break-word;">${user.email}</div>
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        
+    } catch (error) {
+        console.error('❌ Error loading members:', error);
+        membersList.innerHTML = `
+            <div style="text-align: center; padding: 60px 20px; color: var(--danger);">
+                <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
+                <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Ошибка загрузки</div>
+                <div style="font-size: 14px;">${error.message}</div>
+            </div>
+        `;
+    }
+}
+
+// ============================================
+// END MEMBERS PAGE
+// ============================================
 
 // ============================================
 // RUST SERVER PAGE
