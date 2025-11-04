@@ -386,20 +386,19 @@ function updateChart(timeline, view = 'all') {
             borderColor: getAccentRgba(1),
             backgroundColor: buildGradient(ctx, getAccentRgba(1)),
             fill: true,
-            tension: 0.5,
+            tension: 0.4,
             borderWidth: 3,
-            pointRadius: 0,
-            pointHoverRadius: 6,
-            pointBackgroundColor: '#ffffff',
-            pointBorderColor: getAccentRgba(1),
-            pointBorderWidth: 2,
-            pointHoverBorderWidth: 3,
+            pointRadius: 6,
+            pointHoverRadius: 10,
+            pointBackgroundColor: getAccentRgba(1),
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 3,
+            pointHoverBorderWidth: 4,
             pointHoverBackgroundColor: getAccentRgba(1),
             spanGaps: true,
-            shadowOffsetX: 0,
-            shadowOffsetY: 4,
-            shadowBlur: 12,
-            shadowColor: getAccentRgba(0.3)
+            segment: {
+                borderColor: ctx => ctx.p0.skip || ctx.p1.skip ? 'rgba(0,0,0,0)' : undefined
+            }
         }];
     } else if (view === 'wipes') {
         datasets = [{
@@ -408,16 +407,19 @@ function updateChart(timeline, view = 'all') {
             borderColor: getAccentRgba(1),
             backgroundColor: buildGradient(ctx, getAccentRgba(1)),
             fill: true,
-            tension: 0.5,
+            tension: 0.4,
             borderWidth: 3,
-            pointRadius: 0,
-            pointHoverRadius: 6,
-            pointBackgroundColor: '#ffffff',
-            pointBorderColor: getAccentRgba(1),
-            pointBorderWidth: 2,
-            pointHoverBorderWidth: 3,
+            pointRadius: 6,
+            pointHoverRadius: 10,
+            pointBackgroundColor: getAccentRgba(1),
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 3,
+            pointHoverBorderWidth: 4,
             pointHoverBackgroundColor: getAccentRgba(1),
-            spanGaps: true
+            spanGaps: true,
+            segment: {
+                borderColor: ctx => ctx.p0.skip || ctx.p1.skip ? 'rgba(0,0,0,0)' : undefined
+            }
         }];
     } else if (view === 'tickets') {
         datasets = [{
@@ -426,16 +428,19 @@ function updateChart(timeline, view = 'all') {
             borderColor: getAccentRgba(1),
             backgroundColor: buildGradient(ctx, getAccentRgba(1)),
             fill: true,
-            tension: 0.5,
+            tension: 0.4,
             borderWidth: 3,
-            pointRadius: 0,
-            pointHoverRadius: 6,
-            pointBackgroundColor: '#ffffff',
-            pointBorderColor: getAccentRgba(1),
-            pointBorderWidth: 2,
-            pointHoverBorderWidth: 3,
+            pointRadius: 6,
+            pointHoverRadius: 10,
+            pointBackgroundColor: getAccentRgba(1),
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 3,
+            pointHoverBorderWidth: 4,
             pointHoverBackgroundColor: getAccentRgba(1),
-            spanGaps: true
+            spanGaps: true,
+            segment: {
+                borderColor: ctx => ctx.p0.skip || ctx.p1.skip ? 'rgba(0,0,0,0)' : undefined
+            }
         }];
     } else if (view === 'roles') {
         datasets = [{
@@ -444,16 +449,19 @@ function updateChart(timeline, view = 'all') {
             borderColor: getAccentRgba(1),
             backgroundColor: buildGradient(ctx, getAccentRgba(1)),
             fill: true,
-            tension: 0.5,
+            tension: 0.4,
             borderWidth: 3,
-            pointRadius: 0,
-            pointHoverRadius: 6,
-            pointBackgroundColor: '#ffffff',
-            pointBorderColor: getAccentRgba(1),
-            pointBorderWidth: 2,
-            pointHoverBorderWidth: 3,
+            pointRadius: 6,
+            pointHoverRadius: 10,
+            pointBackgroundColor: getAccentRgba(1),
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 3,
+            pointHoverBorderWidth: 4,
             pointHoverBackgroundColor: getAccentRgba(1),
-            spanGaps: true
+            spanGaps: true,
+            segment: {
+                borderColor: ctx => ctx.p0.skip || ctx.p1.skip ? 'rgba(0,0,0,0)' : undefined
+            }
         }];
     } else if (view === 'deleted') {
         datasets = [{
@@ -462,16 +470,19 @@ function updateChart(timeline, view = 'all') {
             borderColor: getAccentRgba(1),
             backgroundColor: buildGradient(ctx, getAccentRgba(1)),
             fill: true,
-            tension: 0.5,
+            tension: 0.4,
             borderWidth: 3,
-            pointRadius: 0,
-            pointHoverRadius: 6,
-            pointBackgroundColor: '#ffffff',
-            pointBorderColor: getAccentRgba(1),
-            pointBorderWidth: 2,
-            pointHoverBorderWidth: 3,
+            pointRadius: 6,
+            pointHoverRadius: 10,
+            pointBackgroundColor: getAccentRgba(1),
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 3,
+            pointHoverBorderWidth: 4,
             pointHoverBackgroundColor: getAccentRgba(1),
-            spanGaps: true
+            spanGaps: true,
+            segment: {
+                borderColor: ctx => ctx.p0.skip || ctx.p1.skip ? 'rgba(0,0,0,0)' : undefined
+            }
         }];
     } else if (view === 'members') {
         datasets = [{
@@ -480,16 +491,19 @@ function updateChart(timeline, view = 'all') {
             borderColor: getAccentRgba(1),
             backgroundColor: buildGradient(ctx, getAccentRgba(1)),
             fill: true,
-            tension: 0.5,
+            tension: 0.4,
             borderWidth: 3,
-            pointRadius: 0,
-            pointHoverRadius: 6,
-            pointBackgroundColor: '#ffffff',
-            pointBorderColor: getAccentRgba(1),
-            pointBorderWidth: 2,
-            pointHoverBorderWidth: 3,
+            pointRadius: 6,
+            pointHoverRadius: 10,
+            pointBackgroundColor: getAccentRgba(1),
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 3,
+            pointHoverBorderWidth: 4,
             pointHoverBackgroundColor: getAccentRgba(1),
-            spanGaps: true
+            spanGaps: true,
+            segment: {
+                borderColor: ctx => ctx.p0.skip || ctx.p1.skip ? 'rgba(0,0,0,0)' : undefined
+            }
         }];
     } else if (view === 'wipe-signup') {
         // Три линии: ищут игроков, готовы зайти, не зайдут
@@ -500,16 +514,19 @@ function updateChart(timeline, view = 'all') {
                 borderColor: '#3b9bf9',
                 backgroundColor: buildGradient(ctx, 'rgba(59, 155, 249, 1)'),
                 fill: true,
-                tension: 0.5,
+                tension: 0.4,
                 borderWidth: 3,
-                pointRadius: 0,
-                pointHoverRadius: 6,
-                pointBackgroundColor: '#ffffff',
-                pointBorderColor: '#3b9bf9',
-                pointBorderWidth: 2,
-                pointHoverBorderWidth: 3,
+                pointRadius: 6,
+                pointHoverRadius: 10,
+                pointBackgroundColor: '#3b9bf9',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 3,
+                pointHoverBorderWidth: 4,
                 pointHoverBackgroundColor: '#3b9bf9',
-                spanGaps: true
+                spanGaps: true,
+                segment: {
+                    borderColor: ctx => ctx.p0.skip || ctx.p1.skip ? 'rgba(0,0,0,0)' : undefined
+                }
             },
             {
                 label: 'Готовы зайти',
@@ -517,16 +534,19 @@ function updateChart(timeline, view = 'all') {
                 borderColor: '#57F287',
                 backgroundColor: buildSecondaryGradient(ctx, 'rgba(87, 242, 135, 1)'),
                 fill: true,
-                tension: 0.5,
-                borderWidth: 2,
-                pointRadius: 0,
-                pointHoverRadius: 5,
-                pointBackgroundColor: '#ffffff',
-                pointBorderColor: '#57F287',
-                pointBorderWidth: 2,
-                pointHoverBorderWidth: 3,
+                tension: 0.4,
+                borderWidth: 3,
+                pointRadius: 6,
+                pointHoverRadius: 10,
+                pointBackgroundColor: '#57F287',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 3,
+                pointHoverBorderWidth: 4,
                 pointHoverBackgroundColor: '#57F287',
-                spanGaps: true
+                spanGaps: true,
+                segment: {
+                    borderColor: ctx => ctx.p0.skip || ctx.p1.skip ? 'rgba(0,0,0,0)' : undefined
+                }
             },
             {
                 label: 'Не зайдут',
@@ -534,16 +554,19 @@ function updateChart(timeline, view = 'all') {
                 borderColor: '#ED4245',
                 backgroundColor: buildSecondaryGradient(ctx, 'rgba(237, 66, 69, 1)'),
                 fill: true,
-                tension: 0.5,
-                borderWidth: 2,
-                pointRadius: 0,
-                pointHoverRadius: 5,
-                pointBackgroundColor: '#ffffff',
-                pointBorderColor: '#ED4245',
-                pointBorderWidth: 2,
-                pointHoverBorderWidth: 3,
+                tension: 0.4,
+                borderWidth: 3,
+                pointRadius: 6,
+                pointHoverRadius: 10,
+                pointBackgroundColor: '#ED4245',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 3,
+                pointHoverBorderWidth: 4,
                 pointHoverBackgroundColor: '#ED4245',
-                spanGaps: true
+                spanGaps: true,
+                segment: {
+                    borderColor: ctx => ctx.p0.skip || ctx.p1.skip ? 'rgba(0,0,0,0)' : undefined
+                }
             }
         ];
     }
@@ -568,17 +591,14 @@ function updateChart(timeline, view = 'all') {
                 maintainAspectRatio: true,
                 aspectRatio: 2.2,
                 animation: {
-                    duration: 2000,
-                    easing: 'easeInOutQuart',
-                    onComplete: function() {
-                        // Дополнительная анимация рисования линии
-                        const canvas = chart.canvas;
-                        const meta = chart.getDatasetMeta(0);
-                        if (meta && meta.data) {
-                            const ctx = canvas.getContext('2d');
-                            ctx.save();
-                            ctx.restore();
+                    duration: 2500,
+                    easing: 'easeInOutCubic',
+                    delay: (context) => {
+                        let delay = 0;
+                        if (context.type === 'data' && context.mode === 'default') {
+                            delay = context.dataIndex * 50;
                         }
+                        return delay;
                     }
                 },
                 plugins: {
@@ -664,62 +684,7 @@ function updateChart(timeline, view = 'all') {
                         borderJoinStyle: 'round'
                     }
                 }
-            },
-            plugins: [{
-                id: 'smoothLineAnimation',
-                beforeDatasetsDraw: function(chart) {
-                    const meta = chart.getDatasetMeta(0);
-                    if (!meta || meta.hidden || !chart.options.animation) return;
-                    
-                    const ctx = chart.ctx;
-                    const points = meta.data;
-                    
-                    if (points.length < 2) return;
-                    
-                    // Рассчитываем прогресс анимации
-                    const currentStep = chart._animator?._animations?.get?.(points[0])?.currentStep || 0;
-                    const numSteps = chart.options.animation.duration / 16.67; // ~60fps
-                    const progress = Math.min(currentStep / numSteps, 1);
-                    
-                    if (progress < 1 && progress > 0) {
-                        ctx.save();
-                        
-                        // Создаем путь линии
-                        ctx.beginPath();
-                        ctx.moveTo(points[0].x, points[0].y);
-                        
-                        for (let i = 1; i < points.length; i++) {
-                            const xc = (points[i - 1].x + points[i].x) / 2;
-                            const yc = (points[i - 1].y + points[i].y) / 2;
-                            ctx.quadraticCurveTo(points[i - 1].x, points[i - 1].y, xc, yc);
-                        }
-                        
-                        if (points.length > 1) {
-                            ctx.quadraticCurveTo(
-                                points[points.length - 2].x,
-                                points[points.length - 2].y,
-                                points[points.length - 1].x,
-                                points[points.length - 1].y
-                            );
-                        }
-                        
-                        // Применяем эффект рисования
-                        const pathLength = ctx.measureText ? 1000 : 1000;
-                        ctx.setLineDash([pathLength]);
-                        ctx.lineDashOffset = pathLength * (1 - progress);
-                        
-                        ctx.strokeStyle = meta.dataset.options.borderColor || '#667eea';
-                        ctx.lineWidth = meta.dataset.options.borderWidth || 3;
-                        ctx.lineCap = 'round';
-                        ctx.lineJoin = 'round';
-                        ctx.shadowColor = 'rgba(102, 126, 234, 0.5)';
-                        ctx.shadowBlur = 10;
-                        
-                        ctx.stroke();
-                        ctx.restore();
-                    }
-                }
-            }]
+            }
         });
     }
 }
