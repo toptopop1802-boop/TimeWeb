@@ -248,10 +248,10 @@ async function loadImprovedTournamentAdminPanel() {
             </div>
         `;
         
-        // Создаем график заявок
+        // Создаем график заявок с анимацией
         const chartCanvas = document.getElementById('applications-chart');
         if (chartCanvas && dates.length > 0) {
-            new Chart(chartCanvas.getContext('2d'), {
+            const chart = new Chart(chartCanvas.getContext('2d'), {
                 type: 'line',
                 data: {
                     labels: dates,
@@ -275,6 +275,49 @@ async function loadImprovedTournamentAdminPanel() {
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    animation: {
+                        duration: 2000,
+                        easing: 'easeInOutQuart',
+                        onComplete: function() {
+                            // Анимация линии (рисование)
+                            const canvas = chart.canvas;
+                            const meta = chart.getDatasetMeta(0);
+                            const points = meta.data;
+                            
+                            if (points.length > 1) {
+                                const ctx = canvas.getContext('2d');
+                                ctx.save();
+                                
+                                // Создаем путь линии
+                                ctx.beginPath();
+                                ctx.moveTo(points[0].x, points[0].y);
+                                for (let i = 1; i < points.length; i++) {
+                                    const point = points[i];
+                                    const prevPoint = points[i - 1];
+                                    
+                                    // Кривая Безье для плавности
+                                    const cpX = prevPoint.x + (point.x - prevPoint.x) / 2;
+                                    ctx.bezierCurveTo(
+                                        cpX, prevPoint.y,
+                                        cpX, point.y,
+                                        point.x, point.y
+                                    );
+                                }
+                                
+                                ctx.strokeStyle = 'rgba(102, 126, 234, 0.8)';
+                                ctx.lineWidth = 3;
+                                ctx.lineCap = 'round';
+                                ctx.lineJoin = 'round';
+                                
+                                // Анимация рисования линии
+                                const length = ctx.getLength ? ctx.getLength() : 1000;
+                                ctx.setLineDash([length]);
+                                ctx.lineDashOffset = length;
+                                
+                                ctx.restore();
+                            }
+                        }
+                    },
                     plugins: {
                         legend: {
                             display: true,
@@ -334,11 +377,169 @@ async function loadImprovedTournamentAdminPanel() {
                         intersect: false,
                         mode: 'index'
                     }
-                }
+                },
+                plugins: [{
+                    id: 'animatedLine',
+                    afterDatasetsDraw: function(chart) {
+                        const meta = chart.getDatasetMeta(0);
+                        if (!meta || meta.hidden) return;
+                        
+                        const ctx = chart.ctx;
+                        const points = meta.data;
+                        
+                        if (points.length < 2) return;
+                        
+                        // Анимированная линия с градиентом
+                        ctx.save();
+                        ctx.strokeStyle = '#667eea';
+                        ctx.lineWidth = 3;
+                        ctx.lineCap = 'round';
+                        ctx.lineJoin = 'round';
+                        ctx.shadowColor = 'rgba(102, 126, 234, 0.5)';
+                        ctx.shadowBlur = 10;
+                        
+                        // Создаем плавную кривую
+                        ctx.beginPath();
+                        ctx.moveTo(points[0].x, points[0].y);
+                        
+                        for (let i = 1; i < points.length; i++) {
+                            const xc = (points[i - 1].x + points[i].x) / 2;
+                            const yc = (points[i - 1].y + points[i].y) / 2;
+                            ctx.quadraticCurveTo(points[i - 1].x, points[i - 1].y, xc, yc);
+                        }
+                        
+                        ctx.quadraticCurveTo(
+                            points[points.length - 2].x,
+                            points[points.length - 2].y,
+                            points[points.length - 1].x,
+                            points[points.length - 1].y
+                        );
+                        
+                        ctx.stroke();
+                        ctx.restore();
+                    }
+                }]
             });
+            
+            // Добавляем анимацию после отрисовки
+            setTimeout(() => {
+                if (chart) {
+                    chart.update('none');
+                }
+            }, 100);
         } else if (chartCanvas) {
-            chartCanvas.style.display = 'none';
-            chartCanvas.parentElement.innerHTML += '<p style="text-align: center; color: var(--text-secondary); padding: 40px;">📊 Недостаточно данных для графика</p>';
+            // Демо-режим с анимированным графиком
+            const demoDates = ['01.11', '02.11', '03.11', '04.11', '05.11', '06.11', '07.11'];
+            const demoCounts = [2, 5, 3, 8, 6, 10, 7];
+            
+            const chart = new Chart(chartCanvas.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: demoDates,
+                    datasets: [{
+                        label: 'Пример данных',
+                        data: demoCounts,
+                        borderColor: '#9ca3af',
+                        backgroundColor: 'rgba(156, 163, 175, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 6,
+                        pointHoverRadius: 10,
+                        pointBackgroundColor: '#9ca3af',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointHoverBackgroundColor: '#6b7280',
+                        pointHoverBorderWidth: 3,
+                        borderDash: [5, 5]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 2500,
+                        easing: 'easeInOutQuart',
+                        delay: 200
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20,
+                                font: {
+                                    size: 14,
+                                    weight: 600
+                                },
+                                color: '#9ca3af'
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                            padding: 16,
+                            cornerRadius: 12,
+                            titleFont: { size: 16, weight: 'bold' },
+                            bodyFont: { size: 14 },
+                            displayColors: false,
+                            callbacks: {
+                                title: (context) => `Дата: ${context[0].label}`,
+                                label: (context) => `Заявок: ${context.parsed.y} (демо)`
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 2,
+                                color: '#9ca3af',
+                                font: {
+                                    size: 12,
+                                    weight: 600
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(156, 163, 175, 0.1)',
+                                borderDash: [5, 5]
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#9ca3af',
+                                font: {
+                                    size: 12,
+                                    weight: 600
+                                }
+                            },
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    }
+                },
+                plugins: [{
+                    id: 'demoWatermark',
+                    afterDraw: function(chart) {
+                        const ctx = chart.ctx;
+                        const width = chart.width;
+                        const height = chart.height;
+                        
+                        ctx.save();
+                        ctx.font = 'bold 24px Arial';
+                        ctx.fillStyle = 'rgba(156, 163, 175, 0.15)';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText('ДЕМО ДАННЫЕ', width / 2, height / 2);
+                        ctx.restore();
+                    }
+                }]
+            });
         }
         
         // Обработчики событий
