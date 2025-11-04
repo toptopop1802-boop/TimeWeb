@@ -250,8 +250,9 @@ async function loadImprovedTournamentAdminPanel() {
         
         // Создаем график заявок с анимацией
         const chartCanvas = document.getElementById('applications-chart');
+        let tournamentChart = null;
         if (chartCanvas && dates.length > 0) {
-            const chart = new Chart(chartCanvas.getContext('2d'), {
+            tournamentChart = new Chart(chartCanvas.getContext('2d'), {
                 type: 'line',
                 data: {
                     labels: dates,
@@ -263,13 +264,13 @@ async function loadImprovedTournamentAdminPanel() {
                         borderWidth: 3,
                         tension: 0.4,
                         fill: true,
-                        pointRadius: 8,
-                        pointHoverRadius: 12,
-                        pointBackgroundColor: '#667eea',
-                        pointBorderColor: '#fff',
-                        pointBorderWidth: 3,
+                        pointRadius: 3,
+                        pointHoverRadius: 8,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#667eea',
+                        pointBorderWidth: 2,
                         pointHoverBackgroundColor: '#764ba2',
-                        pointHoverBorderWidth: 4
+                        pointHoverBorderWidth: 3
                     }]
                 },
                 options: {
@@ -280,8 +281,8 @@ async function loadImprovedTournamentAdminPanel() {
                         easing: 'easeInOutQuart',
                         onComplete: function() {
                             // Анимация линии (рисование)
-                            const canvas = chart.canvas;
-                            const meta = chart.getDatasetMeta(0);
+                            const canvas = tournamentChart.canvas;
+                            const meta = tournamentChart.getDatasetMeta(0);
                             const points = meta.data;
                             
                             if (points.length > 1) {
@@ -423,8 +424,8 @@ async function loadImprovedTournamentAdminPanel() {
             
             // Добавляем анимацию после отрисовки
             setTimeout(() => {
-                if (chart) {
-                    chart.update('none');
+                if (tournamentChart) {
+                    tournamentChart.update('none');
                 }
             }, 100);
         } else if (chartCanvas) {

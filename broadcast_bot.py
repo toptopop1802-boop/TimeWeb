@@ -5610,6 +5610,56 @@ def main() -> None:
         )
         return view
 
+    @bot.command(name="delete_channels", aliases=["delch", "remove_channels"])
+    @commands.has_permissions(administrator=True)
+    async def delete_channels_by_name(ctx: commands.Context, *, channel_name: str) -> None:
+        """Удалить все каналы с указанным названием"""
+        if not ctx.guild:
+            await ctx.send("❌ Команда доступна только на сервере")
+            return
+        
+        # Подтверждение
+        matching_channels = [ch for ch in ctx.guild.channels if ch.name.lower() == channel_name.lower()]
+        
+        if not matching_channels:
+            await ctx.send(f"❌ Каналы с названием `{channel_name}` не найдены")
+            return
+        
+        confirm_msg = await ctx.send(
+            f"⚠️ Найдено каналов: **{len(matching_channels)}**\n"
+            f"Название: `{channel_name}`\n\n"
+            f"Вы уверены? Напишите `да` для подтверждения (30 сек)"
+        )
+        
+        def check(m):
+            return m.author == ctx.author and m.channel == ctx.channel and m.content.lower() in ['да', 'yes', 'y']
+        
+        try:
+            await bot.wait_for('message', timeout=30.0, check=check)
+        except asyncio.TimeoutError:
+            await confirm_msg.edit(content="❌ Время ожидания истекло. Удаление отменено.")
+            return
+        
+        # Удаление каналов
+        deleted = 0
+        failed = 0
+        
+        status_msg = await ctx.send(f"🔄 Удаление каналов...")
+        
+        for channel in matching_channels:
+            try:
+                await channel.delete(reason=f"Bulk delete by {ctx.author}")
+                deleted += 1
+                await asyncio.sleep(0.5)  # Rate limit protection
+            except Exception as e:
+                logging.error(f"Failed to delete channel {channel.name}: {e}")
+                failed += 1
+        
+        await status_msg.edit(
+            content=f"✅ Удалено каналов: **{deleted}**\n"
+                   f"{'❌ Ошибок: **' + str(failed) + '**' if failed > 0 else ''}"
+        )
+    
     @bot.command(name="broadcast_wipe")
     @commands.has_permissions(administrator=True)
     async def broadcast_wipe(ctx: commands.Context) -> None:

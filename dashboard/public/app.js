@@ -388,10 +388,10 @@ function updateChart(timeline, view = 'all') {
             fill: true,
             tension: 0.4,
             borderWidth: 3,
-            pointRadius: 0,
+            pointRadius: 3,
             pointHoverRadius: 8,
-            pointBackgroundColor: getAccentRgba(1),
-            pointBorderColor: '#ffffff',
+            pointBackgroundColor: '#ffffff',
+            pointBorderColor: getAccentRgba(1),
             pointBorderWidth: 2,
             pointHoverBorderWidth: 3,
             pointHoverBackgroundColor: getAccentRgba(1),
@@ -409,10 +409,10 @@ function updateChart(timeline, view = 'all') {
             fill: true,
             tension: 0.4,
             borderWidth: 3,
-            pointRadius: 0,
+            pointRadius: 3,
             pointHoverRadius: 8,
-            pointBackgroundColor: getAccentRgba(1),
-            pointBorderColor: '#ffffff',
+            pointBackgroundColor: '#ffffff',
+            pointBorderColor: getAccentRgba(1),
             pointBorderWidth: 2,
             pointHoverBorderWidth: 3,
             pointHoverBackgroundColor: getAccentRgba(1),
@@ -430,10 +430,10 @@ function updateChart(timeline, view = 'all') {
             fill: true,
             tension: 0.4,
             borderWidth: 3,
-            pointRadius: 0,
+            pointRadius: 3,
             pointHoverRadius: 8,
-            pointBackgroundColor: getAccentRgba(1),
-            pointBorderColor: '#ffffff',
+            pointBackgroundColor: '#ffffff',
+            pointBorderColor: getAccentRgba(1),
             pointBorderWidth: 2,
             pointHoverBorderWidth: 3,
             pointHoverBackgroundColor: getAccentRgba(1),
@@ -451,10 +451,10 @@ function updateChart(timeline, view = 'all') {
             fill: true,
             tension: 0.4,
             borderWidth: 3,
-            pointRadius: 0,
+            pointRadius: 3,
             pointHoverRadius: 8,
-            pointBackgroundColor: getAccentRgba(1),
-            pointBorderColor: '#ffffff',
+            pointBackgroundColor: '#ffffff',
+            pointBorderColor: getAccentRgba(1),
             pointBorderWidth: 2,
             pointHoverBorderWidth: 3,
             pointHoverBackgroundColor: getAccentRgba(1),
@@ -472,10 +472,10 @@ function updateChart(timeline, view = 'all') {
             fill: true,
             tension: 0.4,
             borderWidth: 3,
-            pointRadius: 0,
+            pointRadius: 3,
             pointHoverRadius: 8,
-            pointBackgroundColor: getAccentRgba(1),
-            pointBorderColor: '#ffffff',
+            pointBackgroundColor: '#ffffff',
+            pointBorderColor: getAccentRgba(1),
             pointBorderWidth: 2,
             pointHoverBorderWidth: 3,
             pointHoverBackgroundColor: getAccentRgba(1),
@@ -493,10 +493,10 @@ function updateChart(timeline, view = 'all') {
             fill: true,
             tension: 0.4,
             borderWidth: 3,
-            pointRadius: 0,
+            pointRadius: 3,
             pointHoverRadius: 8,
-            pointBackgroundColor: getAccentRgba(1),
-            pointBorderColor: '#ffffff',
+            pointBackgroundColor: '#ffffff',
+            pointBorderColor: getAccentRgba(1),
             pointBorderWidth: 2,
             pointHoverBorderWidth: 3,
             pointHoverBackgroundColor: getAccentRgba(1),
@@ -1000,10 +1000,10 @@ function renderDemoChart(days, type) {
             fill: true,
             tension: 0.4,
             borderWidth: 3,
-            pointRadius: 0,
+            pointRadius: 3,
             pointHoverRadius: 8,
-            pointBackgroundColor: getAccentRgba(1),
-            pointBorderColor: '#ffffff',
+            pointBackgroundColor: '#ffffff',
+            pointBorderColor: getAccentRgba(1),
             pointBorderWidth: 2,
             pointHoverBorderWidth: 3,
             pointHoverBackgroundColor: getAccentRgba(1),
@@ -1022,10 +1022,10 @@ function renderDemoChart(days, type) {
             fill: true,
             tension: 0.4,
             borderWidth: 3,
-            pointRadius: 0,
+            pointRadius: 3,
             pointHoverRadius: 8,
-            pointBackgroundColor: getAccentRgba(1),
-            pointBorderColor: '#ffffff',
+            pointBackgroundColor: '#ffffff',
+            pointBorderColor: getAccentRgba(1),
             pointBorderWidth: 2,
             pointHoverBorderWidth: 3,
             pointHoverBackgroundColor: getAccentRgba(1),
@@ -2954,14 +2954,32 @@ function initGradientRolePage() {
     
     console.log('✅ [Gradient Role] Форма найдена, добавляем обработчик');
     
+    let isSubmitting = false;
+    
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
+        
+        // Защита от множественных отправок
+        if (isSubmitting) {
+            console.warn('⚠️ [Gradient Role] Заявка уже отправляется');
+            return;
+        }
+        
         console.log('🌈 [Gradient Role] Форма отправлена');
+        isSubmitting = true;
         
         const roleName = document.getElementById('role-name').value.trim();
         const color1 = document.getElementById('role-color1').value.trim();
         const members = document.getElementById('role-members').value.trim();
         const statusDiv = document.getElementById('gradient-role-status');
+        const submitBtn = form.querySelector('button[type="submit"]');
+        
+        // Блокируем кнопку
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.6';
+            submitBtn.style.cursor = 'not-allowed';
+        }
         
         console.log('📝 [Gradient Role] Данные формы:', {
             roleName,
@@ -3082,6 +3100,14 @@ function initGradientRolePage() {
                 statusDiv.textContent = `❌ Ошибка: ${error.message}`;
             }
             showToast('Ошибка отправки заявки', 'error');
+        } finally {
+            // Разблокируем кнопку
+            isSubmitting = false;
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = '1';
+                submitBtn.style.cursor = 'pointer';
+            }
         }
     });
     
