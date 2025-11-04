@@ -397,6 +397,21 @@ async def handle_tournament_application_request(request: web.Request) -> web.Res
         if bot.db:
             logging.info("💾 [Tournament Application] Saving to database")
             user_id = data.get('userId')  # UUID пользователя с сайта
+            
+            # Удаляем старые заявки этого пользователя перед созданием новой
+            # Это нужно чтобы избежать конфликта уникального constraint
+            try:
+                from supabase import create_client
+                supabase_url = os.getenv("SUPABASE_URL")
+                supabase_key = os.getenv("SUPABASE_KEY")
+                if supabase_url and supabase_key:
+                    supabase_client = create_client(supabase_url, supabase_key)
+                    # Удаляем все старые заявки (approved/rejected) для этого пользователя
+                    delete_result = supabase_client.table("tournament_applications").delete().eq('discord_id', int(discord_id)).in_('status', ['approved', 'rejected']).execute()
+                    logging.info(f"🗑️ [Tournament Application] Removed old applications before creating new one")
+            except Exception as delete_error:
+                logging.warning(f"⚠️ [Tournament Application] Could not delete old applications: {delete_error}")
+            
             await bot.db.save_tournament_application(
                 user_id=user_id,
                 discord_id=int(discord_id),

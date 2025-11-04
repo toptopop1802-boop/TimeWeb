@@ -1032,20 +1032,27 @@ function setupAuthRoutes(app, supabase) {
                     return res.status(400).json({ error: 'У вас уже есть заявка, ожидающая рассмотрения' });
                 }
                 
-                // Если есть одобренная или отклоненная заявка - удаляем её перед созданием новой
-                const { data: oldApp } = await supabase
+                // Удаляем ВСЕ старые заявки этого пользователя (approved/rejected) перед созданием новой
+                // Это нужно чтобы избежать конфликта уникального constraint на (user_id, discord_id)
+                const { data: oldApps } = await supabase
                     .from('tournament_applications')
                     .select('*')
                     .eq('discord_id', req.user.discord_id)
-                    .in('status', ['approved', 'rejected'])
-                    .maybeSingle();
+                    .in('status', ['approved', 'rejected']);
                 
-                if (oldApp) {
-                    console.log(`🗑️ [Tournament Apply] Removing old ${oldApp.status} application for user ${req.user.discord_id}`);
-                    await supabase
+                if (oldApps && oldApps.length > 0) {
+                    console.log(`🗑️ [Tournament Apply] Removing ${oldApps.length} old application(s) for user ${req.user.discord_id}`);
+                    const { error: deleteError } = await supabase
                         .from('tournament_applications')
                         .delete()
-                        .eq('id', oldApp.id);
+                        .eq('discord_id', req.user.discord_id)
+                        .in('status', ['approved', 'rejected']);
+                    
+                    if (deleteError) {
+                        console.error('❌ [Tournament Apply] Error deleting old applications:', deleteError);
+                    } else {
+                        console.log(`✅ [Tournament Apply] Old applications removed`);
+                    }
                 }
                 
                 // Проверяем, открыта ли регистрация
@@ -1376,25 +1383,39 @@ function setupAuthRoutes(app, supabase) {
                     // Отправляем DM через бота (опционально, если бот доступен)
                     try {
                         const API_HOST = process.env.API_HOST || '127.0.0.1';
-                        console.log(`🔗 [Tournament Notify] Sending notification to bot at http://${API_HOST}:8787/api/tournament/notify`);
-                        const notifyResponse = await fetch(`http://${API_HOST}:8787/api/tournament/notify`, {
+                        const notifyUrl = `http://${API_HOST}:8787/api/tournament/notify`;
+                        const notifyPayload = {
+                            discord_id: application.discord_id,
+                            action: 'approve',
+                            steam_id: application.steam_id
+                        };
+                        
+                        console.log(`🔗 [Tournament Notify] Sending notification to bot at ${notifyUrl}`);
+                        console.log(`📋 [Tournament Notify] Payload:`, JSON.stringify(notifyPayload));
+                        
+                        const notifyResponse = await fetch(notifyUrl, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                discord_id: application.discord_id,
-                                action: 'approve',
-                                steam_id: application.steam_id
-                            }),
+                            body: JSON.stringify(notifyPayload),
                             signal: AbortSignal.timeout(5000)
                         });
+                        
+                        console.log(`📥 [Tournament Notify] Bot response status: ${notifyResponse.status}`);
+                        
                         if (notifyResponse.ok) {
+                            const responseData = await notifyResponse.json();
                             console.log(`✅ [Tournament Notify] Bot notification sent successfully for user ${application.discord_id}`);
+                            console.log(`📄 [Tournament Notify] Bot response:`, JSON.stringify(responseData));
                         } else {
                             const errorText = await notifyResponse.text();
                             console.error(`❌ [Tournament Notify] Bot returned error: ${notifyResponse.status} - ${errorText}`);
                         }
                     } catch (notifyError) {
                         console.error('⚠️ [Tournament Notify] Bot notification failed (non-critical):', notifyError.message);
+                        console.error('⚠️ [Tournament Notify] Error stack:', notifyError.stack);
+                        if (notifyError.name === 'AbortError') {
+                            console.error('⚠️ [Tournament Notify] Request timeout (5s)');
+                        }
                     }
                     
                     res.json({ success: true, message: 'Заявка одобрена' });
@@ -1439,25 +1460,39 @@ function setupAuthRoutes(app, supabase) {
                     // Отправляем DM через бота (опционально, если бот доступен)
                     try {
                         const API_HOST = process.env.API_HOST || '127.0.0.1';
-                        console.log(`🔗 [Tournament Notify] Sending notification to bot at http://${API_HOST}:8787/api/tournament/notify`);
-                        const notifyResponse = await fetch(`http://${API_HOST}:8787/api/tournament/notify`, {
+                        const notifyUrl = `http://${API_HOST}:8787/api/tournament/notify`;
+                        const notifyPayload = {
+                            discord_id: application.discord_id,
+                            action: 'reject',
+                            steam_id: application.steam_id
+                        };
+                        
+                        console.log(`🔗 [Tournament Notify] Sending notification to bot at ${notifyUrl}`);
+                        console.log(`📋 [Tournament Notify] Payload:`, JSON.stringify(notifyPayload));
+                        
+                        const notifyResponse = await fetch(notifyUrl, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                discord_id: application.discord_id,
-                                action: 'reject',
-                                steam_id: application.steam_id
-                            }),
+                            body: JSON.stringify(notifyPayload),
                             signal: AbortSignal.timeout(5000)
                         });
+                        
+                        console.log(`📥 [Tournament Notify] Bot response status: ${notifyResponse.status}`);
+                        
                         if (notifyResponse.ok) {
+                            const responseData = await notifyResponse.json();
                             console.log(`✅ [Tournament Notify] Bot notification sent successfully for user ${application.discord_id}`);
+                            console.log(`📄 [Tournament Notify] Bot response:`, JSON.stringify(responseData));
                         } else {
                             const errorText = await notifyResponse.text();
                             console.error(`❌ [Tournament Notify] Bot returned error: ${notifyResponse.status} - ${errorText}`);
                         }
                     } catch (notifyError) {
                         console.error('⚠️ [Tournament Notify] Bot notification failed (non-critical):', notifyError.message);
+                        console.error('⚠️ [Tournament Notify] Error stack:', notifyError.stack);
+                        if (notifyError.name === 'AbortError') {
+                            console.error('⚠️ [Tournament Notify] Request timeout (5s)');
+                        }
                     }
                     
                     res.json({ success: true, message: 'Заявка отклонена' });
