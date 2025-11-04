@@ -1315,7 +1315,8 @@ async function loadUsers() {
         }
         
         const data = await response.json();
-        const users = data.users || [];
+        // API возвращает массив напрямую, а не объект с полем users
+        const users = Array.isArray(data) ? data : (data.users || []);
         
         console.log(`✅ Loaded ${users.length} users`);
         

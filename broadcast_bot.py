@@ -1991,6 +1991,12 @@ def main() -> None:
                     supabase_key = os.getenv("SUPABASE_KEY")
                     if supabase_url and supabase_key:
                         supabase_client = create_client(supabase_url, supabase_key)
+                        
+                        # Удаляем ВСЕ заявки для нового турнира
+                        logging.info("🗑️ [Tournament Closure] Deleting all applications for new tournament")
+                        delete_result = supabase_client.table("tournament_applications").delete().neq('status', 'deleted').execute()
+                        logging.info(f"✅ [Tournament Closure] Deleted all applications")
+                        
                         # Добавляем новую запись с закрытой регистрацией
                         supabase_client.table("tournament_registration_settings").insert({
                             "is_open": False,

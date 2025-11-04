@@ -1113,13 +1113,28 @@ function setupAuthRoutes(app, supabase) {
                     // Логика: если указана дата - регистрация открыта, если нет - закрыта
                     const isOpen = !!closesAt;
                     
-                    // Если открываем регистрацию (устанавливаем дату) - сбрасываем все заявки и сообщения
+                    // Если открываем регистрацию (устанавливаем дату) - сбрасываем все pending заявки и сообщения
+                    // Если закрываем регистрацию - удаляем ВСЕ заявки для нового турнира
                     if (isOpen) {
-                        // Удаляем все pending заявки
+                        // Удаляем все pending заявки при открытии новой регистрации
                         await supabase
                             .from('tournament_applications')
                             .delete()
                             .eq('status', 'pending');
+                    } else {
+                        // При закрытии регистрации - удаляем ВСЕ заявки для нового турнира
+                        console.log('🗑️ [Tournament Settings] Closing registration - deleting all applications');
+                        // Удаляем все заявки
+                        const { error: deleteError } = await supabase
+                            .from('tournament_applications')
+                            .delete()
+                            .neq('status', 'deleted'); // Delete all (удаляем все, используя условие которое всегда true)
+                        
+                        if (deleteError) {
+                            console.error('❌ [Tournament Settings] Error deleting applications:', deleteError);
+                        } else {
+                            console.log('✅ [Tournament Settings] All applications deleted');
+                        }
                         
                         // Получаем последнюю запись settings
                         const { data: latestSettings } = await supabase
