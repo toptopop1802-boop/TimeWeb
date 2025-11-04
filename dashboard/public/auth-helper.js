@@ -148,10 +148,10 @@ function setupRoleBasedUI(authData) {
             channelsNavBtn.style.display = 'none';
         }
 
-        // Скрыть раздел "Участники" (только для админа)
-        const membersNavBtn = document.querySelector('[data-page="members"]');
-        if (membersNavBtn) {
-            membersNavBtn.style.display = 'none';
+        // Скрыть раздел "Users" (только для админа)
+        const usersNavBtn = document.querySelector('[data-page="users"]');
+        if (usersNavBtn) {
+            usersNavBtn.style.display = 'none';
         }
         
         // "Хостинг фото" - доступен всем авторизованным пользователям (не скрываем)
@@ -170,7 +170,7 @@ function setupRoleBasedUI(authData) {
     window.addEventListener('hashchange', () => {
         if (!isAdmin(authData)) {
             const hash = window.location.hash;
-            if (hash === '#analytics' || hash === '#messages' || hash === '#channels' || hash === '#admin' || hash === '#members' || hash === '#server') {
+            if (hash === '#analytics' || hash === '#messages' || hash === '#channels' || hash === '#admin' || hash === '#users' || hash === '#server') {
                 console.warn('⛔ Доступ запрещен. Требуются права администратора.');
                 alert('Доступ запрещен. Требуются права администратора.');
                 window.location.hash = '#maps';

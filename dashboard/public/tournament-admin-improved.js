@@ -282,8 +282,13 @@ async function loadImprovedTournamentAdminPanel() {
         // Создаем график заявок с анимацией
         const chartCanvas = document.getElementById('applications-chart');
         let tournamentChart = null;
-        if (chartCanvas && dates.length > 0) {
-            tournamentChart = new Chart(chartCanvas.getContext('2d'), {
+        if (chartCanvas && chartCanvas.getContext && dates.length > 0) {
+            const ctx = chartCanvas.getContext('2d');
+            if (!ctx) {
+                console.warn('⚠️ [Tournament Chart] Cannot get canvas context');
+                return;
+            }
+            tournamentChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: dates,
@@ -312,12 +317,20 @@ async function loadImprovedTournamentAdminPanel() {
                         easing: 'easeInOutQuart',
                         onComplete: function() {
                             // Анимация линии (рисование)
+                            if (!tournamentChart || !tournamentChart.canvas) {
+                                console.warn('⚠️ [Tournament Chart] Chart or canvas is null');
+                                return;
+                            }
                             const canvas = tournamentChart.canvas;
                             const meta = tournamentChart.getDatasetMeta(0);
                             const points = meta.data;
                             
-                            if (points.length > 1) {
+                            if (points.length > 1 && canvas) {
                                 const ctx = canvas.getContext('2d');
+                                if (!ctx) {
+                                    console.warn('⚠️ [Tournament Chart] Cannot get context');
+                                    return;
+                                }
                                 ctx.save();
                                 
                                 // Создаем путь линии

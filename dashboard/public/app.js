@@ -1308,7 +1308,7 @@ async function loadUsers() {
     try {
         usersList.innerHTML = '<div class="admin-loading">Загрузка пользователей...</div>';
         
-        const response = await fetchWithAuth('/api/users');
+        const response = await fetchWithAuth('/api/admin/users');
         
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
