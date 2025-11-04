@@ -160,11 +160,21 @@ async function loadImprovedTournamentAdminPanel() {
             
             <!-- Детальные логи заявок -->
             <div style="background: var(--bg-card); border-radius: 20px; padding: 28px; border: 2px solid var(--border-color); box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
-                <h3 style="margin: 0 0 20px 0; font-size: 18px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 10px;">
-                    <span style="font-size: 24px;">📋</span>
-                    <span>Детальные логи заявок</span>
-                    <span style="margin-left: auto; font-size: 14px; font-weight: 600; color: var(--text-secondary); background: var(--bg-secondary); padding: 6px 12px; border-radius: 8px;">${applications.length} записей</span>
-                </h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+                    <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 24px;">📋</span>
+                        <span>Детальные логи заявок</span>
+                        <span style="font-size: 14px; font-weight: 600; color: var(--text-secondary); background: var(--bg-secondary); padding: 6px 12px; border-radius: 8px;">${applications.length} записей</span>
+                    </h3>
+                    ${applications.filter(a => a.status === 'pending').length > 0 ? `
+                        <button id="approve-all-btn" style="padding: 12px 24px; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); display: flex; align-items: center; gap: 8px;"
+                            onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(16, 185, 129, 0.4)'"
+                            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(16, 185, 129, 0.3)'">
+                            <span>✅</span>
+                            <span>Одобрить все (${applications.filter(a => a.status === 'pending').length})</span>
+                        </button>
+                    ` : ''}
+                </div>
                 
                 <div style="display: flex; flex-direction: column; gap: 16px;">
                     ${applications.length === 0 ? 
@@ -239,6 +249,22 @@ async function loadImprovedTournamentAdminPanel() {
                                                 </div>
                                             ` : ''}
                                         </div>
+                                        
+                                        <!-- Action buttons -->
+                                        ${app.status === 'pending' ? `
+                                            <div style="display: flex; gap: 12px; margin-top: 20px;">
+                                                <button class="approve-application-btn" data-app-id="${app.id}" data-discord-id="${app.discord_id}" style="flex: 1; padding: 14px; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);"
+                                                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(16, 185, 129, 0.4)'"
+                                                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(16, 185, 129, 0.3)'">
+                                                    ✅ Одобрить
+                                                </button>
+                                                <button class="reject-application-btn" data-app-id="${app.id}" data-discord-id="${app.discord_id}" style="flex: 1; padding: 14px; background: linear-gradient(135deg, #ef4444, #dc2626); color: white; border: none; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);"
+                                                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(239, 68, 68, 0.4)'"
+                                                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(239, 68, 68, 0.3)'">
+                                                    ❌ Отклонить
+                                                </button>
+                                            </div>
+                                        ` : ''}
                                     </div>
                                 </div>
                             `;
@@ -545,6 +571,128 @@ async function loadImprovedTournamentAdminPanel() {
         
         // Обработчики событий
         const saveBtn = document.getElementById('save-tournament-settings-btn');
+        const approveAllBtn = document.getElementById('approve-all-btn');
+        
+        // Обработчик кнопки "Одобрить все"
+        if (approveAllBtn) {
+            approveAllBtn.addEventListener('click', async () => {
+                const pendingApps = applications.filter(a => a.status === 'pending');
+                if (pendingApps.length === 0) return;
+                
+                if (!confirm(`Вы уверены, что хотите одобрить все ${pendingApps.length} заявок?`)) {
+                    return;
+                }
+                
+                approveAllBtn.disabled = true;
+                approveAllBtn.innerHTML = '⏳ Одобряем...';
+                
+                let successCount = 0;
+                let failCount = 0;
+                
+                for (const app of pendingApps) {
+                    try {
+                        const response = await fetch('/api/tournament/applications/approve', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${authData.token}`
+                            },
+                            body: JSON.stringify({ application_id: app.id })
+                        });
+                        
+                        if (response.ok) {
+                            successCount++;
+                        } else {
+                            failCount++;
+                        }
+                    } catch (error) {
+                        console.error('Error approving application:', error);
+                        failCount++;
+                    }
+                }
+                
+                showToast(`✅ Одобрено: ${successCount} | ❌ Ошибок: ${failCount}`, successCount > 0 ? 'success' : 'error');
+                
+                // Перезагружаем панель
+                setTimeout(() => loadImprovedTournamentAdminPanel(), 1000);
+            });
+        }
+        
+        // Обработчики кнопок "Одобрить" для отдельных заявок
+        document.querySelectorAll('.approve-application-btn').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const appId = this.getAttribute('data-app-id');
+                const discordId = this.getAttribute('data-discord-id');
+                
+                this.disabled = true;
+                this.innerHTML = '⏳ Одобряем...';
+                
+                try {
+                    const response = await fetch('/api/tournament/applications/approve', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${authData.token}`
+                        },
+                        body: JSON.stringify({ application_id: appId })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        showToast('✅ Заявка одобрена', 'success');
+                        setTimeout(() => loadImprovedTournamentAdminPanel(), 1000);
+                    } else {
+                        throw new Error(data.error || 'Ошибка одобрения');
+                    }
+                } catch (error) {
+                    console.error('Error approving application:', error);
+                    showToast(`❌ Ошибка: ${error.message}`, 'error');
+                    this.disabled = false;
+                    this.innerHTML = '✅ Одобрить';
+                }
+            });
+        });
+        
+        // Обработчики кнопок "Отклонить" для отдельных заявок
+        document.querySelectorAll('.reject-application-btn').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const appId = this.getAttribute('data-app-id');
+                const discordId = this.getAttribute('data-discord-id');
+                
+                if (!confirm('Вы уверены, что хотите отклонить эту заявку?')) {
+                    return;
+                }
+                
+                this.disabled = true;
+                this.innerHTML = '⏳ Отклоняем...';
+                
+                try {
+                    const response = await fetch('/api/tournament/applications/reject', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${authData.token}`
+                        },
+                        body: JSON.stringify({ application_id: appId })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        showToast('❌ Заявка отклонена', 'success');
+                        setTimeout(() => loadImprovedTournamentAdminPanel(), 1000);
+                    } else {
+                        throw new Error(data.error || 'Ошибка отклонения');
+                    }
+                } catch (error) {
+                    console.error('Error rejecting application:', error);
+                    showToast(`❌ Ошибка: ${error.message}`, 'error');
+                    this.disabled = false;
+                    this.innerHTML = '❌ Отклонить';
+                }
+            });
+        });
         
         if (saveBtn) {
             saveBtn.addEventListener('click', async () => {

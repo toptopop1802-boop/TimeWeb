@@ -502,6 +502,69 @@ async def handle_tournament_application_request(request: web.Request) -> web.Res
         }, status=500)
 
 
+async def handle_tournament_notify_request(request: web.Request) -> web.Response:
+    """Обработчик HTTP запросов на отправку уведомлений о заявке"""
+    global _bot_instance
+    
+    logging.info("📥 [Tournament Notify] Received notification request")
+    
+    try:
+        data = await request.json()
+        logging.info(f"📄 [Tournament Notify] Data: {data}")
+        
+        discord_id = data.get('discord_id')
+        action = data.get('action')  # 'approve' or 'reject'
+        steam_id = data.get('steam_id')
+        
+        if not discord_id or not action:
+            logging.warning("❌ [Tournament Notify] Missing discord_id or action")
+            return web.json_response({'error': 'Missing required fields'}, status=400)
+        
+        bot = _bot_instance
+        if not bot:
+            logging.warning("❌ [Tournament Notify] Bot not initialized")
+            return web.json_response({'error': 'Bot not initialized'}, status=503)
+        
+        # Пытаемся отправить DM пользователю
+        try:
+            user = await bot.fetch_user(int(discord_id))
+            if user:
+                if action == 'approve':
+                    embed = discord.Embed(
+                        title="✅ Заявка одобрена!",
+                        description=f"Ваша заявка на турнир была **одобрена**!\n\n**Steam ID:** `{steam_id}`\n\nОжидайте дальнейших инструкций от администрации.",
+                        color=discord.Color.green(),
+                        timestamp=datetime.now()
+                    )
+                    embed.set_footer(text="Турнир BublickRust")
+                elif action == 'reject':
+                    embed = discord.Embed(
+                        title="❌ Заявка отклонена",
+                        description=f"Ваша заявка на турнир была **отклонена**.\n\n**Steam ID:** `{steam_id}`\n\nПо вопросам обращайтесь к администрации.",
+                        color=discord.Color.red(),
+                        timestamp=datetime.now()
+                    )
+                    embed.set_footer(text="Турнир BublickRust")
+                else:
+                    logging.warning(f"⚠️ [Tournament Notify] Unknown action: {action}")
+                    return web.json_response({'error': 'Unknown action'}, status=400)
+                
+                await user.send(embed=embed)
+                logging.info(f"✅ [Tournament Notify] DM sent to user {discord_id} (action: {action})")
+            else:
+                logging.warning(f"⚠️ [Tournament Notify] User {discord_id} not found")
+        except discord.Forbidden:
+            logging.warning(f"⚠️ [Tournament Notify] Cannot send DM to user {discord_id} (DMs disabled)")
+        except Exception as dm_error:
+            logging.error(f"❌ [Tournament Notify] Error sending DM: {dm_error}")
+        
+        return web.json_response({'success': True})
+        
+    except Exception as exc:
+        logging.error(f"❌ [Tournament Notify] Error: {exc}", exc_info=True)
+        return web.json_response({'error': str(exc)}, status=500)
+
+
 async def start_http_server(bot: commands.Bot, port: int, secret: str):
     """Запуск HTTP сервера для приема заявок с дашборда"""
     global _bot_instance
@@ -511,6 +574,7 @@ async def start_http_server(bot: commands.Bot, port: int, secret: str):
     app['api_secret'] = secret
     app.router.add_post('/api/gradient-role', handle_gradient_role_request)
     app.router.add_post('/api/tournament-application', handle_tournament_application_request)
+    app.router.add_post('/api/tournament/notify', handle_tournament_notify_request)
     
     # Добавляем логирование для всех запросов
     @web.middleware

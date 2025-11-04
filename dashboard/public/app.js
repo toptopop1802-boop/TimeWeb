@@ -4189,7 +4189,7 @@ function renderAPIChart(data) {
                     borderWidth: 2,
                     fill: true,
                     tension: 0.5,
-                    pointRadius: 3,
+                    pointRadius: 0,
                     pointHoverRadius: 6
                 },
                 {
@@ -4200,7 +4200,7 @@ function renderAPIChart(data) {
                     borderWidth: 2,
                     fill: true,
                     tension: 0.5,
-                    pointRadius: 3,
+                    pointRadius: 0,
                     pointHoverRadius: 6
                 }
             ]

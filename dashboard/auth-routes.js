@@ -1179,6 +1179,118 @@ function setupAuthRoutes(app, supabase) {
             });
         }, supabase);
     });
+    
+    // Одобрить заявку на турнир (только для админа)
+    app.post('/api/tournament/applications/approve', async (req, res) => {
+        await requireAuth(req, res, async () => {
+            requireAdmin(req, res, async () => {
+                try {
+                    const { application_id } = req.body;
+                    
+                    if (!application_id) {
+                        return res.status(400).json({ error: 'application_id обязателен' });
+                    }
+                    
+                    // Получаем заявку
+                    const { data: application, error: fetchError } = await supabase
+                        .from('tournament_applications')
+                        .select('*')
+                        .eq('id', application_id)
+                        .single();
+                    
+                    if (fetchError || !application) {
+                        return res.status(404).json({ error: 'Заявка не найдена' });
+                    }
+                    
+                    // Обновляем статус
+                    const { error: updateError } = await supabase
+                        .from('tournament_applications')
+                        .update({ status: 'approved' })
+                        .eq('id', application_id);
+                    
+                    if (updateError) throw updateError;
+                    
+                    // Отправляем DM через бота (опционально, если бот доступен)
+                    try {
+                        const API_HOST = process.env.API_HOST || '127.0.0.1';
+                        await fetch(`http://${API_HOST}:8787/api/tournament/notify`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                discord_id: application.discord_id,
+                                action: 'approve',
+                                steam_id: application.steam_id
+                            }),
+                            signal: AbortSignal.timeout(5000)
+                        });
+                    } catch (notifyError) {
+                        console.log('⚠️ [Tournament Notify] Bot notification failed (non-critical):', notifyError.message);
+                    }
+                    
+                    res.json({ success: true, message: 'Заявка одобрена' });
+                } catch (error) {
+                    console.error('Approve tournament application error:', error);
+                    res.status(500).json({ error: error.message });
+                }
+            });
+        }, supabase);
+    });
+    
+    // Отклонить заявку на турнир (только для админа)
+    app.post('/api/tournament/applications/reject', async (req, res) => {
+        await requireAuth(req, res, async () => {
+            requireAdmin(req, res, async () => {
+                try {
+                    const { application_id } = req.body;
+                    
+                    if (!application_id) {
+                        return res.status(400).json({ error: 'application_id обязателен' });
+                    }
+                    
+                    // Получаем заявку
+                    const { data: application, error: fetchError } = await supabase
+                        .from('tournament_applications')
+                        .select('*')
+                        .eq('id', application_id)
+                        .single();
+                    
+                    if (fetchError || !application) {
+                        return res.status(404).json({ error: 'Заявка не найдена' });
+                    }
+                    
+                    // Обновляем статус
+                    const { error: updateError } = await supabase
+                        .from('tournament_applications')
+                        .update({ status: 'rejected' })
+                        .eq('id', application_id);
+                    
+                    if (updateError) throw updateError;
+                    
+                    // Отправляем DM через бота (опционально, если бот доступен)
+                    try {
+                        const API_HOST = process.env.API_HOST || '127.0.0.1';
+                        await fetch(`http://${API_HOST}:8787/api/tournament/notify`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                discord_id: application.discord_id,
+                                action: 'reject',
+                                steam_id: application.steam_id
+                            }),
+                            signal: AbortSignal.timeout(5000)
+                        });
+                    } catch (notifyError) {
+                        console.log('⚠️ [Tournament Notify] Bot notification failed (non-critical):', notifyError.message);
+                    }
+                    
+                    res.json({ success: true, message: 'Заявка отклонена' });
+                } catch (error) {
+                    console.error('Reject tournament application error:', error);
+                    res.status(500).json({ error: error.message });
+                }
+            });
+        }, supabase);
+    });
 }
 
 module.exports = { setupAuthRoutes };
