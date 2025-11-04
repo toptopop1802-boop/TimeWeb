@@ -1216,7 +1216,8 @@ function setupAuthRoutes(app, supabase) {
                     // Отправляем DM через бота (опционально, если бот доступен)
                     try {
                         const API_HOST = process.env.API_HOST || '127.0.0.1';
-                        await fetch(`http://${API_HOST}:8787/api/tournament/notify`, {
+                        console.log(`🔗 [Tournament Notify] Sending notification to bot at http://${API_HOST}:8787/api/tournament/notify`);
+                        const notifyResponse = await fetch(`http://${API_HOST}:8787/api/tournament/notify`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
@@ -1226,8 +1227,14 @@ function setupAuthRoutes(app, supabase) {
                             }),
                             signal: AbortSignal.timeout(5000)
                         });
+                        if (notifyResponse.ok) {
+                            console.log(`✅ [Tournament Notify] Bot notification sent successfully for user ${application.discord_id}`);
+                        } else {
+                            const errorText = await notifyResponse.text();
+                            console.error(`❌ [Tournament Notify] Bot returned error: ${notifyResponse.status} - ${errorText}`);
+                        }
                     } catch (notifyError) {
-                        console.log('⚠️ [Tournament Notify] Bot notification failed (non-critical):', notifyError.message);
+                        console.error('⚠️ [Tournament Notify] Bot notification failed (non-critical):', notifyError.message);
                     }
                     
                     res.json({ success: true, message: 'Заявка одобрена' });
@@ -1272,7 +1279,8 @@ function setupAuthRoutes(app, supabase) {
                     // Отправляем DM через бота (опционально, если бот доступен)
                     try {
                         const API_HOST = process.env.API_HOST || '127.0.0.1';
-                        await fetch(`http://${API_HOST}:8787/api/tournament/notify`, {
+                        console.log(`🔗 [Tournament Notify] Sending notification to bot at http://${API_HOST}:8787/api/tournament/notify`);
+                        const notifyResponse = await fetch(`http://${API_HOST}:8787/api/tournament/notify`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
@@ -1282,8 +1290,14 @@ function setupAuthRoutes(app, supabase) {
                             }),
                             signal: AbortSignal.timeout(5000)
                         });
+                        if (notifyResponse.ok) {
+                            console.log(`✅ [Tournament Notify] Bot notification sent successfully for user ${application.discord_id}`);
+                        } else {
+                            const errorText = await notifyResponse.text();
+                            console.error(`❌ [Tournament Notify] Bot returned error: ${notifyResponse.status} - ${errorText}`);
+                        }
                     } catch (notifyError) {
-                        console.log('⚠️ [Tournament Notify] Bot notification failed (non-critical):', notifyError.message);
+                        console.error('⚠️ [Tournament Notify] Bot notification failed (non-critical):', notifyError.message);
                     }
                     
                     res.json({ success: true, message: 'Заявка отклонена' });
