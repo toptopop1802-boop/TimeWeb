@@ -1189,7 +1189,7 @@ function setupNavigation() {
 
 function navigateToPage(page) {
     // Check admin-only pages
-    const adminPages = ['server', 'analytics', 'messages', 'channels', 'admin', 'members'];
+    const adminPages = ['server', 'analytics', 'messages', 'channels', 'admin', 'users'];
     if (adminPages.includes(page)) {
         const authData = getAuthData();
         if (!authData || !isAdmin(authData)) {
@@ -1281,26 +1281,32 @@ function navigateToPage(page) {
         initTrainingRequestPage();
     } else if (page === 'server') {
         loadServerPlayers();
-    } else if (page === 'members') {
-        loadMembers();
+    } else if (page === 'users') {
+        loadUsers();
     }
 }
 
 // ============================================
-// MEMBERS PAGE
+// USERS PAGE (Admin Only)
 // ============================================
 
-async function loadMembers() {
-    console.log('👥 Loading members page');
-    const membersList = document.getElementById('members-list');
+async function loadUsers() {
+    console.log('👥 Loading users page');
+    const usersList = document.getElementById('users-list');
     
-    if (!membersList) {
-        console.error('❌ Members list container not found');
+    if (!usersList) {
+        console.error('❌ Users list container not found');
+        return;
+    }
+    
+    const authData = getAuthData();
+    if (!authData || !isAdmin(authData)) {
+        usersList.innerHTML = '<div style="text-align: center; padding: 60px 20px; color: var(--danger);"><div style="font-size: 48px; margin-bottom: 16px;">⛔</div><div style="font-size: 18px; font-weight: 600;">Доступ запрещен. Требуются права администратора.</div></div>';
         return;
     }
     
     try {
-        membersList.innerHTML = '<div class="admin-loading">Загрузка участников...</div>';
+        usersList.innerHTML = '<div class="admin-loading">Загрузка пользователей...</div>';
         
         const response = await fetchWithAuth('/api/users');
         
@@ -1326,7 +1332,7 @@ async function loadMembers() {
         document.getElementById('total-registrations-today').textContent = todayRegs;
         
         if (users.length === 0) {
-            membersList.innerHTML = `
+            usersList.innerHTML = `
                 <div style="text-align: center; padding: 60px 20px; color: var(--text-secondary);">
                     <div style="font-size: 48px; margin-bottom: 16px;">👥</div>
                     <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Нет зарегистрированных пользователей</div>
@@ -1340,7 +1346,7 @@ async function loadMembers() {
         users.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
         
         // Render users
-        membersList.innerHTML = `
+        usersList.innerHTML = `
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px;">
                 ${users.map(user => `
                     <div style="
@@ -1433,8 +1439,8 @@ async function loadMembers() {
         `;
         
     } catch (error) {
-        console.error('❌ Error loading members:', error);
-        membersList.innerHTML = `
+        console.error('❌ Error loading users:', error);
+        usersList.innerHTML = `
             <div style="text-align: center; padding: 60px 20px; color: var(--danger);">
                 <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
                 <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Ошибка загрузки</div>
@@ -1445,7 +1451,7 @@ async function loadMembers() {
 }
 
 // ============================================
-// END MEMBERS PAGE
+// END USERS PAGE
 // ============================================
 
 // ============================================

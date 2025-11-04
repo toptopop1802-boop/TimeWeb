@@ -2,7 +2,7 @@
 ИНСТРУКЦИЯ ПО РАЗВЕРТЫВАНИЮ на СЕРВЕР
 ===================================================
 
-Файл env-full.txt содержит ВСЕ секреты!
+Файл .txt содержит ВСЕ секреты!
 Этот файл ТОЛЬКО для ручной загрузки на сервер!
 
 ===================================================
@@ -11,8 +11,8 @@
 
 Через WinSCP / FileZilla / SFTP:
 
-ОТКУДА: W:\Projects\dsbot\dashboard\env-full.txt
-КУДА: /root/TimeWeb/dashboard/env-full.txt
+ОТКУДА: W:\Projects\dsbot\dashboard\.txt
+КУДА: /root/TimeWeb/dashboard/.txt
 
 
 ===================================================
@@ -26,8 +26,8 @@ cd /root/TimeWeb/dashboard
 # Удалить старый .env
 rm -f .env
 
-# Скопировать env-full.txt в .env
-cp env-full.txt .env
+# Скопировать .txt в .env
+cp .txt .env
 
 # Установить правильные права
 chmod 600 .env
@@ -35,8 +35,8 @@ chmod 600 .env
 # Проверить содержимое
 cat .env
 
-# УДАЛИТЬ env-full.txt после копирования!
-rm -f env-full.txt
+# УДАЛИТЬ .txt после копирования!
+rm -f .txt
 
 
 ===================================================

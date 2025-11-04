@@ -24,8 +24,13 @@ async function loadImprovedTournamentAdminPanel() {
         const settingsData = await settingsRes.json();
         const applicationsData = await applicationsRes.json();
         
+        console.log('📊 [Tournament Admin] Settings:', settingsData);
+        console.log('📊 [Tournament Admin] Applications:', applicationsData);
+        
         const settings = settingsData.settings || { is_open: true, closes_at: null };
         const applications = applicationsData.applications || [];
+        
+        console.log(`✅ [Tournament Admin] Loaded ${applications.length} applications`);
         
         // Группируем заявки по дате для графика
         const applicationsByDate = {};
@@ -210,11 +215,11 @@ async function loadImprovedTournamentAdminPanel() {
                                         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
                                             <div style="display: flex; align-items: center; gap: 16px;">
                                                 <div style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, ${statusColor}, ${statusColor}DD); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 20px; box-shadow: 0 4px 12px ${statusColor}40;">
-                                                    ${(app.users?.discord_username || app.users?.username || 'U')[0].toUpperCase()}
+                                                    ${(app.users?.discord_username || app.users?.username || `ID:${String(app.discord_id || 'U').slice(-4)}`)[0].toUpperCase()}
                                                 </div>
                                                 <div>
                                                     <div style="font-weight: 700; font-size: 18px; color: var(--text-primary); margin-bottom: 4px;">
-                                                        ${app.users?.discord_username || app.users?.username || 'Неизвестный пользователь'}
+                                                        ${app.users?.discord_username || app.users?.username || `Discord ID: ${app.discord_id || 'Неизвестный'}`}
                                                     </div>
                                                     <div style="font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
                                                         <span>🕐</span>

@@ -51,9 +51,10 @@
                     <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     <span class="nav-text">Изменения</span>
                 </a>
-                <a href="#members" class="nav-link" data-page="members">
+                <a href="#users" class="nav-link" data-page="users">
                     <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
-                    <span class="nav-text">Участники</span>
+                    <span class="nav-text">Users</span>
+                    <span style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Admin</span>
                 </a>
                 <a href="#images" class="nav-link" data-page="images">
                     <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
@@ -629,11 +630,11 @@
 
             <!-- Admin Page -->
             <!-- Members Page -->
-            <div id="page-members" class="page" style="display:none;">
+            <div id="page-users" class="page" style="display:none;">
                 <header class="page-header">
                     <h2>
                         <svg class="h2-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:28px;height:28px;vertical-align:-6px;margin-right:8px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
-                        Участники сайта
+                        Users
                     </h2>
                 </header>
 
@@ -652,7 +653,7 @@
                     </div>
                 </div>
 
-                <div id="members-list" class="admin-content">
+                <div id="users-list" class="admin-content">
                     <div class="admin-loading">Загрузка...</div>
                 </div>
             </div>

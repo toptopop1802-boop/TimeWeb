@@ -1083,6 +1083,9 @@ function setupAuthRoutes(app, supabase) {
                         `)
                         .order('created_at', { ascending: false });
                     
+                    // Используем LEFT JOIN чтобы получить заявки даже без user_id
+                    // Если user_id null, то просто будет null в users
+                    
                     if (status) {
                         query = query.eq('status', status);
                     }
