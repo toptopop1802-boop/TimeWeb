@@ -568,8 +568,18 @@ function updateChart(timeline, view = 'all') {
                 maintainAspectRatio: true,
                 aspectRatio: 2.2,
                 animation: {
-                    duration: 1000,
-                    easing: 'easeInOutQuart'
+                    duration: 2000,
+                    easing: 'easeInOutQuart',
+                    onComplete: function() {
+                        // Дополнительная анимация рисования линии
+                        const canvas = chart.canvas;
+                        const meta = chart.getDatasetMeta(0);
+                        if (meta && meta.data) {
+                            const ctx = canvas.getContext('2d');
+                            ctx.save();
+                            ctx.restore();
+                        }
+                    }
                 },
                 plugins: {
                     legend: {
@@ -654,7 +664,62 @@ function updateChart(timeline, view = 'all') {
                         borderJoinStyle: 'round'
                     }
                 }
-            }
+            },
+            plugins: [{
+                id: 'smoothLineAnimation',
+                beforeDatasetsDraw: function(chart) {
+                    const meta = chart.getDatasetMeta(0);
+                    if (!meta || meta.hidden || !chart.options.animation) return;
+                    
+                    const ctx = chart.ctx;
+                    const points = meta.data;
+                    
+                    if (points.length < 2) return;
+                    
+                    // Рассчитываем прогресс анимации
+                    const currentStep = chart._animator?._animations?.get?.(points[0])?.currentStep || 0;
+                    const numSteps = chart.options.animation.duration / 16.67; // ~60fps
+                    const progress = Math.min(currentStep / numSteps, 1);
+                    
+                    if (progress < 1 && progress > 0) {
+                        ctx.save();
+                        
+                        // Создаем путь линии
+                        ctx.beginPath();
+                        ctx.moveTo(points[0].x, points[0].y);
+                        
+                        for (let i = 1; i < points.length; i++) {
+                            const xc = (points[i - 1].x + points[i].x) / 2;
+                            const yc = (points[i - 1].y + points[i].y) / 2;
+                            ctx.quadraticCurveTo(points[i - 1].x, points[i - 1].y, xc, yc);
+                        }
+                        
+                        if (points.length > 1) {
+                            ctx.quadraticCurveTo(
+                                points[points.length - 2].x,
+                                points[points.length - 2].y,
+                                points[points.length - 1].x,
+                                points[points.length - 1].y
+                            );
+                        }
+                        
+                        // Применяем эффект рисования
+                        const pathLength = ctx.measureText ? 1000 : 1000;
+                        ctx.setLineDash([pathLength]);
+                        ctx.lineDashOffset = pathLength * (1 - progress);
+                        
+                        ctx.strokeStyle = meta.dataset.options.borderColor || '#667eea';
+                        ctx.lineWidth = meta.dataset.options.borderWidth || 3;
+                        ctx.lineCap = 'round';
+                        ctx.lineJoin = 'round';
+                        ctx.shadowColor = 'rgba(102, 126, 234, 0.5)';
+                        ctx.shadowBlur = 10;
+                        
+                        ctx.stroke();
+                        ctx.restore();
+                    }
+                }
+            }]
         });
     }
 }
