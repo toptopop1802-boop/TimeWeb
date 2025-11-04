@@ -3537,6 +3537,85 @@ function initGradientRolePage() {
 }
 
 // ============================================
+// TOURNAMENT FORM HANDLER
+// ============================================
+
+function setupTournamentFormHandler() {
+    const form = document.getElementById('tournament-application-form');
+    if (!form) return;
+    
+    // Удаляем старые обработчики если есть
+    const newForm = form.cloneNode(true);
+    form.parentNode.replaceChild(newForm, form);
+    
+    // Добавляем новый обработчик
+    newForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const submitBtn = document.getElementById('submit-application-btn');
+        const statusDiv = document.getElementById('tournament-status-message');
+        const steamIdInput = document.getElementById('steam-id-input');
+        
+        if (!submitBtn || !steamIdInput) {
+            console.error('❌ [Tournament Form] Required elements not found');
+            return;
+        }
+        
+        const steamId = steamIdInput.value.trim();
+        
+        // Валидация Steam ID
+        if (!steamId) {
+            showTournamentStatus('error', 'Пожалуйста, укажите ваш Steam ID');
+            return;
+        }
+        
+        if (!/^\d+$/.test(steamId)) {
+            showTournamentStatus('error', 'Steam ID должен содержать только цифры');
+            return;
+        }
+        
+        // Отключаем кнопку
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Отправка...';
+        if (statusDiv) {
+            statusDiv.style.display = 'none';
+        }
+        
+        try {
+            const authData = getAuthData();
+            const response = await fetch('/api/tournament/apply', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authData.token}`
+                },
+                body: JSON.stringify({ steamId })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                showTournamentStatus('success', '✅ Заявка успешно подана! Она появится в Discord канале.');
+                newForm.style.display = 'none';
+                // Обновляем статус
+                setTimeout(() => {
+                    loadTournamentStatus();
+                }, 1000);
+            } else {
+                showTournamentStatus('error', data.error || 'Ошибка при подаче заявки');
+                submitBtn.disabled = false;
+                submitBtn.textContent = '📝 Подать заявку';
+            }
+        } catch (error) {
+            console.error('Application error:', error);
+            showTournamentStatus('error', 'Ошибка при отправке заявки. Попробуйте позже.');
+            submitBtn.disabled = false;
+            submitBtn.textContent = '📝 Подать заявку';
+        }
+    });
+}
+
+// ============================================
 // TRAINING REQUEST PAGE
 // ============================================
 
@@ -3765,64 +3844,8 @@ async function initTrainingRequestPage() {
         </div>
     `;
     
-    // Обработка формы заявки
-    const form = document.getElementById('tournament-application-form');
-    if (form) {
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const submitBtn = document.getElementById('submit-application-btn');
-            const statusDiv = document.getElementById('tournament-status-message');
-            const steamIdInput = document.getElementById('steam-id-input');
-            const steamId = steamIdInput.value.trim();
-            
-            // Валидация Steam ID
-            if (!steamId) {
-                showTournamentStatus('error', 'Пожалуйста, укажите ваш Steam ID');
-                return;
-            }
-            
-            if (!/^\d+$/.test(steamId)) {
-                showTournamentStatus('error', 'Steam ID должен содержать только цифры');
-                return;
-            }
-            
-            // Отключаем кнопку
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Отправка...';
-            statusDiv.style.display = 'none';
-            
-            try {
-                const authData = getAuthData();
-                const response = await fetch('/api/tournament/apply', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${authData.token}`
-                    },
-                    body: JSON.stringify({ steamId })
-                });
-                
-                const data = await response.json();
-                
-                if (response.ok && data.success) {
-                    showTournamentStatus('success', '✅ Заявка успешно подана! Она появится в Discord канале.');
-                    form.style.display = 'none';
-                    // Обновляем статус
-                    loadTournamentStatus();
-                } else {
-                    showTournamentStatus('error', data.error || 'Ошибка при подаче заявки');
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = '📝 Подать заявку';
-                }
-            } catch (error) {
-                console.error('Application error:', error);
-                showTournamentStatus('error', 'Ошибка при отправке заявки. Попробуйте позже.');
-                submitBtn.disabled = false;
-                submitBtn.textContent = '📝 Подать заявку';
-            }
-        });
-    }
+    // Устанавливаем обработчик формы
+    setupTournamentFormHandler();
     
     // Загружаем статус заявки и настройки турнира
     await Promise.all([
@@ -3969,9 +3992,14 @@ async function loadTournamentStatus() {
                 
                 // Если заявка одобрена или отклонена - показываем форму для создания новой
                 if (data.application.status === 'approved' || data.application.status === 'rejected') {
-                    // Создаем контейнер для старого статуса
-                    const statusDiv = document.createElement('div');
-                    statusDiv.innerHTML = `
+                    // Сохраняем HTML формы если она есть
+                    let formHTML = '';
+                    if (form) {
+                        formHTML = form.outerHTML;
+                    }
+                    
+                    // Создаем новый контент с статусом и формой
+                    formContainer.innerHTML = `
                         <div style="padding: 24px; background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border-color); text-align: center; margin-bottom: 24px;">
                             <div style="font-size: 48px; margin-bottom: 16px;">${data.application.status === 'approved' ? '✅' : '❌'}</div>
                             <h3 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 700; color: var(--text-primary);">
@@ -3987,17 +4015,13 @@ async function loadTournamentStatus() {
                                 💡 Вы можете создать новую заявку ниже
                             </p>
                         </div>
+                        ${formHTML}
                     `;
                     
-                    // Очищаем контейнер и добавляем статус + форму
-                    formContainer.innerHTML = '';
-                    formContainer.appendChild(statusDiv);
-                    
-                    // Показываем форму
-                    if (form) {
-                        form.style.display = 'flex';
-                        formContainer.appendChild(form);
-                    }
+                    // Переустанавливаем обработчик формы
+                    setTimeout(() => {
+                        setupTournamentFormHandler();
+                    }, 100);
                 } else {
                     // Если pending - скрываем форму
                     if (form) form.style.display = 'none';
