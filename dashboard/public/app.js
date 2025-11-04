@@ -1308,20 +1308,27 @@ async function loadUsers() {
     try {
         usersList.innerHTML = '<div class="admin-loading">Загрузка пользователей...</div>';
         
-        const response = await fetchWithAuth('/api/admin/users');
+        // Загружаем статус БД и пользователей параллельно
+        const [dbStatusResponse, usersResponse] = await Promise.all([
+            fetchWithAuth('/api/admin/database-status'),
+            fetchWithAuth('/api/admin/users')
+        ]);
         
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+        if (!usersResponse.ok) {
+            throw new Error(`HTTP ${usersResponse.status}`);
         }
         
-        const data = await response.json();
+        const dbStatus = dbStatusResponse.ok ? await dbStatusResponse.json() : null;
+        const data = await usersResponse.json();
         // API возвращает массив напрямую, а не объект с полем users
         const users = Array.isArray(data) ? data : (data.users || []);
         
         console.log(`✅ Loaded ${users.length} users`);
+        console.log('📊 Database status:', dbStatus);
         
-        // Update stats
-        document.getElementById('total-users').textContent = users.length;
+        // Update stats - используем данные из БД если доступны
+        const totalUsers = dbStatus?.usersCount || users.length;
+        document.getElementById('total-users').textContent = totalUsers;
         document.getElementById('total-admins').textContent = users.filter(u => u.role === 'admin').length;
         
         // Count today's registrations
@@ -1332,8 +1339,51 @@ async function loadUsers() {
         }).length;
         document.getElementById('total-registrations-today').textContent = todayRegs;
         
+        // Показываем статус БД
+        let dbStatusHtml = '';
+        if (dbStatus) {
+            const statusColor = dbStatus.connected ? '#10b981' : '#ef4444';
+            const statusText = dbStatus.connected ? '✅ Подключена' : '❌ Не подключена';
+            const statusBg = dbStatus.connected ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
+            
+            dbStatusHtml = `
+                <div style="background: var(--bg-card); border-radius: 16px; padding: 24px; margin-bottom: 24px; border: 2px solid var(--border-color);">
+                    <h3 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 24px;">🗄️</span>
+                        <span>Статус базы данных</span>
+                    </h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+                        <div style="padding: 16px; background: ${statusBg}; border-radius: 12px; border-left: 4px solid ${statusColor};">
+                            <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Статус</div>
+                            <div style="font-size: 18px; font-weight: 700; color: ${statusColor};">${statusText}</div>
+                        </div>
+                        <div style="padding: 16px; background: var(--bg-secondary); border-radius: 12px;">
+                            <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">URL</div>
+                            <div style="font-size: 14px; font-weight: 600; color: var(--text-primary); word-break: break-all;">${dbStatus.url}</div>
+                        </div>
+                        <div style="padding: 16px; background: var(--bg-secondary); border-radius: 12px;">
+                            <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Key Preview</div>
+                            <code style="font-size: 13px; color: var(--text-primary);">${dbStatus.keyPreview}</code>
+                        </div>
+                        <div style="padding: 16px; background: var(--bg-secondary); border-radius: 12px;">
+                            <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Пользователей в БД</div>
+                            <div style="font-size: 24px; font-weight: 700; color: var(--text-primary);">${totalUsers}</div>
+                        </div>
+                    </div>
+                    ${totalUsers !== users.length ? `
+                        <div style="margin-top: 16px; padding: 12px; background: rgba(245, 158, 11, 0.1); border-radius: 8px; border-left: 4px solid #f59e0b;">
+                            <div style="font-size: 13px; color: var(--text-secondary);">
+                                ⚠️ В БД: <strong>${totalUsers}</strong> пользователей, загружено: <strong>${users.length}</strong>
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+        
         if (users.length === 0) {
             usersList.innerHTML = `
+                ${dbStatusHtml}
                 <div style="text-align: center; padding: 60px 20px; color: var(--text-secondary);">
                     <div style="font-size: 48px; margin-bottom: 16px;">👥</div>
                     <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Нет зарегистрированных пользователей</div>
@@ -1348,6 +1398,7 @@ async function loadUsers() {
         
         // Render users
         usersList.innerHTML = `
+            ${dbStatusHtml}
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px;">
                 ${users.map(user => `
                     <div style="

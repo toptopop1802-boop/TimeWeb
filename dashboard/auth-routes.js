@@ -745,7 +745,7 @@ function setupAuthRoutes(app, supabase) {
                 try {
                     const { data: users, error } = await supabase
                         .from('users')
-                        .select('id, username, email, role, created_at, last_login, is_active')
+                        .select('id, username, email, role, created_at, last_login, is_active, discord_id, discord_username')
                         .order('created_at', { ascending: false });
 
                     if (error) throw error;
@@ -754,6 +754,68 @@ function setupAuthRoutes(app, supabase) {
                 } catch (error) {
                     console.error('List users error:', error);
                     res.status(500).json({ error: error.message });
+                }
+            });
+        }, supabase);
+    });
+    
+    // Статус БД (только для админа)
+    app.get('/api/admin/database-status', async (req, res) => {
+        await requireAuth(req, res, async () => {
+            requireAdmin(req, res, async () => {
+                try {
+                    const SUPABASE_URL = process.env.SUPABASE_URL || 'Не установлено';
+                    const SUPABASE_KEY_PREVIEW = process.env.SUPABASE_KEY ? 
+                        `${process.env.SUPABASE_KEY.substring(0, 10)}...${process.env.SUPABASE_KEY.substring(process.env.SUPABASE_KEY.length - 4)}` : 
+                        'Не установлено';
+                    
+                    // Проверяем подключение
+                    let connectionStatus = 'disconnected';
+                    let usersCount = 0;
+                    let tables = [];
+                    
+                    try {
+                        // Тестовый запрос
+                        const { data: testData, error: testError } = await supabase
+                            .from('users')
+                            .select('id')
+                            .limit(1);
+                        
+                        if (!testError) {
+                            connectionStatus = 'connected';
+                            
+                            // Получаем количество пользователей
+                            const { count, error: countError } = await supabase
+                                .from('users')
+                                .select('*', { count: 'exact', head: true });
+                            
+                            if (!countError && count !== null) {
+                                usersCount = count;
+                            }
+                        } else {
+                            connectionStatus = 'error';
+                            console.error('Database connection test error:', testError);
+                        }
+                    } catch (dbError) {
+                        connectionStatus = 'error';
+                        console.error('Database error:', dbError);
+                    }
+                    
+                    res.json({
+                        connected: connectionStatus === 'connected',
+                        status: connectionStatus,
+                        url: SUPABASE_URL,
+                        keyPreview: SUPABASE_KEY_PREVIEW,
+                        usersCount: usersCount,
+                        timestamp: new Date().toISOString()
+                    });
+                } catch (error) {
+                    console.error('Database status error:', error);
+                    res.status(500).json({ 
+                        error: error.message,
+                        connected: false,
+                        status: 'error'
+                    });
                 }
             });
         }, supabase);
