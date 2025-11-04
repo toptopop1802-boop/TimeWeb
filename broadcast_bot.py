@@ -339,17 +339,32 @@ async def handle_tournament_application_request(request: web.Request) -> web.Res
         
         logging.info(f"✅ [Tournament Application] Channel found: {channel.name}")
         
-        # Проверяем, есть ли уже заявка от этого пользователя
+        # Проверяем, есть ли уже pending заявка (одобренные/отклоненные можно пересоздать)
         if bot.db:
             logging.info(f"🔍 [Tournament Application] Checking for existing application for Discord ID: {discord_id}")
             existing_app = await bot.db.get_tournament_application(discord_id=discord_id)
-            if existing_app:
-                logging.warning(f"⚠️ [Tournament Application] User {discord_id} already has an application")
+            
+            # Проверяем только pending заявки
+            if existing_app and existing_app.get('status') == 'pending':
+                logging.warning(f"⚠️ [Tournament Application] User {discord_id} already has a pending application")
                 return web.json_response({
                     'success': False,
-                    'error': 'Вы уже подали заявку на турнир'
+                    'error': 'У вас уже есть заявка, ожидающая рассмотрения'
                 }, status=400)
-            logging.info("✅ [Tournament Application] No existing application found")
+            
+            # Если есть одобренная или отклоненная заявка - удаляем её перед созданием новой
+            if existing_app and existing_app.get('status') in ['approved', 'rejected']:
+                logging.info(f"🗑️ [Tournament Application] Removing old {existing_app.get('status')} application for user {discord_id}")
+                if bot.db:
+                    from supabase import create_client
+                    supabase_url = os.getenv("SUPABASE_URL")
+                    supabase_key = os.getenv("SUPABASE_KEY")
+                    if supabase_url and supabase_key:
+                        supabase_client = create_client(supabase_url, supabase_key)
+                        supabase_client.table("tournament_applications").delete().eq('id', existing_app.get('id')).execute()
+                        logging.info(f"✅ [Tournament Application] Old application removed")
+            
+            logging.info("✅ [Tournament Application] No blocking application found")
         
         # Проверяем, открыта ли регистрация
         if bot.db:

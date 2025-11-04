@@ -954,15 +954,32 @@ function setupAuthRoutes(app, supabase) {
                     return res.status(400).json({ error: 'Требуется авторизация через Discord' });
                 }
                 
-                // Проверяем, есть ли уже заявка
+                // Проверяем, есть ли уже pending заявка (одобренные/отклоненные можно пересоздать)
                 const { data: existingApp } = await supabase
                     .from('tournament_applications')
                     .select('*')
                     .eq('discord_id', req.user.discord_id)
+                    .eq('status', 'pending')
                     .maybeSingle();
                 
                 if (existingApp) {
-                    return res.status(400).json({ error: 'Вы уже подали заявку на турнир' });
+                    return res.status(400).json({ error: 'У вас уже есть заявка, ожидающая рассмотрения' });
+                }
+                
+                // Если есть одобренная или отклоненная заявка - удаляем её перед созданием новой
+                const { data: oldApp } = await supabase
+                    .from('tournament_applications')
+                    .select('*')
+                    .eq('discord_id', req.user.discord_id)
+                    .in('status', ['approved', 'rejected'])
+                    .maybeSingle();
+                
+                if (oldApp) {
+                    console.log(`🗑️ [Tournament Apply] Removing old ${oldApp.status} application for user ${req.user.discord_id}`);
+                    await supabase
+                        .from('tournament_applications')
+                        .delete()
+                        .eq('id', oldApp.id);
                 }
                 
                 // Проверяем, открыта ли регистрация
