@@ -5655,10 +5655,17 @@ def main() -> None:
                 logging.error(f"Failed to delete channel {channel.name}: {e}")
                 failed += 1
         
-        await status_msg.edit(
-            content=f"✅ Удалено каналов: **{deleted}**\n"
-                   f"{'❌ Ошибок: **' + str(failed) + '**' if failed > 0 else ''}"
-        )
+        try:
+            await status_msg.edit(
+                content=f"✅ Удалено каналов: **{deleted}**\n"
+                       f"{'❌ Ошибок: **' + str(failed) + '**' if failed > 0 else ''}"
+            )
+        except discord.errors.NotFound:
+            # Канал был удален вместе с сообщением
+            await ctx.send(
+                f"✅ Удалено каналов: **{deleted}**\n"
+                f"{'❌ Ошибок: **' + str(failed) + '**' if failed > 0 else ''}"
+            )
     
     @bot.command(name="broadcast_wipe")
     @commands.has_permissions(administrator=True)
