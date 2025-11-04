@@ -998,16 +998,19 @@ function renderDemoChart(days, type) {
             borderColor: getAccentRgba(1),
             backgroundColor: buildGradient(ctx, getAccentRgba(1)),
             fill: true,
-            tension: 0.5,
+            tension: 0.4,
             borderWidth: 3,
-            pointRadius: 0,
-            pointHoverRadius: 6,
-            pointBackgroundColor: '#ffffff',
-            pointBorderColor: getAccentRgba(1),
-            pointBorderWidth: 2,
-            pointHoverBorderWidth: 3,
+            pointRadius: 6,
+            pointHoverRadius: 10,
+            pointBackgroundColor: getAccentRgba(1),
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 3,
+            pointHoverBorderWidth: 4,
             pointHoverBackgroundColor: getAccentRgba(1),
-            spanGaps: true
+            spanGaps: true,
+            segment: {
+                borderColor: ctx => ctx.p0.skip || ctx.p1.skip ? 'rgba(0,0,0,0)' : undefined
+            }
         }];
     } else {
         const map = { wipes: 'Вайпы', tickets: 'Тикеты', roles: 'Роли', deleted: 'Удаленные каналы' };
@@ -1017,25 +1020,35 @@ function renderDemoChart(days, type) {
             borderColor: getAccentRgba(1),
             backgroundColor: buildGradient(ctx, getAccentRgba(1)),
             fill: true,
-            tension: 0.5,
+            tension: 0.4,
             borderWidth: 3,
-            pointRadius: 0,
-            pointHoverRadius: 6,
-            pointBackgroundColor: '#ffffff',
-            pointBorderColor: getAccentRgba(1),
-            pointBorderWidth: 2,
-            pointHoverBorderWidth: 3,
+            pointRadius: 6,
+            pointHoverRadius: 10,
+            pointBackgroundColor: getAccentRgba(1),
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 3,
+            pointHoverBorderWidth: 4,
             pointHoverBackgroundColor: getAccentRgba(1),
-            spanGaps: true
+            spanGaps: true,
+            segment: {
+                borderColor: ctx => ctx.p0.skip || ctx.p1.skip ? 'rgba(0,0,0,0)' : undefined
+            }
         }];
     }
 
     const options = {
         responsive: true,
         maintainAspectRatio: false,
-        animation: { 
-            duration: 1000, 
-            easing: 'easeInOutQuart' 
+        animation: {
+            duration: 2500,
+            easing: 'easeInOutCubic',
+            delay: (context) => {
+                let delay = 0;
+                if (context.type === 'data' && context.mode === 'default') {
+                    delay = context.dataIndex * 50;
+                }
+                return delay;
+            }
         },
         plugins: {
             legend: { display: false },
