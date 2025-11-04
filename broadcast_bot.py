@@ -393,30 +393,44 @@ async def handle_tournament_application_request(request: web.Request) -> web.Res
                     }, status=400)
             logging.info("✅ [Tournament Application] Registration is open")
         
-        # Сохраняем заявку в БД
+        # Сохраняем заявку в БД (только если её еще нет - Node.js может создать её раньше)
         if bot.db:
-            logging.info("💾 [Tournament Application] Saving to database")
+            logging.info("💾 [Tournament Application] Checking if application already exists")
             user_id = data.get('userId')  # UUID пользователя с сайта
             
-            # Удаляем старые заявки этого пользователя перед созданием новой
-            # Это нужно чтобы избежать конфликта уникального constraint
-            try:
-                from supabase import create_client
-                supabase_url = os.getenv("SUPABASE_URL")
-                supabase_key = os.getenv("SUPABASE_KEY")
-                if supabase_url and supabase_key:
-                    supabase_client = create_client(supabase_url, supabase_key)
-                    # Удаляем все старые заявки (approved/rejected) для этого пользователя
-                    delete_result = supabase_client.table("tournament_applications").delete().eq('discord_id', int(discord_id)).in_('status', ['approved', 'rejected']).execute()
-                    logging.info(f"🗑️ [Tournament Application] Removed old applications before creating new one")
-            except Exception as delete_error:
-                logging.warning(f"⚠️ [Tournament Application] Could not delete old applications: {delete_error}")
+            # Проверяем, есть ли уже заявка с таким discord_id и статусом pending
+            existing_app = await bot.db.get_tournament_application(discord_id=discord_id)
             
-            await bot.db.save_tournament_application(
-                user_id=user_id,
-                discord_id=int(discord_id),
-                steam_id=steam_id
-            )
+            if existing_app and existing_app.get('status') == 'pending':
+                logging.info(f"✅ [Tournament Application] Application already exists in DB, skipping insert")
+            else:
+                # Удаляем старые заявки этого пользователя перед созданием новой
+                # Это нужно чтобы избежать конфликта уникального constraint
+                try:
+                    from supabase import create_client
+                    supabase_url = os.getenv("SUPABASE_URL")
+                    supabase_key = os.getenv("SUPABASE_KEY")
+                    if supabase_url and supabase_key:
+                        supabase_client = create_client(supabase_url, supabase_key)
+                        # Удаляем все старые заявки (approved/rejected) для этого пользователя
+                        delete_result = supabase_client.table("tournament_applications").delete().eq('discord_id', int(discord_id)).in_('status', ['approved', 'rejected']).execute()
+                        logging.info(f"🗑️ [Tournament Application] Removed old applications before creating new one")
+                except Exception as delete_error:
+                    logging.warning(f"⚠️ [Tournament Application] Could not delete old applications: {delete_error}")
+                
+                try:
+                    await bot.db.save_tournament_application(
+                        user_id=user_id,
+                        discord_id=int(discord_id),
+                        steam_id=steam_id
+                    )
+                    logging.info(f"✅ [Tournament Application] Application saved to DB")
+                except Exception as save_error:
+                    # Если ошибка duplicate key - значит Node.js уже создал заявку, это нормально
+                    if 'duplicate' in str(save_error).lower() or '23505' in str(save_error):
+                        logging.info(f"ℹ️ [Tournament Application] Application already exists (created by Node.js), skipping")
+                    else:
+                        raise
             
             # Логируем событие
             await bot.db.log_event(

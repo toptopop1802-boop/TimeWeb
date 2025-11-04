@@ -1384,8 +1384,9 @@ function setupAuthRoutes(app, supabase) {
                     try {
                         const API_HOST = process.env.API_HOST || '127.0.0.1';
                         const notifyUrl = `http://${API_HOST}:8787/api/tournament/notify`;
+                        // Преобразуем discord_id в строку чтобы избежать потери точности в JavaScript
                         const notifyPayload = {
-                            discord_id: application.discord_id,
+                            discord_id: String(application.discord_id),
                             action: 'approve',
                             steam_id: application.steam_id
                         };
@@ -1461,8 +1462,9 @@ function setupAuthRoutes(app, supabase) {
                     try {
                         const API_HOST = process.env.API_HOST || '127.0.0.1';
                         const notifyUrl = `http://${API_HOST}:8787/api/tournament/notify`;
+                        // Преобразуем discord_id в строку чтобы избежать потери точности в JavaScript
                         const notifyPayload = {
-                            discord_id: application.discord_id,
+                            discord_id: String(application.discord_id),
                             action: 'reject',
                             steam_id: application.steam_id
                         };
