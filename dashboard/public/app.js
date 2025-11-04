@@ -3759,7 +3759,6 @@ async function loadTournamentStatus() {
             const formContainer = document.getElementById('tournament-form-container');
             if (formContainer) {
                 const form = document.getElementById('tournament-application-form');
-                if (form) form.style.display = 'none';
                 
                 const statusMessages = {
                     'pending': '⏳ Ожидание рассмотрения',
@@ -3769,20 +3768,46 @@ async function loadTournamentStatus() {
                 
                 const statusText = statusMessages[data.application.status] || 'Неизвестный статус';
                 
-                formContainer.innerHTML = `
-                    <div style="padding: 24px; background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border-color); text-align: center;">
-                        <div style="font-size: 48px; margin-bottom: 16px;">${data.application.status === 'approved' ? '✅' : data.application.status === 'rejected' ? '❌' : '⏳'}</div>
-                        <h3 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 700; color: var(--text-primary);">
-                            ${statusText}
-                        </h3>
-                        <p style="margin: 0 0 8px 0; color: var(--text-secondary); font-size: 14px;">
-                            Steam ID: <strong>${data.application.steam_id}</strong>
-                        </p>
-                        <p style="margin: 0; color: var(--text-secondary); font-size: 12px;">
-                            Подана: ${new Date(data.application.created_at).toLocaleString('ru-RU')}
-                        </p>
-                    </div>
-                `;
+                // Если заявка одобрена или отклонена - показываем форму для создания новой
+                if (data.application.status === 'approved' || data.application.status === 'rejected') {
+                    if (form) form.style.display = 'flex';
+                    
+                    formContainer.innerHTML = `
+                        <div style="padding: 24px; background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border-color); text-align: center; margin-bottom: 24px;">
+                            <div style="font-size: 48px; margin-bottom: 16px;">${data.application.status === 'approved' ? '✅' : '❌'}</div>
+                            <h3 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 700; color: var(--text-primary);">
+                                ${statusText}
+                            </h3>
+                            <p style="margin: 0 0 8px 0; color: var(--text-secondary); font-size: 14px;">
+                                Steam ID: <strong>${data.application.steam_id}</strong>
+                            </p>
+                            <p style="margin: 0 0 16px 0; color: var(--text-secondary); font-size: 12px;">
+                                Подана: ${new Date(data.application.created_at).toLocaleString('ru-RU')}
+                            </p>
+                            <p style="margin: 0; color: var(--text-secondary); font-size: 13px; padding: 12px; background: rgba(102, 126, 234, 0.1); border-radius: 8px;">
+                                💡 Вы можете создать новую заявку ниже
+                            </p>
+                        </div>
+                    `;
+                } else {
+                    // Если pending - скрываем форму
+                    if (form) form.style.display = 'none';
+                    
+                    formContainer.innerHTML = `
+                        <div style="padding: 24px; background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border-color); text-align: center;">
+                            <div style="font-size: 48px; margin-bottom: 16px;">⏳</div>
+                            <h3 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 700; color: var(--text-primary);">
+                                ${statusText}
+                            </h3>
+                            <p style="margin: 0 0 8px 0; color: var(--text-secondary); font-size: 14px;">
+                                Steam ID: <strong>${data.application.steam_id}</strong>
+                            </p>
+                            <p style="margin: 0; color: var(--text-secondary); font-size: 12px;">
+                                Подана: ${new Date(data.application.created_at).toLocaleString('ru-RU')}
+                            </p>
+                        </div>
+                    `;
+                }
             }
         }
         
