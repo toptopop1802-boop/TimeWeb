@@ -163,6 +163,85 @@ async function loadImprovedTournamentAdminPanel() {
                 <canvas id="applications-chart" style="max-height: 280px;"></canvas>
             </div>
             
+            <!-- Команды А и Б -->
+            ${(() => {
+                const team1 = applications.filter(a => a.team_number === 1 && a.status === 'approved');
+                const team2 = applications.filter(a => a.team_number === 2 && a.status === 'approved');
+                
+                if (team1.length > 0 || team2.length > 0) {
+                    return `
+                        <div style="background: var(--bg-card); border-radius: 20px; padding: 28px; border: 2px solid var(--border-color); box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 24px;">
+                            <h3 style="margin: 0 0 24px 0; font-size: 20px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 10px;">
+                                <span style="font-size: 28px;">🏆</span>
+                                <span>Составы команд</span>
+                            </h3>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                                <!-- Команда А -->
+                                <div style="padding: 24px; background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.05)); border-radius: 16px; border: 2px solid rgba(239, 68, 68, 0.3);">
+                                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+                                        <div style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #ef4444, #dc2626); display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: 700; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);">
+                                            🔴
+                                        </div>
+                                        <div>
+                                            <h4 style="margin: 0; font-size: 18px; font-weight: 700; color: #ef4444;">Команда А</h4>
+                                            <p style="margin: 4px 0 0 0; font-size: 14px; color: var(--text-secondary);">${team1.length} игроков</p>
+                                        </div>
+                                    </div>
+                                    <div id="team1-list" style="display: flex; flex-direction: column; gap: 12px; max-height: 400px; overflow-y: auto;">
+                                        ${team1.map((player, idx) => `
+                                            <div style="padding: 14px; background: var(--bg-primary); border-radius: 10px; border-left: 3px solid #ef4444; display: flex; justify-content: space-between; align-items: center;">
+                                                <div style="flex: 1;">
+                                                    <div style="font-weight: 600; font-size: 14px; color: var(--text-primary); margin-bottom: 4px;" data-discord-id="${player.discord_id}">
+                                                        Загрузка...
+                                                    </div>
+                                                    <div style="font-size: 12px; color: var(--text-secondary); font-family: monospace;">
+                                                        Steam: ${player.steam_id}
+                                                    </div>
+                                                </div>
+                                                <div style="font-size: 18px; font-weight: 700; color: #ef4444; opacity: 0.6;">
+                                                    #${idx + 1}
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                                
+                                <!-- Команда Б -->
+                                <div style="padding: 24px; background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.05)); border-radius: 16px; border: 2px solid rgba(59, 130, 246, 0.3);">
+                                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+                                        <div style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #2563eb); display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: 700; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);">
+                                            🔵
+                                        </div>
+                                        <div>
+                                            <h4 style="margin: 0; font-size: 18px; font-weight: 700; color: #3b82f6;">Команда Б</h4>
+                                            <p style="margin: 4px 0 0 0; font-size: 14px; color: var(--text-secondary);">${team2.length} игроков</p>
+                                        </div>
+                                    </div>
+                                    <div id="team2-list" style="display: flex; flex-direction: column; gap: 12px; max-height: 400px; overflow-y: auto;">
+                                        ${team2.map((player, idx) => `
+                                            <div style="padding: 14px; background: var(--bg-primary); border-radius: 10px; border-left: 3px solid #3b82f6; display: flex; justify-content: space-between; align-items: center;">
+                                                <div style="flex: 1;">
+                                                    <div style="font-weight: 600; font-size: 14px; color: var(--text-primary); margin-bottom: 4px;" data-discord-id="${player.discord_id}">
+                                                        Загрузка...
+                                                    </div>
+                                                    <div style="font-size: 12px; color: var(--text-secondary); font-family: monospace;">
+                                                        Steam: ${player.steam_id}
+                                                    </div>
+                                                </div>
+                                                <div style="font-size: 18px; font-weight: 700; color: #3b82f6; opacity: 0.6;">
+                                                    #${idx + 1}
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                return '';
+            })()}
+            
             <!-- Детальные логи заявок -->
             <div style="background: var(--bg-card); border-radius: 20px; padding: 28px; border: 2px solid var(--border-color); box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
@@ -748,6 +827,42 @@ async function loadImprovedTournamentAdminPanel() {
                 }
             });
         }
+        
+        // Загружаем Discord теги для игроков команд
+        setTimeout(async () => {
+            const team1Elements = document.querySelectorAll('#team1-list [data-discord-id]');
+            const team2Elements = document.querySelectorAll('#team2-list [data-discord-id]');
+            
+            if (team1Elements.length === 0 && team2Elements.length === 0) return;
+            
+            const loadTags = async (elements) => {
+                for (const element of elements) {
+                    const discordId = element.getAttribute('data-discord-id');
+                    if (!discordId) continue;
+                    
+                    try {
+                        const response = await fetch(`/api/admin/users/${discordId}/discord-tag`, {
+                            headers: { 'Authorization': `Bearer ${authData.token}` }
+                        });
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            element.textContent = data.tag || `Discord ID: ${discordId}`;
+                        } else {
+                            element.textContent = `Discord ID: ${discordId}`;
+                        }
+                    } catch (error) {
+                        console.error(`Error loading Discord tag for ${discordId}:`, error);
+                        element.textContent = `Discord ID: ${discordId}`;
+                    }
+                }
+            };
+            
+            await Promise.all([
+                loadTags(Array.from(team1Elements)),
+                loadTags(Array.from(team2Elements))
+            ]);
+        }, 500);
         
     } catch (error) {
         console.error('Load tournament admin panel error:', error);

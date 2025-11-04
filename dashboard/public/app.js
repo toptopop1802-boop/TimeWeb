@@ -3976,12 +3976,35 @@ async function loadTournamentStatus() {
         
         const data = await response.json();
         
-        // Если заявка уже подана, показываем статус
-        if (data.hasApplication) {
-            const formContainer = document.getElementById('tournament-form-container');
-            if (formContainer) {
-                const form = document.getElementById('tournament-application-form');
+        // Проверяем статус регистрации ПЕРВЫМ делом
+        const formContainer = document.getElementById('tournament-form-container');
+        if (formContainer) {
+            const form = document.getElementById('tournament-application-form');
+            
+            // Если регистрация закрыта - скрываем форму независимо от статуса заявки
+            if (!data.registrationOpen) {
+                if (form) form.style.display = 'none';
                 
+                const closesAtText = data.closesAt ? 
+                    `Регистрация закрыта до ${new Date(data.closesAt).toLocaleString('ru-RU')}` : 
+                    'Регистрация закрыта';
+                
+                formContainer.innerHTML = `
+                    <div style="padding: 24px; background: rgba(239, 68, 68, 0.1); border-radius: 12px; border: 1px solid rgba(239, 68, 68, 0.3); text-align: center;">
+                        <div style="font-size: 48px; margin-bottom: 16px;">🔒</div>
+                        <h3 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 700; color: var(--danger);">
+                            Регистрация закрыта
+                        </h3>
+                        <p style="margin: 0; color: var(--text-secondary); font-size: 14px;">
+                            ${closesAtText}
+                        </p>
+                    </div>
+                `;
+                return; // Прекращаем дальнейшую обработку
+            }
+            
+            // Если заявка уже подана, показываем статус
+            if (data.hasApplication) {
                 const statusMessages = {
                     'pending': '⏳ Ожидание рассмотрения',
                     'approved': '✅ Заявка одобрена',
@@ -4044,7 +4067,7 @@ async function loadTournamentStatus() {
             }
         }
         
-        // Если регистрация закрыта, показываем сообщение
+        // Если регистрация закрыта и нет заявки, показываем сообщение (fallback)
         if (!data.registrationOpen && !data.hasApplication) {
             const formContainer = document.getElementById('tournament-form-container');
             if (formContainer) {

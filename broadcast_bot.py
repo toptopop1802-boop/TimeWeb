@@ -566,12 +566,16 @@ async def handle_tournament_notify_request(request: web.Request) -> web.Response
                 
                 await user.send(embed=embed)
                 logging.info(f"✅ [Tournament Notify] DM sent to user {discord_id} (action: {action})")
+                logging.info(f"📧 [Tournament Notify] User details: {user.name}#{user.discriminator} (ID: {user.id})")
             else:
                 logging.warning(f"⚠️ [Tournament Notify] User {discord_id} not found")
-        except discord.Forbidden:
+        except discord.Forbidden as forbidden_error:
             logging.warning(f"⚠️ [Tournament Notify] Cannot send DM to user {discord_id} (DMs disabled)")
+            logging.warning(f"⚠️ [Tournament Notify] Forbidden error details: {forbidden_error}")
+        except discord.HTTPException as http_error:
+            logging.error(f"❌ [Tournament Notify] HTTP error sending DM to {discord_id}: {http_error}")
         except Exception as dm_error:
-            logging.error(f"❌ [Tournament Notify] Error sending DM: {dm_error}")
+            logging.error(f"❌ [Tournament Notify] Error sending DM to {discord_id}: {dm_error}", exc_info=True)
         
         return web.json_response({'success': True})
         
