@@ -2671,9 +2671,6 @@ async function showMapPreview(file) {
     dropZone.appendChild(previewContainer);
     
     try {
-        // Читаем файл как ArrayBuffer для отправки на сервер для генерации превью
-        const fileBuffer = await file.arrayBuffer();
-        
         // Отправляем файл на сервер для генерации превью
         const formData = new FormData();
         formData.append('map', file);
