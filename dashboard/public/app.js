@@ -2737,6 +2737,9 @@ async function showMapPreview(file) {
                         </div>
                     </div>
                 `;
+                
+                // Сохраняем URL превью для использования при загрузке
+                window.pendingMapPreviewUrl = previewUrl;
             }
             // Если превью недоступно, оставляем базовую информацию (уже показана)
         } else {
@@ -2941,9 +2944,15 @@ async function loadMaps() {
             const downloadUrl = map.download_url || generateDownloadUrl(map.id);
             const uploadDate = new Date(map.uploaded_at).toLocaleString('ru-RU');
             const fileSize = formatFileSize(map.file_size || 0);
+            const previewUrl = map.preview_url || null;
 
             return `
                 <div class="map-card">
+                    ${previewUrl ? `
+                        <div class="map-preview-thumbnail" style="margin-bottom: 16px; border-radius: 8px; overflow: hidden; border: 2px solid var(--border-color);">
+                            <img src="${previewUrl}" alt="Превью карты" style="width: 100%; height: auto; display: block;" loading="lazy" onerror="this.style.display='none';">
+                        </div>
+                    ` : ''}
                     <div class="map-info">
                         <h4 class="map-name">${escapeHtml(map.original_name)}</h4>
                         <div class="map-meta">
@@ -2955,6 +2964,7 @@ async function loadMaps() {
                     <div class="map-link-section">
                         <input type="text" class="map-link-input" value="${downloadUrl}" readonly id="map-link-${map.id}">
                         <button class="map-link-btn" onclick="copyMapLink('${map.id}', '${downloadUrl}')">⧉ Копировать</button>
+                        ${previewUrl ? `<a href="${previewUrl}" download="${map.original_name.replace('.map', '_preview.jpg')}" class="btn btn-secondary" style="text-decoration: none; display: inline-block; padding: 8px 16px; margin-right: 8px;">📥 Превью</a>` : ''}
                         <button class="map-delete-btn" onclick="deleteMapLocal('${map.id}')">🗑️ Удалить</button>
                     </div>
                 </div>
