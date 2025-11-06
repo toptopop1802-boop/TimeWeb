@@ -2606,7 +2606,8 @@ function setupMapsPage() {
                 showToast('Пожалуйста, выберите файл с расширением .map');
                 return;
             }
-            uploadMap(file);
+            // Показываем превью перед загрузкой
+            showMapPreview(file);
         }
     });
 
@@ -2639,9 +2640,120 @@ function setupMapsPage() {
                 showToast('Пожалуйста, перетащите файл с расширением .map');
                 return;
             }
-            uploadMap(file);
+            // Показываем превью перед загрузкой
+            showMapPreview(file);
         }
     });
+}
+
+// Показываем превью карты перед загрузкой
+async function showMapPreview(file) {
+    const dropZone = document.getElementById('maps-drop');
+    if (!dropZone) return;
+    
+    // Удаляем старое превью если есть
+    const oldPreview = dropZone.querySelector('.map-preview-container');
+    if (oldPreview) {
+        oldPreview.remove();
+    }
+    
+    // Создаем контейнер для превью
+    const previewContainer = document.createElement('div');
+    previewContainer.className = 'map-preview-container';
+    previewContainer.innerHTML = `
+        <div class="map-preview-loading">
+            <div class="map-preview-spinner"></div>
+            <p>Генерация превью карты...</p>
+        </div>
+    `;
+    
+    // Вставляем превью в drop zone
+    dropZone.appendChild(previewContainer);
+    
+    try {
+        // Читаем файл как ArrayBuffer для отправки на сервер для генерации превью
+        const fileBuffer = await file.arrayBuffer();
+        
+        // Отправляем файл на сервер для генерации превью
+        const formData = new FormData();
+        formData.append('map', file);
+        
+        const previewResponse = await fetch(`${API_URL}/api/maps/preview`, {
+            method: 'POST',
+            body: formData,
+            headers: currentUser && currentUser.token ? {
+                'Authorization': `Bearer ${currentUser.token}`
+            } : {}
+        });
+        
+        if (previewResponse.ok) {
+            const previewData = await previewResponse.json();
+            
+            // Если превью успешно получено, показываем его
+            if (previewData.preview_url) {
+                previewContainer.innerHTML = `
+                    <div class="map-preview-image-container">
+                        <img src="${previewData.preview_url}" alt="Превью карты" class="map-preview-image" onerror="this.parentElement.innerHTML='<div class=\\'map-preview-error\\'>Не удалось загрузить превью</div>'">
+                        <div class="map-preview-info">
+                            <h4>${escapeHtml(file.name)}</h4>
+                            <p>Размер: ${formatFileSize(file.size)}</p>
+                        </div>
+                        <div class="map-preview-actions">
+                            <button class="btn btn-primary" onclick="uploadSelectedMap()">Загрузить карту</button>
+                            <button class="btn btn-secondary" onclick="cancelMapPreview()">Отмена</button>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Если превью недоступно, показываем базовую информацию
+                throw new Error('Превью недоступно');
+            }
+            
+            // Сохраняем файл для загрузки
+            window.pendingMapFile = file;
+        } else {
+            throw new Error('Не удалось сгенерировать превью');
+        }
+    } catch (error) {
+        console.error('Ошибка генерации превью:', error);
+        // Если не удалось получить превью, показываем базовую информацию
+        previewContainer.innerHTML = `
+            <div class="map-preview-basic">
+                <div class="map-preview-info">
+                    <h4>${escapeHtml(file.name)}</h4>
+                    <p>Размер: ${formatFileSize(file.size)}</p>
+                    <p style="color: var(--text-secondary); font-size: 12px; margin-top: 8px;">Превью недоступно</p>
+                </div>
+                <div class="map-preview-actions">
+                    <button class="btn btn-primary" onclick="uploadSelectedMap()">Загрузить карту</button>
+                    <button class="btn btn-secondary" onclick="cancelMapPreview()">Отмена</button>
+                </div>
+            </div>
+        `;
+        window.pendingMapFile = file;
+    }
+}
+
+// Загружаем выбранную карту
+window.uploadSelectedMap = function() {
+    if (window.pendingMapFile) {
+        uploadMap(window.pendingMapFile);
+        window.pendingMapFile = null;
+    }
+}
+
+// Отменяем превью
+window.cancelMapPreview = function() {
+    const dropZone = document.getElementById('maps-drop');
+    const previewContainer = dropZone?.querySelector('.map-preview-container');
+    if (previewContainer) {
+        previewContainer.remove();
+    }
+    const fileInput = document.getElementById('maps-file');
+    if (fileInput) {
+        fileInput.value = '';
+    }
+    window.pendingMapFile = null;
 }
 
 async function uploadMap(file) {
@@ -2660,6 +2772,12 @@ async function uploadMap(file) {
     progressDiv.style.display = 'block';
     dropZone.style.opacity = '0.5';
     dropZone.style.pointerEvents = 'none';
+    
+    // Скрываем превью во время загрузки
+    const previewContainer = dropZone.querySelector('.map-preview-container');
+    if (previewContainer) {
+        previewContainer.style.display = 'none';
+    }
 
     try {
         const xhr = new XMLHttpRequest();
@@ -2686,6 +2804,11 @@ async function uploadMap(file) {
                 progressDiv.style.display = 'none';
                 dropZone.style.opacity = '1';
                 dropZone.style.pointerEvents = 'auto';
+                // Удаляем превью после успешной загрузки
+                const previewContainer = dropZone.querySelector('.map-preview-container');
+                if (previewContainer) {
+                    previewContainer.remove();
+                }
                 console.log('🔄 Перезагружаем список карт...');
                 loadMaps();
             } else {

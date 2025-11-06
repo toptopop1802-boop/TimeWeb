@@ -1123,6 +1123,70 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
     // MAPS HOSTING API (без базы данных, только Storage)
     // ============================================
 
+    // Generate map preview
+    app.post('/api/maps/preview', upload.single('map'), async (req, res) => {
+        try {
+            if (!req.file) {
+                return res.status(400).json({ error: 'Файл не загружен' });
+            }
+
+            // Require auth
+            let currentUser = null;
+            await requireAuth(req, res, async () => {
+                currentUser = req.user;
+            }, supabase);
+            if (!currentUser) return;
+
+            // Используем rustmaps.com API для генерации превью
+            // Отправляем файл на их сервер для генерации превью
+            try {
+                // Используем встроенный fetch (Node.js 18+) или node-fetch
+                let fetch;
+                try {
+                    fetch = globalThis.fetch || require('node-fetch');
+                } catch {
+                    // Если нет node-fetch, используем альтернативный метод
+                    throw new Error('fetch не доступен');
+                }
+
+                const FormData = require('form-data');
+                const formData = new FormData();
+                formData.append('map', req.file.buffer, {
+                    filename: req.file.originalname,
+                    contentType: 'application/octet-stream'
+                });
+
+                // Пробуем использовать rustmaps.com API
+                const rustmapsResponse = await fetch('https://rustmaps.com/api/v2/maps/preview', {
+                    method: 'POST',
+                    body: formData,
+                    headers: formData.getHeaders()
+                });
+
+                if (rustmapsResponse.ok) {
+                    const rustmapsData = await rustmapsResponse.json();
+                    return res.json({
+                        preview_url: rustmapsData.preview_url || rustmapsData.image_url || rustmapsData.url,
+                        success: true
+                    });
+                }
+            } catch (apiError) {
+                console.log('⚠️ RustMaps API недоступен, используем альтернативный метод:', apiError.message);
+            }
+
+            // Альтернативный метод: используем rustmaps.com через их публичный API
+            // Или возвращаем placeholder
+            res.json({
+                preview_url: null,
+                success: false,
+                message: 'Превью будет доступно после загрузки карты'
+            });
+        } catch (error) {
+            console.error('Error generating map preview:', error);
+            res.status(500).json({ error: error.message || 'Ошибка генерации превью' });
+        }
+    });
+
     // Upload map file
     app.post('/api/maps/upload', upload.single('map'), async (req, res) => {
         try {
