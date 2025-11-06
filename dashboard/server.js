@@ -1140,27 +1140,22 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
             // Используем rustmaps.com API для генерации превью
             // Отправляем файл на их сервер для генерации превью
             try {
-                // Используем встроенный fetch (Node.js 18+) или node-fetch
-                let fetch;
-                try {
-                    fetch = globalThis.fetch || require('node-fetch');
-                } catch {
-                    // Если нет node-fetch, используем альтернативный метод
+                // Используем встроенный fetch (Node.js 18+)
+                const fetch = globalThis.fetch;
+                
+                if (!fetch) {
                     throw new Error('fetch не доступен');
                 }
 
-                const FormData = require('form-data');
+                // Используем FormData из встроенного API (Node.js 18+)
                 const formData = new FormData();
-                formData.append('map', req.file.buffer, {
-                    filename: req.file.originalname,
-                    contentType: 'application/octet-stream'
-                });
+                const blob = new Blob([req.file.buffer], { type: 'application/octet-stream' });
+                formData.append('map', blob, req.file.originalname);
 
                 // Пробуем использовать rustmaps.com API
                 const rustmapsResponse = await fetch('https://rustmaps.com/api/v2/maps/preview', {
                     method: 'POST',
-                    body: formData,
-                    headers: formData.getHeaders()
+                    body: formData
                 });
 
                 if (rustmapsResponse.ok) {

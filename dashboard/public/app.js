@@ -2731,6 +2731,7 @@ async function showMapPreview(file) {
                             <p>Размер: ${formatFileSize(file.size)}</p>
                         </div>
                         <div class="map-preview-actions">
+                            <a href="${previewUrl}" download="${file.name.replace('.map', '_preview.jpg')}" class="btn btn-secondary" style="text-decoration: none; display: inline-block;">📥 Скачать превью</a>
                             <button class="btn btn-primary" onclick="uploadSelectedMap()">Загрузить карту</button>
                             <button class="btn btn-secondary" onclick="cancelMapPreview()">Отмена</button>
                         </div>
