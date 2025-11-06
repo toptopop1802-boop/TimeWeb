@@ -2718,57 +2718,26 @@ async function showMapPreview(file) {
                     </div>
                 `;
             } else {
-                // Если превью недоступно, показываем базовую информацию (не выбрасываем ошибку)
-                previewContainer.innerHTML = `
-                    <div class="map-preview-basic">
-                        <div class="map-preview-info">
-                            <h4>${escapeHtml(file.name)}</h4>
-                            <p>Размер: ${formatFileSize(file.size)}</p>
-                            <p style="color: var(--text-secondary); font-size: 12px; margin-top: 8px;">Превью будет доступно после загрузки</p>
-                        </div>
-                        <div class="map-preview-actions">
-                            <button class="btn btn-primary" onclick="uploadSelectedMap()">Загрузить карту</button>
-                            <button class="btn btn-secondary" onclick="cancelMapPreview()">Отмена</button>
-                        </div>
-                    </div>
-                `;
+                // Если превью недоступно, показываем базовую информацию с иконкой
+                previewContainer.innerHTML = fileInfoHtml;
             }
             
             // Сохраняем файл для загрузки
             window.pendingMapFile = file;
         } else {
-            // Если запрос не успешен, показываем базовую информацию
-            previewContainer.innerHTML = `
-                <div class="map-preview-basic">
-                    <div class="map-preview-info">
-                        <h4>${escapeHtml(file.name)}</h4>
-                        <p>Размер: ${formatFileSize(file.size)}</p>
-                        <p style="color: var(--text-secondary); font-size: 12px; margin-top: 8px;">Превью будет доступно после загрузки</p>
-                    </div>
-                    <div class="map-preview-actions">
-                        <button class="btn btn-primary" onclick="uploadSelectedMap()">Загрузить карту</button>
-                        <button class="btn btn-secondary" onclick="cancelMapPreview()">Отмена</button>
-                    </div>
-                </div>
-            `;
+            // Если запрос не успешен, показываем базовую информацию с иконкой
+            previewContainer.innerHTML = fileInfoHtml;
             window.pendingMapFile = file;
         }
     } catch (error) {
         console.error('Ошибка генерации превью:', error);
-        // Если не удалось получить превью, показываем базовую информацию
-        previewContainer.innerHTML = `
-            <div class="map-preview-basic">
-                <div class="map-preview-info">
-                    <h4>${escapeHtml(file.name)}</h4>
-                    <p>Размер: ${formatFileSize(file.size)}</p>
-                    <p style="color: var(--text-secondary); font-size: 12px; margin-top: 8px;">Превью недоступно</p>
-                </div>
-                <div class="map-preview-actions">
-                    <button class="btn btn-primary" onclick="uploadSelectedMap()">Загрузить карту</button>
-                    <button class="btn btn-secondary" onclick="cancelMapPreview()">Отмена</button>
-                </div>
-            </div>
-        `;
+        // Если не удалось получить превью, показываем базовую информацию с иконкой
+        previewContainer.innerHTML = fileInfoHtml;
+        window.pendingMapFile = file;
+    }
+    
+    // Сохраняем файл для загрузки
+    if (!window.pendingMapFile) {
         window.pendingMapFile = file;
     }
 }
