@@ -2840,6 +2840,11 @@ async function uploadMap(file) {
         progressDiv.style.display = 'none';
         dropZone.style.opacity = '1';
         dropZone.style.pointerEvents = 'auto';
+        // Показываем превью обратно при ошибке
+        const previewContainer = dropZone.querySelector('.map-preview-container');
+        if (previewContainer) {
+            previewContainer.style.display = 'block';
+        }
     }
 }
 
