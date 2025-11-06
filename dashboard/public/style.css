@@ -1521,6 +1521,18 @@ textarea.form-control {
     gap: 16px;
     padding: 20px;
     text-align: center;
+    align-items: center;
+}
+
+.map-preview-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 80px;
+    height: 80px;
+    background: rgba(196, 5, 82, 0.1);
+    border-radius: 12px;
+    margin-bottom: 8px;
 }
 
 .map-preview-error {
