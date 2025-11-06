@@ -2670,6 +2670,26 @@ async function showMapPreview(file) {
     // Вставляем превью в drop zone
     dropZone.appendChild(previewContainer);
     
+    // Сразу показываем базовую информацию о файле с иконкой
+    const fileInfoHtml = `
+        <div class="map-preview-basic">
+            <div class="map-preview-icon">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width: 64px; height: 64px; stroke: var(--accent-primary); fill: none;">
+                    <path d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.447 2.224A1 1 0 0 0 21 18.382V7.618a1 1 0 0 0-.553-.894L15 4m0 13V4m0 0L9 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <div class="map-preview-info">
+                <h4>${escapeHtml(file.name)}</h4>
+                <p>Размер: ${formatFileSize(file.size)}</p>
+                <p style="color: var(--text-secondary); font-size: 12px; margin-top: 8px;">Готов к загрузке</p>
+            </div>
+            <div class="map-preview-actions">
+                <button class="btn btn-primary" onclick="uploadSelectedMap()">Загрузить карту</button>
+                <button class="btn btn-secondary" onclick="cancelMapPreview()">Отмена</button>
+            </div>
+        </div>
+    `;
+    
     try {
         // Отправляем файл на сервер для генерации превью
         const formData = new FormData();
