@@ -2814,8 +2814,15 @@ async function uploadMap(file) {
                 const response = JSON.parse(xhr.responseText);
                 console.log('✅ Карта загружена успешно!', response);
                 
+                // Пробуем получить превью для загруженной карты
+                const mapData = response.map;
+                if (window.pendingMapPreviewUrl) {
+                    mapData.preview_url = window.pendingMapPreviewUrl;
+                    window.pendingMapPreviewUrl = null;
+                }
+                
                 // Сохраняем в локальную историю
-                saveMapToLocalHistory(response.map);
+                saveMapToLocalHistory(mapData);
                 
                 showToast('Карта успешно загружена!', 'success');
                 progressDiv.style.display = 'none';
@@ -2889,7 +2896,8 @@ function saveMapToLocalHistory(map) {
             original_name: map.original_name,
             file_size: map.file_size,
             uploaded_at: map.uploaded_at || new Date().toISOString(),
-            download_url: generateDownloadUrl(map.id)
+            download_url: generateDownloadUrl(map.id),
+            preview_url: map.preview_url || null // Сохраняем превью если есть
         });
         
         // Ограничиваем историю 100 картами
