@@ -2691,9 +2691,22 @@ async function showMapPreview(file) {
             
             // Если превью успешно получено, показываем его
             if (previewData.preview_url) {
+                // Добавляем параметры сжатия для изображения превью
+                let previewUrl = previewData.preview_url;
+                try {
+                    const url = new URL(previewUrl);
+                    // Устанавливаем параметры для сжатия изображения
+                    url.searchParams.set('w', '800'); // Максимальная ширина 800px
+                    url.searchParams.set('q', '75'); // Качество 75%
+                    previewUrl = url.toString();
+                } catch (e) {
+                    // Если не удалось распарсить URL, используем оригинальный
+                    console.log('Не удалось добавить параметры сжатия');
+                }
+                
                 previewContainer.innerHTML = `
                     <div class="map-preview-image-container">
-                        <img src="${previewData.preview_url}" alt="Превью карты" class="map-preview-image" onerror="this.parentElement.innerHTML='<div class=\\'map-preview-error\\'>Не удалось загрузить превью</div>'">
+                        <img src="${previewUrl}" alt="Превью карты" class="map-preview-image" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'map-preview-error\\'>Не удалось загрузить превью</div>'">
                         <div class="map-preview-info">
                             <h4>${escapeHtml(file.name)}</h4>
                             <p>Размер: ${formatFileSize(file.size)}</p>
@@ -2705,14 +2718,40 @@ async function showMapPreview(file) {
                     </div>
                 `;
             } else {
-                // Если превью недоступно, показываем базовую информацию
-                throw new Error('Превью недоступно');
+                // Если превью недоступно, показываем базовую информацию (не выбрасываем ошибку)
+                previewContainer.innerHTML = `
+                    <div class="map-preview-basic">
+                        <div class="map-preview-info">
+                            <h4>${escapeHtml(file.name)}</h4>
+                            <p>Размер: ${formatFileSize(file.size)}</p>
+                            <p style="color: var(--text-secondary); font-size: 12px; margin-top: 8px;">Превью будет доступно после загрузки</p>
+                        </div>
+                        <div class="map-preview-actions">
+                            <button class="btn btn-primary" onclick="uploadSelectedMap()">Загрузить карту</button>
+                            <button class="btn btn-secondary" onclick="cancelMapPreview()">Отмена</button>
+                        </div>
+                    </div>
+                `;
             }
             
             // Сохраняем файл для загрузки
             window.pendingMapFile = file;
         } else {
-            throw new Error('Не удалось сгенерировать превью');
+            // Если запрос не успешен, показываем базовую информацию
+            previewContainer.innerHTML = `
+                <div class="map-preview-basic">
+                    <div class="map-preview-info">
+                        <h4>${escapeHtml(file.name)}</h4>
+                        <p>Размер: ${formatFileSize(file.size)}</p>
+                        <p style="color: var(--text-secondary); font-size: 12px; margin-top: 8px;">Превью будет доступно после загрузки</p>
+                    </div>
+                    <div class="map-preview-actions">
+                        <button class="btn btn-primary" onclick="uploadSelectedMap()">Загрузить карту</button>
+                        <button class="btn btn-secondary" onclick="cancelMapPreview()">Отмена</button>
+                    </div>
+                </div>
+            `;
+            window.pendingMapFile = file;
         }
     } catch (error) {
         console.error('Ошибка генерации превью:', error);

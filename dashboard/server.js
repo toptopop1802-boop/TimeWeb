@@ -1165,21 +1165,46 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
 
                 if (rustmapsResponse.ok) {
                     const rustmapsData = await rustmapsResponse.json();
-                    return res.json({
-                        preview_url: rustmapsData.preview_url || rustmapsData.image_url || rustmapsData.url,
-                        success: true
-                    });
+                    const previewUrl = rustmapsData.preview_url || rustmapsData.image_url || rustmapsData.url;
+                    
+                    if (previewUrl) {
+                        // Если есть URL превью, возвращаем его с параметрами сжатия
+                        // Добавляем параметры для сжатия изображения (если API поддерживает)
+                        let finalUrl = previewUrl;
+                        
+                        // Пробуем добавить параметры сжатия через query string
+                        // Многие API поддерживают параметры w (width), h (height), q (quality)
+                        try {
+                            const urlObj = new URL(previewUrl);
+                            // Устанавливаем максимальную ширину 800px для превью
+                            urlObj.searchParams.set('w', '800');
+                            urlObj.searchParams.set('q', '75'); // Качество 75% для меньшего размера
+                            finalUrl = urlObj.toString();
+                        } catch (e) {
+                            // Если не удалось распарсить URL, используем оригинальный
+                            console.log('Не удалось добавить параметры сжатия к URL');
+                        }
+                        
+                        return res.json({
+                            preview_url: finalUrl,
+                            success: true
+                        });
+                    }
                 }
             } catch (apiError) {
-                console.log('⚠️ RustMaps API недоступен, используем альтернативный метод:', apiError.message);
+                console.log('⚠️ RustMaps API недоступен:', apiError.message);
             }
 
-            // Альтернативный метод: используем rustmaps.com через их публичный API
-            // Или возвращаем placeholder
+            // Альтернативный метод: возвращаем информацию о файле без превью
+            // Превью будет доступно после загрузки карты
             res.json({
                 preview_url: null,
                 success: false,
-                message: 'Превью будет доступно после загрузки карты'
+                message: 'Превью будет доступно после загрузки карты',
+                file_info: {
+                    name: req.file.originalname,
+                    size: req.file.size
+                }
             });
         } catch (error) {
             console.error('Error generating map preview:', error);
