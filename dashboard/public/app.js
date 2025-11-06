@@ -2660,15 +2660,6 @@ async function showMapPreview(file) {
     // Создаем контейнер для превью
     const previewContainer = document.createElement('div');
     previewContainer.className = 'map-preview-container';
-    previewContainer.innerHTML = `
-        <div class="map-preview-loading">
-            <div class="map-preview-spinner"></div>
-            <p>Генерация превью карты...</p>
-        </div>
-    `;
-    
-    // Вставляем превью в drop zone
-    dropZone.appendChild(previewContainer);
     
     // Сразу показываем базовую информацию о файле с иконкой
     const fileInfoHtml = `
@@ -2690,6 +2681,16 @@ async function showMapPreview(file) {
         </div>
     `;
     
+    // Сразу показываем информацию о файле
+    previewContainer.innerHTML = fileInfoHtml;
+    
+    // Вставляем превью в drop zone
+    dropZone.appendChild(previewContainer);
+    
+    // Сохраняем файл для загрузки
+    window.pendingMapFile = file;
+    
+    // Пробуем получить превью изображения в фоне (не блокируя UI)
     try {
         // Отправляем файл на сервер для генерации превью
         const formData = new FormData();
@@ -2707,7 +2708,7 @@ async function showMapPreview(file) {
             const previewData = await previewResponse.json();
             
             // Если превью успешно получено, показываем его
-            if (previewData.preview_url) {
+                if (previewData.preview_url) {
                 // Добавляем параметры сжатия для изображения превью
                 let previewUrl = previewData.preview_url;
                 try {
@@ -2721,9 +2722,10 @@ async function showMapPreview(file) {
                     console.log('Не удалось добавить параметры сжатия');
                 }
                 
+                // Обновляем превью, добавляя изображение
                 previewContainer.innerHTML = `
                     <div class="map-preview-image-container">
-                        <img src="${previewUrl}" alt="Превью карты" class="map-preview-image" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'map-preview-error\\'>Не удалось загрузить превью</div>'">
+                        <img src="${previewUrl}" alt="Превью карты" class="map-preview-image" loading="lazy" onerror="this.onerror=null; this.style.display='none';">
                         <div class="map-preview-info">
                             <h4>${escapeHtml(file.name)}</h4>
                             <p>Размер: ${formatFileSize(file.size)}</p>
@@ -2734,28 +2736,14 @@ async function showMapPreview(file) {
                         </div>
                     </div>
                 `;
-            } else {
-                // Если превью недоступно, показываем базовую информацию с иконкой
-                previewContainer.innerHTML = fileInfoHtml;
             }
-            
-            // Сохраняем файл для загрузки
-            window.pendingMapFile = file;
+            // Если превью недоступно, оставляем базовую информацию (уже показана)
         } else {
-            // Если запрос не успешен, показываем базовую информацию с иконкой
-            previewContainer.innerHTML = fileInfoHtml;
-            window.pendingMapFile = file;
+            // Если запрос не успешен, оставляем базовую информацию (уже показана)
         }
     } catch (error) {
         console.error('Ошибка генерации превью:', error);
-        // Если не удалось получить превью, показываем базовую информацию с иконкой
-        previewContainer.innerHTML = fileInfoHtml;
-        window.pendingMapFile = file;
-    }
-    
-    // Сохраняем файл для загрузки
-    if (!window.pendingMapFile) {
-        window.pendingMapFile = file;
+        // Оставляем базовую информацию (уже показана)
     }
 }
 
