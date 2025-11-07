@@ -117,9 +117,17 @@ function updatePlayerStatsUrl(steamId) {
 // Получение Steam ID из URL
 function getSteamIdFromUrl() {
     const hash = window.location.hash;
-    if (hash.includes('player-stats?')) {
-        const params = new URLSearchParams(hash.split('?')[1]);
-        return params.get('steamId');
+    if (hash && hash.includes('player-stats')) {
+        // Проверяем формат #player-stats?steamId=...
+        if (hash.includes('player-stats?')) {
+            const params = new URLSearchParams(hash.split('?')[1]);
+            return params.get('steamId');
+        }
+        // Проверяем формат #player-stats?steamId=... в hash
+        const match = hash.match(/player-stats\?steamId=([^&]+)/);
+        if (match) {
+            return match[1];
+        }
     }
     return null;
 }

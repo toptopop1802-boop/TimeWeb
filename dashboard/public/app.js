@@ -1188,9 +1188,12 @@ function setupNavigation() {
 }
 
 function navigateToPage(page) {
+    // Извлекаем имя страницы из hash (убираем параметры после ?)
+    const pageName = page.split('?')[0];
+    
     // Check admin-only pages
     const adminPages = ['server', 'analytics', 'messages', 'channels', 'admin', 'users'];
-    if (adminPages.includes(page)) {
+    if (adminPages.includes(pageName)) {
         const authData = getAuthData();
         if (!authData || !isAdmin(authData)) {
             console.warn('⛔ Доступ запрещен. Требуются права администратора.');
@@ -1202,14 +1205,17 @@ function navigateToPage(page) {
     // Update active link
     document.querySelectorAll('.nav-link').forEach(l => {
         l.classList.remove('active');
-        if (l.dataset.page === page || l.getAttribute('href') === `#${page}`) {
+        if (l.dataset.page === pageName || l.getAttribute('href') === `#${pageName}`) {
             l.classList.add('active');
         }
     });
 
-    // Update URL hash
-    if (window.location.hash !== `#${page}`) {
-        window.location.hash = page;
+    // Update URL hash (сохраняем параметры если они есть)
+    const currentHash = window.location.hash.substring(1);
+    if (!currentHash.startsWith(pageName)) {
+        // Если hash не начинается с имени страницы, обновляем его
+        const params = page.includes('?') ? '?' + page.split('?')[1] : '';
+        window.location.hash = pageName + params;
     }
 
     // Show corresponding page
@@ -1217,19 +1223,19 @@ function navigateToPage(page) {
         p.style.display = 'none';
     });
     
-    const targetPage = document.getElementById(`page-${page}`);
+    const targetPage = document.getElementById(`page-${pageName}`);
     if (targetPage) {
         targetPage.style.display = 'block';
     }
     
     // Hide changelog detail page if switching away from changelog
     const changelogDetailPage = document.getElementById('page-changelog-detail');
-    if (changelogDetailPage && page !== 'changelog') {
+    if (changelogDetailPage && pageName !== 'changelog') {
         changelogDetailPage.style.display = 'none';
     }
     
     // Clear changelog detail hash if not on changelog page
-    if (page !== 'changelog') {
+    if (pageName !== 'changelog') {
         const changelogHashMatch = window.location.hash.match(/^#changelog\/(\d+)$/);
         if (changelogHashMatch) {
             window.location.hash = 'changelog';
@@ -1237,6 +1243,12 @@ function navigateToPage(page) {
     }
 
     // Load page data
+    // Специальная обработка для страницы статистики игроков с параметрами
+    if (pageName === 'player-stats' && typeof handlePlayerStatsPageLoad === 'function') {
+        setTimeout(() => {
+            handlePlayerStatsPageLoad();
+        }, 100);
+    }
     if (page === 'analytics') {
         const days = parseInt(document.getElementById('period-select').value);
         loadAnalytics(days);
