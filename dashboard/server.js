@@ -1231,6 +1231,11 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
             const days = parseInt(req.query.days) || 7;
             const useDemo = req.query.demo === 'true' || req.query.demo === '1';
 
+            // Return demo data if requested
+            if (useDemo) {
+                return res.json(generateDemoPlayerStats(steamId, days));
+            }
+
             // Get player statistics
             const { data: stats, error: statsError } = await supabase
                 .from('player_statistics')
@@ -1242,16 +1247,12 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                 throw statsError;
             }
 
-            const playerStats = stats || {
-                steam_id: steamId,
-                total_kills: 0,
-                total_deaths: 0,
-                headshots: 0,
-                torso_hits: 0,
-                limb_hits: 0,
-                total_reports: 0,
-                total_hours_played: 0
-            };
+            // If player doesn't exist, return demo data
+            if (!stats) {
+                return res.json(generateDemoPlayerStats(steamId, days));
+            }
+
+            const playerStats = stats;
 
             // Get kills in period
             const dateFrom = new Date();
