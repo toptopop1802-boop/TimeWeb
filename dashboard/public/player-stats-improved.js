@@ -178,8 +178,11 @@ async function loadImprovedPlayerStatsPanel(steamId = null, days = 7) {
         const periodSelect = document.getElementById('player-stats-period');
         const selectedDays = periodSelect ? parseInt(periodSelect.value) || days : days;
         
+        // Проверяем, нужны ли демо-данные (если нет реальных данных)
+        const useDemo = !steamId || steamId === 'demo' || window.location.search.includes('demo=true');
+        
         // Загружаем статистику игрока
-        const response = await fetch(`/api/player-stats/${steamId}?days=${selectedDays}`, {
+        const response = await fetch(`/api/player-stats/${steamId}?days=${selectedDays}${useDemo ? '&demo=true' : ''}`, {
             headers: { 'Authorization': `Bearer ${authData.token}` }
         });
         

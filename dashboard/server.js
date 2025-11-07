@@ -1182,6 +1182,44 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
         }
     }
 
+    // Demo data generator function
+    function generateDemoPlayerStats(steamId, days = 7) {
+        // Generate random but realistic stats
+        const killsPeriod = Math.floor(Math.random() * 50) + 10;
+        const deathsPeriod = Math.floor(Math.random() * 40) + 5;
+        const totalKills = Math.floor(Math.random() * 200) + 50;
+        const totalDeaths = Math.floor(Math.random() * 150) + 30;
+        const headshots = Math.floor(killsPeriod * (0.3 + Math.random() * 0.3)); // 30-60% headshots
+        const torsoHits = Math.floor(killsPeriod * (0.2 + Math.random() * 0.2)); // 20-40% torso
+        const limbHits = killsPeriod - headshots - torsoHits;
+        const hoursPlayed = Math.floor(Math.random() * 200) + 50;
+        const totalReports = Math.floor(Math.random() * 10);
+
+        return {
+            steam_id: steamId,
+            kd_ratio: totalDeaths > 0 ? (totalKills / totalDeaths).toFixed(2) : totalKills.toFixed(2),
+            total_kills: totalKills,
+            total_deaths: totalDeaths,
+            kills_period: killsPeriod,
+            deaths_period: deathsPeriod,
+            headshots: headshots,
+            torso_hits: torsoHits,
+            limb_hits: limbHits,
+            total_reports: totalReports,
+            hours_played: hoursPlayed,
+            recent_kills: Array.from({ length: Math.min(10, killsPeriod) }, (_, i) => ({
+                id: `demo-kill-${i}`,
+                initiator_steam_id: steamId,
+                target_steam_id: `76561198${Math.floor(Math.random() * 1000000000)}`,
+                game_time: new Date(Date.now() - i * 3600000).toISOString(),
+                distance: Math.floor(Math.random() * 200) + 10,
+                weapon: ['AK47', 'LR300', 'M4', 'MP5', 'Bolt Action Rifle', 'L96'][Math.floor(Math.random() * 6)],
+                is_headshot: Math.random() > 0.5,
+                created_at: new Date(Date.now() - i * 3600000).toISOString()
+            }))
+        };
+    }
+
     // Get player statistics
     app.get('/api/player-stats/:steamId', async (req, res) => {
         try {
@@ -1191,6 +1229,7 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
 
             const { steamId } = req.params;
             const days = parseInt(req.query.days) || 7;
+            const useDemo = req.query.demo === 'true' || req.query.demo === '1';
 
             // Get player statistics
             const { data: stats, error: statsError } = await supabase
