@@ -98,7 +98,7 @@ namespace Oxide.Plugins
             #endregion
 
             private const string BaseUrl = "https://court.rustapp.io";
-            
+                
             // Наш API для статистики игроков
             // Измените этот URL на адрес вашего сервера (например: "https://your-domain.com" или "http://localhost:3000")
             private static string GetCustomApiBaseUrl()
