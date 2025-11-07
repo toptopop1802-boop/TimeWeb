@@ -1197,7 +1197,7 @@ formData.<span style="color: #dcdcaa;">append</span>(<span style="color: #ce9178
                         Статистика игроков
                     </h2>
                     <div class="header-controls">
-                        <input type="text" id="player-stats-search" placeholder="Введите Steam ID игрока..." style="padding:10px 16px; background:var(--bg-card); border:2px solid var(--border-color); border-radius:8px; font-size:14px; color:var(--text-primary); min-width:300px;" onkeypress="if(event.key==='Enter') loadPlayerStats()">
+                        <input type="text" id="player-stats-search" placeholder="Введите Steam ID или выберите из списка..." style="padding:10px 16px; background:var(--bg-card); border:2px solid var(--border-color); border-radius:8px; font-size:14px; color:var(--text-primary); min-width:300px;" onkeypress="if(event.key==='Enter') loadPlayerStats()" onchange="if(this.value.trim()) loadPlayerStats()">
                         <select id="player-stats-period" class="period-select" style="margin-left:12px;">
                             <option value="7" selected>7 дней</option>
                             <option value="30">30 дней</option>
@@ -1205,6 +1205,7 @@ formData.<span style="color: #dcdcaa;">append</span>(<span style="color: #ce9178
                             <option value="365">Все время</option>
                         </select>
                         <button class="btn btn-primary" onclick="loadPlayerStats()" style="margin-left:12px;">🔍 Загрузить</button>
+                        <button class="btn btn-secondary" onclick="loadPlayersList()" style="margin-left:12px;">👥 Список игроков</button>
                     </div>
                 </header>
 

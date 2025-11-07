@@ -1,5 +1,108 @@
 // Improved Player Statistics Panel with Analytics
 
+// Загрузка списка игроков при открытии страницы
+async function loadPlayersList() {
+    const container = document.getElementById('player-stats-container');
+    if (!container) return;
+    
+    const authData = getAuthData();
+    if (!authData) {
+        container.innerHTML = '<p style="color: var(--danger);">⛔ Требуется авторизация</p>';
+        return;
+    }
+    
+    container.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-secondary);">⏳ Загрузка списка игроков...</div>';
+    
+    try {
+        // Загружаем список игроков
+        const response = await fetch('/api/rust/players?limit=500', {
+            headers: { 'Authorization': `Bearer ${authData.token}` }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Ошибка загрузки списка игроков');
+        }
+        
+        const players = await response.json();
+        
+        if (!Array.isArray(players) || players.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 60px 20px; color: var(--text-secondary);">
+                    <div style="font-size: 48px; margin-bottom: 16px;">👥</div>
+                    <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">Игроков не найдено</div>
+                    <div style="font-size: 14px;">Введите Steam ID вручную в поле поиска</div>
+                </div>
+            `;
+            return;
+        }
+        
+        // Сортируем: сначала онлайн, потом по имени
+        const sortedPlayers = players.sort((a, b) => {
+            if (a.online && !b.online) return -1;
+            if (!a.online && b.online) return 1;
+            return (a.name || '').localeCompare(b.name || '');
+        });
+        
+        container.innerHTML = `
+            <div style="background: var(--bg-card); border-radius: 20px; padding: 28px; border: 2px solid var(--border-color); box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                <h3 style="margin: 0 0 20px 0; font-size: 18px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 24px;">👥</span>
+                    <span>Выберите игрока</span>
+                    <span style="font-size: 14px; font-weight: 600; color: var(--text-secondary); background: var(--bg-secondary); padding: 6px 12px; border-radius: 8px; margin-left: auto;">${sortedPlayers.length} игроков</span>
+                </h3>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; max-height: 600px; overflow-y: auto; padding-right: 8px;">
+                    ${sortedPlayers.map(player => {
+                        const onlineBadge = player.online 
+                            ? '<span style="display: inline-block; width: 8px; height: 8px; background: #10b981; border-radius: 50%; margin-right: 8px; animation: pulse 2s ease-in-out infinite;"></span>'
+                            : '<span style="display: inline-block; width: 8px; height: 8px; background: #6b7280; border-radius: 50%; margin-right: 8px;"></span>';
+                        
+                        return `
+                            <div onclick="selectPlayer('${player.steam_id || player.steamId}')" 
+                                style="padding: 16px; background: ${player.online ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.05))' : 'var(--bg-secondary)'}; border-radius: 12px; border: 2px solid ${player.online ? '#10b98140' : 'var(--border-color)'}; cursor: pointer; transition: all 0.2s;"
+                                onmouseover="this.style.transform='translateY(-2px)'; this.style.borderColor='${player.online ? '#10b981' : '#667eea'}'; this.style.boxShadow='0 4px 12px rgba(102, 126, 234, 0.2)'"
+                                onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='${player.online ? '#10b98140' : 'var(--border-color)'}'; this.style.boxShadow='none'">
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                                    <div style="font-weight: 600; font-size: 15px; color: var(--text-primary); display: flex; align-items: center;">
+                                        ${onlineBadge}
+                                        ${player.name || 'Без имени'}
+                                    </div>
+                                </div>
+                                <div style="font-size: 12px; color: var(--text-secondary); font-family: monospace; margin-top: 4px;">
+                                    ${player.steam_id || player.steamId}
+                                </div>
+                                ${player.grid ? `<div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">📍 ${player.grid}</div>` : ''}
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+        
+    } catch (error) {
+        console.error('Load players list error:', error);
+        container.innerHTML = `
+            <div style="text-align: center; padding: 60px 20px; color: var(--danger);">
+                <div style="font-size: 48px; margin-bottom: 16px;">❌</div>
+                <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Ошибка загрузки списка игроков</div>
+                <div style="font-size: 14px; color: var(--text-secondary);">${error.message}</div>
+                <button onclick="loadPlayersList()" style="margin-top: 16px; padding: 12px 24px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 10px; font-weight: 700; cursor: pointer;">
+                    🔄 Попробовать снова
+                </button>
+            </div>
+        `;
+    }
+}
+
+// Выбор игрока из списка
+function selectPlayer(steamId) {
+    const searchInput = document.getElementById('player-stats-search');
+    if (searchInput) {
+        searchInput.value = steamId;
+    }
+    loadPlayerStats();
+}
+
 async function loadImprovedPlayerStatsPanel(steamId = null, days = 7) {
     const container = document.getElementById('player-stats-container');
     if (!container) {
@@ -19,13 +122,8 @@ async function loadImprovedPlayerStatsPanel(steamId = null, days = 7) {
         if (searchInput && searchInput.value.trim()) {
             steamId = searchInput.value.trim();
         } else {
-            container.innerHTML = `
-                <div style="text-align: center; padding: 60px 20px; color: var(--text-secondary);">
-                    <div style="font-size: 48px; margin-bottom: 16px;">🔍</div>
-                    <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">Введите Steam ID игрока</div>
-                    <div style="font-size: 14px;">Используйте поле поиска выше для загрузки статистики</div>
-                </div>
-            `;
+            // Если Steam ID не указан, загружаем список игроков
+            loadPlayersList();
             return;
         }
     }
@@ -65,9 +163,12 @@ async function loadImprovedPlayerStatsPanel(steamId = null, days = 7) {
             : (stats.kills_period > 0 ? stats.kills_period.toFixed(2) : '0.00');
         
         // Рассчитываем процент хедшотов
-        const totalHits = stats.headshots + stats.torso_hits + stats.limb_hits;
+        const headshots = stats.headshots || 0;
+        const torsoHits = stats.torso_hits || 0;
+        const limbHits = stats.limb_hits || 0;
+        const totalHits = headshots + torsoHits + limbHits;
         const headshotPercent = totalHits > 0 
-            ? ((stats.headshots / totalHits) * 100).toFixed(1)
+            ? ((headshots / totalHits) * 100).toFixed(1)
             : '0.0';
         
         container.innerHTML = `
@@ -152,7 +253,7 @@ async function loadImprovedPlayerStatsPanel(steamId = null, days = 7) {
                         <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(217, 119, 6, 0.1)); border-radius: 12px; border-left: 4px solid #f59e0b;">
                             <div>
                                 <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 4px;">🎯 Хедшоты</div>
-                                <div style="font-size: 28px; font-weight: 700; color: var(--text-primary);">${stats.headshots || 0}</div>
+                                <div style="font-size: 28px; font-weight: 700; color: var(--text-primary);">${headshots}</div>
                                 <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">${headshotPercent}% от попаданий</div>
                             </div>
                             <div style="font-size: 40px; opacity: 0.3;">🎯</div>
@@ -161,7 +262,7 @@ async function loadImprovedPlayerStatsPanel(steamId = null, days = 7) {
                         <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.1)); border-radius: 12px; border-left: 4px solid #ef4444;">
                             <div>
                                 <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 4px;">🫁 Попадания в корпус</div>
-                                <div style="font-size: 28px; font-weight: 700; color: var(--text-primary);">${stats.torso_hits || 0}</div>
+                                <div style="font-size: 28px; font-weight: 700; color: var(--text-primary);">${torsoHits}</div>
                             </div>
                             <div style="font-size: 40px; opacity: 0.3;">🫁</div>
                         </div>
@@ -169,7 +270,7 @@ async function loadImprovedPlayerStatsPanel(steamId = null, days = 7) {
                         <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.1)); border-radius: 12px; border-left: 4px solid #3b82f6;">
                             <div>
                                 <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 4px;">🦵 Попадания в конечности</div>
-                                <div style="font-size: 28px; font-weight: 700; color: var(--text-primary);">${stats.limb_hits || 0}</div>
+                                <div style="font-size: 28px; font-weight: 700; color: var(--text-primary);">${limbHits}</div>
                             </div>
                             <div style="font-size: 40px; opacity: 0.3;">🦵</div>
                         </div>
@@ -298,5 +399,40 @@ function loadPlayerStats() {
 if (typeof window !== 'undefined') {
     window.loadImprovedPlayerStatsPanel = loadImprovedPlayerStatsPanel;
     window.loadPlayerStats = loadPlayerStats;
+    window.loadPlayersList = loadPlayersList;
+    window.selectPlayer = selectPlayer;
 }
+
+// Автоматически загружаем список игроков при открытии страницы
+document.addEventListener('DOMContentLoaded', () => {
+    // Проверяем, открыта ли страница статистики игроков
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.target.id === 'page-player-stats') {
+                const display = window.getComputedStyle(mutation.target).display;
+                if (display !== 'none') {
+                    const container = document.getElementById('player-stats-container');
+                    const searchInput = document.getElementById('player-stats-search');
+                    // Если контейнер пустой и поле поиска пустое, загружаем список
+                    if (container && (!searchInput || !searchInput.value.trim())) {
+                        loadPlayersList();
+                    }
+                }
+            }
+        });
+    });
+    
+    const playerStatsPage = document.getElementById('page-player-stats');
+    if (playerStatsPage) {
+        observer.observe(playerStatsPage, { attributes: true, attributeFilter: ['style'] });
+        
+        // Загружаем сразу если страница уже открыта
+        if (window.getComputedStyle(playerStatsPage).display !== 'none') {
+            const searchInput = document.getElementById('player-stats-search');
+            if (!searchInput || !searchInput.value.trim()) {
+                loadPlayersList();
+            }
+        }
+    }
+});
 
