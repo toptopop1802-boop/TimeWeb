@@ -132,12 +132,13 @@ body::after {
     flex-direction: column;
     padding: 20px 10px;
     overflow-x: hidden;
-    overflow-y: auto; /* Добавляем вертикальный скролл */
+    overflow-y: auto;
     transition: none !important; /* Отключаем анимации расширения */
 }
 
 .sidebar::-webkit-scrollbar {
-    width: 4px;
+    width: 0px;
+    display: none;
 }
 
 .sidebar::-webkit-scrollbar-track {
@@ -145,12 +146,32 @@ body::after {
 }
 
 .sidebar::-webkit-scrollbar-thumb {
-    background: var(--border-color);
+    background: transparent;
     border-radius: 2px;
 }
 
 .sidebar::-webkit-scrollbar-thumb:hover {
-    background: var(--text-secondary);
+    background: transparent;
+}
+
+/* Скрываем все скроллбары */
+*::-webkit-scrollbar {
+    width: 0px;
+    height: 0px;
+    display: none;
+}
+
+*::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: transparent;
+}
+
+* {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
 }
 
 .sidebar.expanded {

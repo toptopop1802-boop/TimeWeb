@@ -1092,6 +1092,29 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
     // Helper function to update player statistics
     async function updatePlayerStats(initiatorSteamId, targetSteamId, kill) {
         try {
+            // Count hits by bone type from hit_history
+            let headshotsCount = 0;
+            let torsoHitsCount = 0;
+            let limbHitsCount = 0;
+
+            if (kill.hit_history && Array.isArray(kill.hit_history)) {
+                kill.hit_history.forEach(log => {
+                    const bone = (log.bone || '').toLowerCase();
+                    if (bone === 'head' || bone === 'head.head') {
+                        headshotsCount++;
+                    } else if (bone === 'torso' || bone === 'chest' || bone === 'spine' || bone === 'spine1' || bone === 'spine2' || bone === 'spine3' || bone === 'spine4') {
+                        torsoHitsCount++;
+                    } else if (bone && bone !== '') {
+                        limbHitsCount++;
+                    }
+                });
+            }
+
+            // If is_headshot is true but no head hits in history, count it
+            if (kill.is_headshot && headshotsCount === 0) {
+                headshotsCount = 1;
+            }
+
             // Update initiator stats (kills)
             const { data: initiatorStats } = await supabase
                 .from('player_statistics')
@@ -1104,7 +1127,9 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                     .from('player_statistics')
                     .update({
                         total_kills: (initiatorStats.total_kills || 0) + 1,
-                        headshots: kill.is_headshot ? (initiatorStats.headshots || 0) + 1 : initiatorStats.headshots,
+                        headshots: (initiatorStats.headshots || 0) + headshotsCount,
+                        torso_hits: (initiatorStats.torso_hits || 0) + torsoHitsCount,
+                        limb_hits: (initiatorStats.limb_hits || 0) + limbHitsCount,
                         last_updated: new Date().toISOString()
                     })
                     .eq('steam_id', initiatorSteamId);
@@ -1114,10 +1139,10 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                     .insert({
                         steam_id: initiatorSteamId,
                         total_kills: 1,
-                        headshots: kill.is_headshot ? 1 : 0,
+                        headshots: headshotsCount,
                         total_deaths: 0,
-                        torso_hits: 0,
-                        limb_hits: 0,
+                        torso_hits: torsoHitsCount,
+                        limb_hits: limbHitsCount,
                         total_reports: 0,
                         total_hours_played: 0
                     });
@@ -1222,13 +1247,27 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                     .select('bone')
                     .in('kill_id', killIds);
 
-                if (combatLogs) {
+                if (combatLogs && combatLogs.length > 0) {
                     combatLogs.forEach(log => {
-                        if (log.bone === 'head') headshots++;
-                        else if (log.bone === 'torso' || log.bone === 'chest') torsoHits++;
-                        else if (log.bone) limbHits++;
+                        const bone = (log.bone || '').toLowerCase();
+                        if (bone === 'head' || bone === 'head.head') {
+                            headshots++;
+                        } else if (bone === 'torso' || bone === 'chest' || bone === 'spine' || bone === 'spine1' || bone === 'spine2' || bone === 'spine3' || bone === 'spine4') {
+                            torsoHits++;
+                        } else if (bone && bone !== '') {
+                            limbHits++;
+                        }
                     });
                 }
+            }
+
+            // Fallback: if no combat logs but we have kills with is_headshot flag
+            if (headshots === 0 && torsoHits === 0 && limbHits === 0 && kills && kills.length > 0) {
+                kills.forEach(kill => {
+                    if (kill.is_headshot) {
+                        headshots++;
+                    }
+                });
             }
 
             // Calculate hours played (mock for now - should be calculated from sessions)

@@ -51,7 +51,7 @@ async function loadPlayersList() {
                     <span style="font-size: 14px; font-weight: 600; color: var(--text-secondary); background: var(--bg-secondary); padding: 6px 12px; border-radius: 8px; margin-left: auto;">${sortedPlayers.length} игроков</span>
                 </h3>
                 
-                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; max-height: 600px; overflow-y: auto; padding-right: 8px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; max-height: 600px; overflow-y: auto; padding-right: 8px; scrollbar-width: none; -ms-overflow-style: none;">
                     ${sortedPlayers.map(player => {
                         const onlineBadge = player.online 
                             ? '<span style="display: inline-block; width: 8px; height: 8px; background: #10b981; border-radius: 50%; margin-right: 8px; animation: pulse 2s ease-in-out infinite;"></span>'
@@ -215,7 +215,7 @@ async function loadImprovedPlayerStatsPanel(steamId = null, days = 7) {
         
         container.innerHTML = `
             <!-- Быстрый обзор -->
-            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px; padding: 32px; margin-bottom: 24px; color: white; box-shadow: 0 12px 40px rgba(102, 126, 234, 0.4);">
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px; padding: 32px; margin-bottom: 24px; color: white; box-shadow: 0 12px 40px rgba(102, 126, 234, 0.4); overflow: visible;">
                 <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px;">
                     <div style="flex: 1; min-width: 250px;">
                         <div style="font-size: 14px; opacity: 0.9; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">👤 Статистика игрока</div>
