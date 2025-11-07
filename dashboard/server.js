@@ -1242,8 +1242,8 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                 kills_period: kills ? kills.length : 0,
                 deaths_period: deaths ? deaths.length : 0,
                 headshots,
-                torso_hits,
-                limb_hits,
+                torso_hits: torsoHits,
+                limb_hits: limbHits,
                 total_reports: playerStats.total_reports || 0,
                 hours_played: hoursPlayed,
                 recent_kills: kills ? kills.slice(0, 10) : []
