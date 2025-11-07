@@ -233,90 +233,77 @@ async function loadImprovedPlayerStatsPanel(steamId = null, days = 7) {
                 </div>
             </div>
             
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
-                <!-- Основная статистика -->
+            <!-- Kills/Deaths Chart -->
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-bottom: 24px;">
+                <!-- Убийства и смерти с круговой диаграммой -->
                 <div style="background: var(--bg-card); border-radius: 20px; padding: 28px; border: 2px solid var(--border-color); box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
-                    <h3 style="margin: 0 0 20px 0; font-size: 18px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 10px;">
-                        <span style="font-size: 24px;">📊</span>
-                        <span>Основная статистика</span>
-                    </h3>
-                    
-                    <div style="display: flex; flex-direction: column; gap: 16px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1)); border-radius: 12px; border-left: 4px solid #667eea;">
-                            <div>
-                                <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 4px;">🎯 Общий K/D</div>
-                                <div style="font-size: 28px; font-weight: 700; color: var(--text-primary);">${stats.kd_ratio || '0.00'}</div>
+                    <div style="display: flex; align-items: center; gap: 24px;">
+                        <div style="flex: 1;">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                                <div style="width: 8px; height: 8px; border-radius: 50%; background: #4ade80;"></div>
+                                <span style="font-size: 14px; color: var(--text-secondary);">Убийств</span>
+                                <span style="font-size: 24px; font-weight: 700; color: var(--text-primary); margin-left: auto;">${stats.kills_period || 0}</span>
                             </div>
-                            <div style="font-size: 40px; opacity: 0.3;">🎯</div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div style="width: 8px; height: 8px; border-radius: 50%; background: #6b7280;"></div>
+                                <span style="font-size: 14px; color: var(--text-secondary);">Смертей</span>
+                                <span style="font-size: 24px; font-weight: 700; color: var(--text-primary); margin-left: auto;">${stats.deaths_period || 0}</span>
+                            </div>
                         </div>
-                        
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.1)); border-radius: 12px; border-left: 4px solid #ef4444;">
-                            <div>
-                                <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 4px;">💀 Всего убийств</div>
-                                <div style="font-size: 28px; font-weight: 700; color: var(--text-primary);">${stats.total_kills || 0}</div>
-                            </div>
-                            <div style="font-size: 40px; opacity: 0.3;">💀</div>
-                        </div>
-                        
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.1)); border-radius: 12px; border-left: 4px solid #3b82f6;">
-                            <div>
-                                <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 4px;">⚰️ Всего смертей</div>
-                                <div style="font-size: 28px; font-weight: 700; color: var(--text-primary);">${stats.total_deaths || 0}</div>
-                            </div>
-                            <div style="font-size: 40px; opacity: 0.3;">⚰️</div>
-                        </div>
-                        
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.1)); border-radius: 12px; border-left: 4px solid #10b981;">
-                            <div>
-                                <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 4px;">⏱️ Время на сервере</div>
-                                <div style="font-size: 28px; font-weight: 700; color: var(--text-primary);">${formatTime(stats.hours_played || 0)}</div>
-                            </div>
-                            <div style="font-size: 40px; opacity: 0.3;">⏱️</div>
+                        <div style="width: 120px; height: 120px; position: relative;">
+                            <canvas id="player-kd-chart-${steamId}"></canvas>
                         </div>
                     </div>
                 </div>
-                
-                <!-- Точность стрельбы -->
+
+                <!-- Попадания по частям тела с круговой диаграммой -->
                 <div style="background: var(--bg-card); border-radius: 20px; padding: 28px; border: 2px solid var(--border-color); box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
-                    <h3 style="margin: 0 0 20px 0; font-size: 18px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 10px;">
-                        <span style="font-size: 24px;">🎯</span>
-                        <span>Точность стрельбы</span>
-                    </h3>
-                    
-                    <div style="display: flex; flex-direction: column; gap: 16px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(217, 119, 6, 0.1)); border-radius: 12px; border-left: 4px solid #f59e0b;">
-                            <div>
-                                <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 4px;">🎯 Хедшоты</div>
-                                <div style="font-size: 28px; font-weight: 700; color: var(--text-primary);">${headshots}</div>
-                                <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">${headshotPercent}% от попаданий</div>
+                    <div style="display: flex; align-items: center; gap: 24px;">
+                        <div style="flex: 1;">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                                <div style="width: 8px; height: 8px; border-radius: 50%; background: #f97316;"></div>
+                                <span style="font-size: 14px; color: var(--text-secondary);">В голову</span>
+                                <span style="font-size: 24px; font-weight: 700; color: var(--text-primary); margin-left: auto;">${headshots}</span>
                             </div>
-                            <div style="font-size: 40px; opacity: 0.3;">🎯</div>
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                                <div style="width: 8px; height: 8px; border-radius: 50%; background: #fb923c;"></div>
+                                <span style="font-size: 14px; color: var(--text-secondary);">В туловище</span>
+                                <span style="font-size: 24px; font-weight: 700; color: var(--text-primary); margin-left: auto;">${torsoHits}</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div style="width: 8px; height: 8px; border-radius: 50%; background: #6b7280;"></div>
+                                <span style="font-size: 14px; color: var(--text-secondary);">В конечности</span>
+                                <span style="font-size: 24px; font-weight: 700; color: var(--text-primary); margin-left: auto;">${limbHits}</span>
+                            </div>
                         </div>
-                        
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.1)); border-radius: 12px; border-left: 4px solid #ef4444;">
-                            <div>
-                                <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 4px;">🫁 Попадания в корпус</div>
-                                <div style="font-size: 28px; font-weight: 700; color: var(--text-primary);">${torsoHits}</div>
-                            </div>
-                            <div style="font-size: 40px; opacity: 0.3;">🫁</div>
-                        </div>
-                        
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.1)); border-radius: 12px; border-left: 4px solid #3b82f6;">
-                            <div>
-                                <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 4px;">🦵 Попадания в конечности</div>
-                                <div style="font-size: 28px; font-weight: 700; color: var(--text-primary);">${limbHits}</div>
-                            </div>
-                            <div style="font-size: 40px; opacity: 0.3;">🦵</div>
-                        </div>
-                        
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(124, 58, 237, 0.1)); border-radius: 12px; border-left: 4px solid #8b5cf6;">
-                            <div>
-                                <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 4px;">📊 Всего попаданий</div>
-                                <div style="font-size: 28px; font-weight: 700; color: var(--text-primary);">${totalHits}</div>
-                            </div>
-                            <div style="font-size: 40px; opacity: 0.3;">📊</div>
+                        <div style="width: 120px; height: 120px; position: relative;">
+                            <canvas id="player-hits-chart-${steamId}"></canvas>
                         </div>
                     </div>
+                </div>
+            </div>
+            
+            <!-- Hours Played Chart -->
+            <div style="background: var(--bg-card); border-radius: 20px; padding: 28px; border: 2px solid var(--border-color); box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 24px;">
+                <div style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 20px;">Наигранные часы</div>
+                <div style="height: 200px;">
+                    <canvas id="player-hours-chart-${steamId}"></canvas>
+                </div>
+            </div>
+            
+            <!-- Основная статистика -->
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;">
+                <div style="background: var(--bg-card); border-radius: 20px; padding: 24px; border: 2px solid var(--border-color); box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">K/D</div>
+                    <div style="font-size: 32px; font-weight: 700; color: var(--text-primary);">${stats.kd_ratio || '0.00'}</div>
+                </div>
+                <div style="background: var(--bg-card); border-radius: 20px; padding: 24px; border: 2px solid var(--border-color); box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">На проекте</div>
+                    <div style="font-size: 32px; font-weight: 700; color: var(--text-primary);">${formatTime(stats.hours_played || 0)}</div>
+                </div>
+                <div style="background: var(--bg-card); border-radius: 20px; padding: 24px; border: 2px solid var(--border-color); box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">Репортов</div>
+                    <div style="font-size: 32px; font-weight: 700; color: var(--text-primary);">${stats.total_reports || 0}</div>
                 </div>
             </div>
             
@@ -389,6 +376,13 @@ async function loadImprovedPlayerStatsPanel(steamId = null, days = 7) {
             </div>
         `;
         
+        // Создаем круговые диаграммы после рендеринга HTML
+        setTimeout(() => {
+            createKdChart(steamId, stats.kills_period || 0, stats.deaths_period || 0);
+            createHitsChart(steamId, headshots, torsoHits, limbHits);
+            createHoursChart(steamId, stats.hours_played || 0);
+        }, 100);
+        
     } catch (error) {
         console.error('Load player stats error:', error);
         container.innerHTML = `
@@ -399,6 +393,173 @@ async function loadImprovedPlayerStatsPanel(steamId = null, days = 7) {
             </div>
         `;
     }
+}
+
+// Создание круговой диаграммы K/D
+function createKdChart(steamId, kills, deaths) {
+    const canvasId = `player-kd-chart-${steamId}`;
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    const total = kills + deaths;
+    
+    if (total === 0) {
+        // Если нет данных, показываем пустой круг
+        ctx.beginPath();
+        ctx.arc(60, 60, 50, 0, 2 * Math.PI);
+        ctx.strokeStyle = '#6b7280';
+        ctx.lineWidth = 20;
+        ctx.stroke();
+        return;
+    }
+    
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            datasets: [{
+                data: [kills, deaths],
+                backgroundColor: ['#4ade80', '#6b7280'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            cutout: '60%',
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    enabled: false
+                }
+            }
+        }
+    });
+}
+
+// Создание круговой диаграммы попаданий
+function createHitsChart(steamId, headshots, torsoHits, limbHits) {
+    const canvasId = `player-hits-chart-${steamId}`;
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    const total = headshots + torsoHits + limbHits;
+    
+    if (total === 0) {
+        ctx.beginPath();
+        ctx.arc(60, 60, 50, 0, 2 * Math.PI);
+        ctx.strokeStyle = '#6b7280';
+        ctx.lineWidth = 20;
+        ctx.stroke();
+        return;
+    }
+    
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            datasets: [{
+                data: [headshots, torsoHits, limbHits],
+                backgroundColor: ['#f97316', '#fb923c', '#6b7280'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            cutout: '60%',
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    enabled: false
+                }
+            }
+        }
+    });
+}
+
+// Создание графика часов игры
+function createHoursChart(steamId, hoursPlayed) {
+    const canvasId = `player-hours-chart-${steamId}`;
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Генерируем демо-данные для графика (можно заменить на реальные данные из API)
+    const days = 7;
+    const labels = [];
+    const data = [];
+    const now = new Date();
+    
+    for (let i = days - 1; i >= 0; i--) {
+        const date = new Date(now);
+        date.setDate(date.getDate() - i);
+        labels.push(date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' }));
+        // Демо данные - равномерное распределение часов
+        data.push(Math.round((hoursPlayed / days) * (0.5 + Math.random())));
+    }
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Часы',
+                data: data,
+                backgroundColor: '#667eea',
+                borderRadius: 8,
+                borderSkipped: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                    padding: 12,
+                    cornerRadius: 8,
+                    titleFont: { size: 14, weight: 'bold' },
+                    bodyFont: { size: 13 },
+                    displayColors: false,
+                    callbacks: {
+                        label: (context) => `${context.parsed.y} ч.`
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 2,
+                        color: '#9ca3af',
+                        font: { size: 11, weight: 600 }
+                    },
+                    grid: {
+                        color: 'rgba(156, 163, 175, 0.1)',
+                        borderDash: [5, 5]
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: '#9ca3af',
+                        font: { size: 11, weight: 600 }
+                    },
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
 }
 
 // Вспомогательная функция для форматирования времени
