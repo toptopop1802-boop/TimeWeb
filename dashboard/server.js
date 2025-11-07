@@ -988,7 +988,7 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
             await requireAuth(req, res, async () => {}, supabase);
             if (!req.user || req.user.role !== 'admin') return; // only admins
 
-            const limit = Math.min(Math.max(parseInt(req.query.limit) || 200, 1), 1000);
+            const limit = Math.min(Math.max(parseInt(req.query.limit) || 1000, 1), 5000);
             const { data, error } = await supabase
                 .from('rust_players')
                 .select('*')

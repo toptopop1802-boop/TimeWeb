@@ -14,8 +14,8 @@ async function loadPlayersList() {
     container.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-secondary);">⏳ Загрузка списка игроков...</div>';
     
     try {
-        // Загружаем список игроков
-        const response = await fetch('/api/rust/players?limit=500', {
+        // Загружаем список игроков (увеличиваем лимит для всех игроков)
+        const response = await fetch('/api/rust/players?limit=1000', {
             headers: { 'Authorization': `Bearer ${authData.token}` }
         });
         
@@ -100,7 +100,28 @@ function selectPlayer(steamId) {
     if (searchInput) {
         searchInput.value = steamId;
     }
+    // Обновляем URL с Steam ID
+    updatePlayerStatsUrl(steamId);
     loadPlayerStats();
+}
+
+// Обновление URL с Steam ID
+function updatePlayerStatsUrl(steamId) {
+    if (steamId) {
+        window.location.hash = `player-stats?steamId=${steamId}`;
+    } else {
+        window.location.hash = 'player-stats';
+    }
+}
+
+// Получение Steam ID из URL
+function getSteamIdFromUrl() {
+    const hash = window.location.hash;
+    if (hash.includes('player-stats?')) {
+        const params = new URLSearchParams(hash.split('?')[1]);
+        return params.get('steamId');
+    }
+    return null;
 }
 
 async function loadImprovedPlayerStatsPanel(steamId = null, days = 7) {
@@ -116,17 +137,30 @@ async function loadImprovedPlayerStatsPanel(steamId = null, days = 7) {
         return;
     }
     
-    // Если steamId не передан, пытаемся получить из поля поиска
+    // Если steamId не передан, пытаемся получить из URL или поля поиска
     if (!steamId) {
-        const searchInput = document.getElementById('player-stats-search');
-        if (searchInput && searchInput.value.trim()) {
-            steamId = searchInput.value.trim();
-        } else {
-            // Если Steam ID не указан, загружаем список игроков
-            loadPlayersList();
-            return;
+        // Сначала проверяем URL
+        steamId = getSteamIdFromUrl();
+        
+        // Если нет в URL, проверяем поле поиска
+        if (!steamId) {
+            const searchInput = document.getElementById('player-stats-search');
+            if (searchInput && searchInput.value.trim()) {
+                steamId = searchInput.value.trim();
+            } else {
+                // Если Steam ID не указан, загружаем список игроков
+                loadPlayersList();
+                return;
+            }
         }
     }
+    
+    // Обновляем поле поиска и URL если нужно
+    const searchInput = document.getElementById('player-stats-search');
+    if (searchInput && searchInput.value !== steamId) {
+        searchInput.value = steamId;
+    }
+    updatePlayerStatsUrl(steamId);
     
     container.style.display = 'block';
     container.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-secondary);">⏳ Загрузка статистики...</div>';
@@ -384,13 +418,22 @@ function loadPlayerStats() {
     const searchInput = document.getElementById('player-stats-search');
     const periodSelect = document.getElementById('player-stats-period');
     
-    if (!searchInput || !searchInput.value.trim()) {
-        showToast('Введите Steam ID игрока', 'error');
-        return;
+    // Проверяем URL сначала
+    let steamId = getSteamIdFromUrl();
+    
+    // Если нет в URL, берем из поля поиска
+    if (!steamId) {
+        if (!searchInput || !searchInput.value.trim()) {
+            showToast('Введите Steam ID игрока', 'error');
+            return;
+        }
+        steamId = searchInput.value.trim();
     }
     
-    const steamId = searchInput.value.trim();
     const days = periodSelect ? parseInt(periodSelect.value) || 7 : 7;
+    
+    // Обновляем URL
+    updatePlayerStatsUrl(steamId);
     
     loadImprovedPlayerStatsPanel(steamId, days);
 }
@@ -401,9 +444,12 @@ if (typeof window !== 'undefined') {
     window.loadPlayerStats = loadPlayerStats;
     window.loadPlayersList = loadPlayersList;
     window.selectPlayer = selectPlayer;
+    window.updatePlayerStatsUrl = updatePlayerStatsUrl;
+    window.getSteamIdFromUrl = getSteamIdFromUrl;
+    window.handlePlayerStatsPageLoad = handlePlayerStatsPageLoad;
 }
 
-// Автоматически загружаем список игроков при открытии страницы
+// Автоматически загружаем список игроков или статистику при открытии страницы
 document.addEventListener('DOMContentLoaded', () => {
     // Проверяем, открыта ли страница статистики игроков
     const observer = new MutationObserver((mutations) => {
@@ -411,12 +457,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (mutation.target.id === 'page-player-stats') {
                 const display = window.getComputedStyle(mutation.target).display;
                 if (display !== 'none') {
-                    const container = document.getElementById('player-stats-container');
-                    const searchInput = document.getElementById('player-stats-search');
-                    // Если контейнер пустой и поле поиска пустое, загружаем список
-                    if (container && (!searchInput || !searchInput.value.trim())) {
-                        loadPlayersList();
-                    }
+                    handlePlayerStatsPageLoad();
                 }
             }
         });
@@ -428,11 +469,38 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Загружаем сразу если страница уже открыта
         if (window.getComputedStyle(playerStatsPage).display !== 'none') {
-            const searchInput = document.getElementById('player-stats-search');
-            if (!searchInput || !searchInput.value.trim()) {
-                loadPlayersList();
-            }
+            handlePlayerStatsPageLoad();
         }
     }
+    
+    // Обработчик изменения hash для загрузки статистики при переходе по ссылке
+    window.addEventListener('hashchange', () => {
+        const hash = window.location.hash;
+        if (hash.includes('player-stats')) {
+            const playerStatsPage = document.getElementById('page-player-stats');
+            if (playerStatsPage && window.getComputedStyle(playerStatsPage).display !== 'none') {
+                handlePlayerStatsPageLoad();
+            }
+        }
+    });
 });
+
+// Обработка загрузки страницы статистики игроков
+function handlePlayerStatsPageLoad() {
+    const steamId = getSteamIdFromUrl();
+    const searchInput = document.getElementById('player-stats-search');
+    
+    if (steamId) {
+        // Если есть Steam ID в URL, загружаем статистику
+        if (searchInput) {
+            searchInput.value = steamId;
+        }
+        const periodSelect = document.getElementById('player-stats-period');
+        const days = periodSelect ? parseInt(periodSelect.value) || 7 : 7;
+        loadImprovedPlayerStatsPanel(steamId, days);
+    } else if (!searchInput || !searchInput.value.trim()) {
+        // Если нет Steam ID, загружаем список игроков
+        loadPlayersList();
+    }
+}
 
