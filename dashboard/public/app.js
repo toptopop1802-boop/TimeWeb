@@ -1158,6 +1158,12 @@ function setupNavigation() {
             return;
         }
         
+        // Check if it's player-stats with parameters
+        if (hash.startsWith('player-stats')) {
+            navigateToPage(hash);
+            return;
+        }
+        
         if (hash) {
             navigateToPage(hash);
         }
