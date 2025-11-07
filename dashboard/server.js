@@ -1003,6 +1003,321 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
         }
     });
 
+    // ============================================
+    // PLAYER STATISTICS API
+    // ============================================
+
+    // Report kills from Rust plugin (similar to RustApp)
+    app.post('/api/rust/kills/report', async (req, res) => {
+        try {
+            if (!supabase) return res.status(503).json({ error: 'Supabase not configured' });
+            let currentUser = null;
+            await requireAuth(req, res, async () => { currentUser = req.user; }, supabase);
+            if (!currentUser) return;
+
+            const body = req.body || {};
+            const kills = Array.isArray(body.kills) ? body.kills : [];
+
+            if (kills.length === 0) {
+                return res.json({ success: true, inserted: 0 });
+            }
+
+            let inserted = 0;
+            for (const kill of kills) {
+                // Insert kill
+                const { data: killData, error: killError } = await supabase
+                    .from('player_kills')
+                    .insert({
+                        initiator_steam_id: String(kill.initiator_steam_id || ''),
+                        target_steam_id: String(kill.target_steam_id || ''),
+                        game_time: kill.game_time || null,
+                        distance: kill.distance || 0,
+                        weapon: kill.weapon || null,
+                        is_headshot: kill.is_headshot || false
+                    })
+                    .select('id')
+                    .single();
+
+                if (killError) {
+                    console.error('Error inserting kill:', killError);
+                    continue;
+                }
+
+                // Insert combat logs
+                if (kill.hit_history && Array.isArray(kill.hit_history) && kill.hit_history.length > 0) {
+                    const combatLogs = kill.hit_history.map(log => ({
+                        kill_id: killData.id,
+                        time: log.time || 0,
+                        attacker_steam_id: log.attacker_steam_id || null,
+                        target_steam_id: log.target_steam_id || null,
+                        attacker: log.attacker || null,
+                        target: log.target || null,
+                        weapon: log.weapon || null,
+                        ammo: log.ammo || null,
+                        bone: log.bone || null,
+                        distance: log.distance || 0,
+                        hp_old: log.hp_old || 0,
+                        hp_new: log.hp_new || 0,
+                        info: log.info || null,
+                        proj_hits: log.proj_hits || 0,
+                        pi: log.pi || 0,
+                        proj_travel: log.proj_travel || 0,
+                        pm: log.pm || 0,
+                        desync: log.desync || 0,
+                        ad: log.ad || false
+                    }));
+
+                    const { error: logsError } = await supabase
+                        .from('combat_logs')
+                        .insert(combatLogs);
+
+                    if (logsError) {
+                        console.error('Error inserting combat logs:', logsError);
+                    }
+                }
+
+                // Update player statistics
+                await updatePlayerStats(kill.initiator_steam_id, kill.target_steam_id, kill);
+
+                inserted++;
+            }
+
+            res.json({ success: true, inserted });
+        } catch (error) {
+            console.error('Rust kills report error:', error);
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // Helper function to update player statistics
+    async function updatePlayerStats(initiatorSteamId, targetSteamId, kill) {
+        try {
+            // Update initiator stats (kills)
+            const { data: initiatorStats } = await supabase
+                .from('player_statistics')
+                .select('*')
+                .eq('steam_id', initiatorSteamId)
+                .single();
+
+            if (initiatorStats) {
+                await supabase
+                    .from('player_statistics')
+                    .update({
+                        total_kills: (initiatorStats.total_kills || 0) + 1,
+                        headshots: kill.is_headshot ? (initiatorStats.headshots || 0) + 1 : initiatorStats.headshots,
+                        last_updated: new Date().toISOString()
+                    })
+                    .eq('steam_id', initiatorSteamId);
+            } else {
+                await supabase
+                    .from('player_statistics')
+                    .insert({
+                        steam_id: initiatorSteamId,
+                        total_kills: 1,
+                        headshots: kill.is_headshot ? 1 : 0,
+                        total_deaths: 0,
+                        torso_hits: 0,
+                        limb_hits: 0,
+                        total_reports: 0,
+                        total_hours_played: 0
+                    });
+            }
+
+            // Update target stats (deaths)
+            const { data: targetStats } = await supabase
+                .from('player_statistics')
+                .select('*')
+                .eq('steam_id', targetSteamId)
+                .single();
+
+            if (targetStats) {
+                await supabase
+                    .from('player_statistics')
+                    .update({
+                        total_deaths: (targetStats.total_deaths || 0) + 1,
+                        last_updated: new Date().toISOString()
+                    })
+                    .eq('steam_id', targetSteamId);
+            } else {
+                await supabase
+                    .from('player_statistics')
+                    .insert({
+                        steam_id: targetSteamId,
+                        total_kills: 0,
+                        headshots: 0,
+                        total_deaths: 1,
+                        torso_hits: 0,
+                        limb_hits: 0,
+                        total_reports: 0,
+                        total_hours_played: 0
+                    });
+            }
+        } catch (error) {
+            console.error('Error updating player stats:', error);
+        }
+    }
+
+    // Get player statistics
+    app.get('/api/player-stats/:steamId', async (req, res) => {
+        try {
+            if (!supabase) return res.status(503).json({ error: 'Supabase not configured' });
+            await requireAuth(req, res, async () => {}, supabase);
+            if (!req.user) return;
+
+            const { steamId } = req.params;
+            const days = parseInt(req.query.days) || 7;
+
+            // Get player statistics
+            const { data: stats, error: statsError } = await supabase
+                .from('player_statistics')
+                .select('*')
+                .eq('steam_id', steamId)
+                .single();
+
+            if (statsError && statsError.code !== 'PGRST116') {
+                throw statsError;
+            }
+
+            const playerStats = stats || {
+                steam_id: steamId,
+                total_kills: 0,
+                total_deaths: 0,
+                headshots: 0,
+                torso_hits: 0,
+                limb_hits: 0,
+                total_reports: 0,
+                total_hours_played: 0
+            };
+
+            // Get kills in period
+            const dateFrom = new Date();
+            dateFrom.setDate(dateFrom.getDate() - days);
+            
+            const { data: kills, error: killsError } = await supabase
+                .from('player_kills')
+                .select('*')
+                .eq('initiator_steam_id', steamId)
+                .gte('created_at', dateFrom.toISOString())
+                .order('created_at', { ascending: false });
+
+            if (killsError) throw killsError;
+
+            // Get deaths in period
+            const { data: deaths, error: deathsError } = await supabase
+                .from('player_kills')
+                .select('*')
+                .eq('target_steam_id', steamId)
+                .gte('created_at', dateFrom.toISOString())
+                .order('created_at', { ascending: false });
+
+            if (deathsError) throw deathsError;
+
+            // Calculate hit locations from combat logs
+            const killIds = kills ? kills.map(k => k.id) : [];
+            let headshots = 0, torsoHits = 0, limbHits = 0;
+
+            if (killIds.length > 0) {
+                const { data: combatLogs } = await supabase
+                    .from('combat_logs')
+                    .select('bone')
+                    .in('kill_id', killIds);
+
+                if (combatLogs) {
+                    combatLogs.forEach(log => {
+                        if (log.bone === 'head') headshots++;
+                        else if (log.bone === 'torso' || log.bone === 'chest') torsoHits++;
+                        else if (log.bone) limbHits++;
+                    });
+                }
+            }
+
+            // Calculate hours played (mock for now - should be calculated from sessions)
+            const hoursPlayed = playerStats.total_hours_played || 0;
+
+            res.json({
+                steam_id: steamId,
+                kd_ratio: playerStats.total_deaths > 0 ? (playerStats.total_kills / playerStats.total_deaths).toFixed(2) : playerStats.total_kills.toFixed(2),
+                total_kills: playerStats.total_kills,
+                total_deaths: playerStats.total_deaths,
+                kills_period: kills ? kills.length : 0,
+                deaths_period: deaths ? deaths.length : 0,
+                headshots,
+                torso_hits,
+                limb_hits,
+                total_reports: playerStats.total_reports || 0,
+                hours_played: hoursPlayed,
+                recent_kills: kills ? kills.slice(0, 10) : []
+            });
+        } catch (error) {
+            console.error('Get player stats error:', error);
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // Get combat log for a specific kill
+    app.get('/api/player-stats/:steamId/combatlog/:killId', async (req, res) => {
+        try {
+            if (!supabase) return res.status(503).json({ error: 'Supabase not configured' });
+            await requireAuth(req, res, async () => {}, supabase);
+            if (!req.user) return;
+
+            const { killId } = req.params;
+
+            const { data: combatLogs, error } = await supabase
+                .from('combat_logs')
+                .select('*')
+                .eq('kill_id', killId)
+                .order('time', { ascending: false });
+
+            if (error) throw error;
+
+            res.json(combatLogs || []);
+        } catch (error) {
+            console.error('Get combat log error:', error);
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // Get player kills list (for combat log table)
+    app.get('/api/player-stats/:steamId/kills', async (req, res) => {
+        try {
+            if (!supabase) return res.status(503).json({ error: 'Supabase not configured' });
+            await requireAuth(req, res, async () => {}, supabase);
+            if (!req.user) return;
+
+            const { steamId } = req.params;
+            const limit = Math.min(parseInt(req.query.limit) || 50, 200);
+
+            const { data: kills, error } = await supabase
+                .from('player_kills')
+                .select(`
+                    *,
+                    combat_logs (
+                        time,
+                        attacker,
+                        target,
+                        weapon,
+                        ammo,
+                        bone,
+                        distance,
+                        hp_old,
+                        hp_new,
+                        info
+                    )
+                `)
+                .or(`initiator_steam_id.eq.${steamId},target_steam_id.eq.${steamId}`)
+                .order('created_at', { ascending: false })
+                .limit(limit);
+
+            if (error) throw error;
+
+            res.json(kills || []);
+        } catch (error) {
+            console.error('Get player kills error:', error);
+            res.status(500).json({ error: error.message });
+        }
+    });
+
     // Получить список серверов
     app.get('/api/guilds', async (req, res) => {
         try {

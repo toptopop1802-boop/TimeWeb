@@ -131,6 +131,10 @@
                     <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 4h16v16H4z" fill="none" stroke-width="2"/><path d="M8 14l3-3 4 4 3-3" stroke-width="2" fill="none"/></svg>
                     <span class="nav-text">Галерея фото</span>
                 </a>
+                <a href="#player-stats" class="nav-link" data-page="player-stats">
+                    <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+                    <span class="nav-text">Статистика игроков</span>
+                </a>
                 <a href="#admin" class="nav-link" data-page="admin" style="position: relative;">
                     <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
                     <span class="nav-text">Админ</span>
@@ -1185,6 +1189,65 @@ formData.<span style="color: #dcdcaa;">append</span>(<span style="color: #ce9178
                 </div>
             </div>
 
+            <!-- Player Statistics Page -->
+            <div id="page-player-stats" class="page" style="display:none;">
+                <header class="page-header">
+                    <h2>
+                        <svg class="h2-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:28px;height:28px;vertical-align:-6px;margin-right:8px;"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+                        Статистика игроков
+                    </h2>
+                    <div class="header-controls">
+                        <input type="text" id="player-stats-search" placeholder="Введите Steam ID игрока..." style="padding:10px 16px; background:var(--bg-card); border:2px solid var(--border-color); border-radius:8px; font-size:14px; color:var(--text-primary); min-width:300px;" onkeypress="if(event.key==='Enter') loadPlayerStats()">
+                        <select id="player-stats-period" class="period-select" style="margin-left:12px;">
+                            <option value="7" selected>7 дней</option>
+                            <option value="30">30 дней</option>
+                            <option value="90">90 дней</option>
+                            <option value="365">Все время</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="loadPlayerStats()" style="margin-left:12px;">🔍 Загрузить</button>
+                    </div>
+                </header>
+
+                <div id="player-stats-container">
+                    <!-- Контент будет загружен через player-stats-improved.js -->
+                </div>
+
+            </div>
+
+            <!-- Combat Log Modal -->
+            <div id="combatlog-modal" class="modal" style="display:none;">
+                <div class="modal-content" style="max-width:1200px; background:var(--bg-card);">
+                    <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; padding:20px; border-bottom:1px solid var(--border-color);">
+                        <h3 style="margin:0; color:var(--text-primary);">Комбатлог</h3>
+                        <button class="modal-close" onclick="closeCombatLogModal()" style="background:none; border:none; font-size:24px; color:var(--text-secondary); cursor:pointer;">&times;</button>
+                    </div>
+                    <div style="padding:20px; max-height:70vh; overflow-y:auto;">
+                        <table style="width:100%; border-collapse:collapse;">
+                            <thead>
+                                <tr style="background:var(--bg-secondary);">
+                                    <th style="padding:12px; text-align:left; font-weight:600; color:var(--text-secondary); font-size:12px; border-bottom:1px solid var(--border-color);">Time</th>
+                                    <th style="padding:12px; text-align:left; font-weight:600; color:var(--text-secondary); font-size:12px; border-bottom:1px solid var(--border-color);">Attacker</th>
+                                    <th style="padding:12px; text-align:left; font-weight:600; color:var(--text-secondary); font-size:12px; border-bottom:1px solid var(--border-color);">Target</th>
+                                    <th style="padding:12px; text-align:left; font-weight:600; color:var(--text-secondary); font-size:12px; border-bottom:1px solid var(--border-color);">Weapon</th>
+                                    <th style="padding:12px; text-align:left; font-weight:600; color:var(--text-secondary); font-size:12px; border-bottom:1px solid var(--border-color);">Ammo</th>
+                                    <th style="padding:12px; text-align:left; font-weight:600; color:var(--text-secondary); font-size:12px; border-bottom:1px solid var(--border-color);">Bone</th>
+                                    <th style="padding:12px; text-align:left; font-weight:600; color:var(--text-secondary); font-size:12px; border-bottom:1px solid var(--border-color);">Distance</th>
+                                    <th style="padding:12px; text-align:left; font-weight:600; color:var(--text-secondary); font-size:12px; border-bottom:1px solid var(--border-color);">Old_hp</th>
+                                    <th style="padding:12px; text-align:left; font-weight:600; color:var(--text-secondary); font-size:12px; border-bottom:1px solid var(--border-color);">New_hp</th>
+                                    <th style="padding:12px; text-align:left; font-weight:600; color:var(--text-secondary); font-size:12px; border-bottom:1px solid var(--border-color);">Info</th>
+                                </tr>
+                            </thead>
+                            <tbody id="combatlog-table-body">
+                                <tr><td colspan="10" style="padding:40px; text-align:center; color:var(--text-secondary);">Загрузка...</td></tr>
+                            </tbody>
+                        </table>
+                        <div style="margin-top:20px; padding-top:20px; border-top:1px dashed var(--border-color); text-align:center; color:var(--text-secondary); font-size:14px;">
+                            Участники файта
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div id="page-admin" class="page" style="display:none;">
                 <header class="page-header">
                     <h2>
@@ -1347,6 +1410,7 @@ formData.<span style="color: #dcdcaa;">append</span>(<span style="color: #ce9178
     <script src="admin-changelog.js"></script>
     <script src="members-images.js"></script>
     <script src="tournament-admin-improved.js"></script>
+    <script src="player-stats-improved.js"></script>
     <div id="toast" class="toast"></div>
 </body>
 </html>
