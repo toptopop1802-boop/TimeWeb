@@ -79,8 +79,28 @@ class SiteAutomation {
             });
 
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-                throw new Error(errorData.error || `HTTP ${response.status}`);
+                let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.error || errorData.message || errorMessage;
+                    // Добавляем логи, если они есть
+                    if (errorData.logs && errorData.logs.length > 0) {
+                        errorData.logs.forEach(log => {
+                            this.addLog(log.message, log.type || 'error');
+                        });
+                    }
+                } catch (e) {
+                    // Если не удалось распарсить JSON, пробуем получить текст
+                    try {
+                        const text = await response.text();
+                        if (text) {
+                            errorMessage = `HTTP ${response.status}: ${text.substring(0, 200)}`;
+                        }
+                    } catch (textError) {
+                        // Оставляем стандартное сообщение
+                    }
+                }
+                throw new Error(errorMessage);
             }
 
             const data = await response.json();

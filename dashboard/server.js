@@ -2999,20 +2999,22 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
             return res.status(400).json({ error: 'URL and element configuration are required' });
         }
 
+        const logs = [];
+        let browser = null;
+        
         try {
             let puppeteer;
             try {
                 puppeteer = require('puppeteer');
             } catch (e) {
+                logs.push({ type: 'error', message: `Ошибка загрузки Puppeteer: ${e.message}` });
                 return res.status(500).json({ 
+                    success: false,
                     error: 'Puppeteer не установлен. Установите: npm install puppeteer',
-                    logs: [
-                        { type: 'error', message: 'Puppeteer не найден. Установите зависимость.' }
-                    ]
+                    logs: logs
                 });
             }
 
-            const logs = [];
             logs.push({ type: 'info', message: `Запуск браузера...` });
 
             // Конфигурация для запуска браузера
@@ -3777,11 +3779,45 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
 
         } catch (error) {
             console.error('Automation error:', error);
+            console.error('Error stack:', error.stack);
+            
+            // Убеждаемся, что браузер закрыт даже при ошибке
+            try {
+                if (typeof browser !== 'undefined' && browser) {
+                    const pages = await browser.pages();
+                    for (const p of pages) {
+                        try {
+                            await p.close();
+                        } catch (e) {
+                            // Игнорируем ошибки закрытия страниц
+                        }
+                    }
+                    await browser.close();
+                }
+            } catch (closeError) {
+                // Игнорируем ошибки закрытия браузера
+            }
+            
+            const errorMessage = error.message || 'Неизвестная ошибка';
+            const errorStack = error.stack || '';
+            
+            logs.push({ 
+                type: 'error', 
+                message: `Критическая ошибка: ${errorMessage}` 
+            });
+            
+            // Добавляем детали ошибки в логи, если они есть
+            if (errorStack && errorStack.length < 500) {
+                logs.push({ 
+                    type: 'error', 
+                    message: `Детали: ${errorStack.split('\n')[0]}` 
+                });
+            }
+            
             res.status(500).json({ 
-                error: error.message,
-                logs: [
-                    { type: 'error', message: `Критическая ошибка: ${error.message}` }
-                ]
+                success: false,
+                error: errorMessage,
+                logs: logs
             });
         }
     });
