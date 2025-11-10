@@ -1,5 +1,7 @@
 pillow>=10.0.0
-pyautogui>=0.9.54
-pynput>=1.7.6
 requests>=2.31.0
+
+# Опционально (для управления, требует GUI или Xvfb):
+# pyautogui>=0.9.54
+# pynput>=1.7.6
 
