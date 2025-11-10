@@ -85,12 +85,16 @@ class SiteAutomation {
 
             const data = await response.json();
             
-            this.addLog('Автоматизация завершена успешно!', 'success');
-            
             if (data.logs && data.logs.length > 0) {
                 data.logs.forEach(log => {
                     this.addLog(log.message, log.type || 'info');
                 });
+            }
+            
+            if (data.success) {
+                this.addLog('Автоматизация завершена успешно!', 'success');
+            } else {
+                this.addLog(`Автоматизация завершена с ошибками: ${data.error || 'Неизвестная ошибка'}`, 'error');
             }
             
             // Показываем инструкции по установке зависимостей, если есть ошибка
@@ -107,6 +111,7 @@ class SiteAutomation {
                 troubleshootingBox.innerHTML = `
                     <strong style="display: block; margin-bottom: 8px;">⚠️ Требуется установка системных зависимостей:</strong>
                     <pre style="background: #f8f9fa; padding: 12px; border-radius: 4px; overflow-x: auto; margin: 0; font-size: 12px;">${this.escapeHtml(data.troubleshooting)}</pre>
+                    <p style="margin-top: 12px; margin-bottom: 0; font-size: 13px;">Выполните эту команду на сервере в терминале с правами root.</p>
                 `;
                 document.getElementById('resultsPanel').appendChild(troubleshootingBox);
             }
