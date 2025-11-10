@@ -84,11 +84,9 @@ body::after {
 
 @keyframes pulse-badge {
     0%, 100% {
-        transform: translateY(-50%) scale(1);
         opacity: 1;
     }
     50% {
-        transform: translateY(-50%) scale(1.1);
         opacity: 0.9;
     }
 }
