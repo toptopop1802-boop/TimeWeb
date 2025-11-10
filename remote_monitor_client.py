@@ -254,8 +254,8 @@ def main():
         print("⚠️  ОШИБКА: Замените 'http://ваш-сервер.com' на реальный URL вашего сервера!")
         print("")
         print("Примеры:")
+        print("  python remote_monitor_client.py --server https://bublickrust.ru")
         print("  python remote_monitor_client.py --server http://localhost:3000")
-        print("  python remote_monitor_client.py --server https://yourdomain.com")
         print("")
         sys.exit(1)
     

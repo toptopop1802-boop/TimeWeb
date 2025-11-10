@@ -20,7 +20,7 @@ bash setup_remote_monitor.sh
 
 3. Запустите клиент:
 ```bash
-./run_remote_monitor.sh --server http://ваш-сервер.com
+./run_remote_monitor.sh --server https://bublickrust.ru
 ```
 
 #### Вариант 2: Ручная установка
@@ -42,12 +42,12 @@ pip install -r remote_monitor_requirements.txt
 
 4. Запустите клиентский скрипт:
 ```bash
-python remote_monitor_client.py --server http://ваш-сервер.com
+python remote_monitor_client.py --server https://bublickrust.ru
 ```
 
 Или если у вас уже есть ID сессии:
 ```bash
-python remote_monitor_client.py --server http://ваш-сервер.com --session YOUR_SESSION_ID
+python remote_monitor_client.py --server https://bublickrust.ru --session YOUR_SESSION_ID
 ```
 
 **Примечание:** Если вы используете Windows, используйте `remote_monitor_env\Scripts\activate` вместо `source remote_monitor_env/bin/activate`
@@ -55,13 +55,15 @@ python remote_monitor_client.py --server http://ваш-сервер.com --sessio
 После запуска скрипт выведет ссылку для просмотра, например:
 ```
 ✓ Сессия зарегистрирована: abc123def456...
-✓ Ссылка для просмотра: http://ваш-сервер.com/remote-monitor.html?session=abc123def456...
+✓ Ссылка для просмотра: https://bublickrust.ru/remote-monitor.html?session=abc123def456...
 ```
 
 ### 2. На компьютере для просмотра
 
 1. Откройте ссылку, которую выдал клиентский скрипт, или перейдите на:
-   `http://ваш-сервер.com/remote-monitor.html`
+   `https://bublickrust.ru/remote-monitor.html`
+   
+   Или используйте навигацию в Dashboard: **Удаленный мониторинг**
 
 2. Введите ID сессии или полную ссылку в поле "ID сессии или ссылка"
 

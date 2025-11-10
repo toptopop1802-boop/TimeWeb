@@ -22,8 +22,8 @@ if [ $# -eq 0 ] || [[ "$*" == *"ваш-сервер"* ]]; then
     echo "⚠️  ВНИМАНИЕ: Замените 'http://ваш-сервер.com' на реальный URL вашего сервера!"
     echo ""
     echo "Пример:"
+    echo "  ./run_remote_monitor.sh --server https://bublickrust.ru"
     echo "  ./run_remote_monitor.sh --server http://localhost:3000"
-    echo "  ./run_remote_monitor.sh --server https://yourdomain.com"
     echo ""
     if [[ "$*" == *"ваш-сервер"* ]]; then
         exit 1
