@@ -1910,7 +1910,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Load initial data
-    await loadAnalytics(30);
+    try {
+        await loadAnalytics(30);
+    } catch (error) {
+        console.error('Error loading analytics:', error);
+    }
 
     // Hide loader after 1 second
     setTimeout(hideLoader, 1000);
@@ -2014,6 +2018,8 @@ function setupPipette() {
         });
     });
 
+    if (!canvas) return;
+    
     let pipetteFrozen = false;
     canvas.addEventListener('mousemove', (e) => {
         if (pipetteFrozen) return;
