@@ -331,29 +331,6 @@
                         text-align: center;
                     ">Статистика</span>
                 </a>
-                <a href="/site-analyzer.html" class="nav-link" target="_blank" style="position: relative;">
-                    <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                    </svg>
-                    <span class="nav-text">Анализатор</span>
-                    <span style="
-                        position: absolute;
-                        right: 50%;
-                        top: 0;
-                        transform: translate(50%, -30%);
-                        background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-                        color: white;
-                        font-size: 8px;
-                        font-weight: 700;
-                        padding: 1px 6px;
-                        border-radius: 10px;
-                        box-shadow: 0 2px 4px rgba(139, 92, 246, 0.4);
-                        animation: pulse-badge 2s ease-in-out infinite;
-                        white-space: nowrap;
-                        min-width: 50px;
-                        text-align: center;
-                    ">Анализ</span>
-                </a>
                 <a href="#admin" class="nav-link" data-page="admin" style="position: relative;">
                     <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
                     <span class="nav-text">Админ</span>
@@ -549,42 +526,6 @@
                     </div>
                 </div>
 
-                <div class="message-form" style="display:none;">
-                    <div class="form-group">
-                        <label for="guild-select">Сервер:</label>
-                        <select id="guild-select" class="form-control">
-                            <option value="">Выберите сервер...</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="channel-select">Канал:</label>
-                        <select id="channel-select" class="form-control" disabled>
-                            <option value="">Сначала выберите сервер...</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="message-content">Сообщение:</label>
-                        <textarea id="message-content" class="form-control" rows="5" placeholder="Введите текст сообщения..."></textarea>
-                    </div>
-
-                    <div class="form-actions">
-                        <button id="send-message-btn" class="btn btn-primary" disabled>
-                            📤 Отправить
-                        </button>
-                        <button id="read-messages-btn" class="btn read-messages-btn" disabled>
-                            📖 Читать сообщения
-                        </button>
-                    </div>
-                </div>
-
-                <div id="message-status" class="message-status"></div>
-
-                <div id="messages-container" class="messages-container" style="display: none;">
-                    <h3>Сообщения в канале</h3>
-                    <div id="messages-list"></div>
-                </div>
             </div>
 
             <!-- Auto-delete Channels Page -->

@@ -710,120 +710,6 @@ function setupChartTabs() {
 }
 
 // ============================================
-// MESSAGES PAGE
-// ============================================
-
-async function loadGuilds() {
-    try {
-        const response = await fetch(`${API_URL}/api/guilds`);
-        const guilds = await response.json();
-
-        const select = document.getElementById('guild-select');
-        select.innerHTML = '<option value="">Выберите сервер...</option>';
-        
-        guilds.forEach(guild => {
-            const option = document.createElement('option');
-            option.value = guild.id;
-            option.textContent = `${guild.name} (${guild.memberCount} участников)`;
-            select.appendChild(option);
-        });
-    } catch (error) {
-        console.error('Error loading guilds:', error);
-    }
-}
-
-async function loadChannels(guildId) {
-    try {
-        const response = await fetch(`${API_URL}/api/guilds/${guildId}/channels`);
-        const channels = await response.json();
-
-        const select = document.getElementById('channel-select');
-        select.innerHTML = '<option value="">Выберите канал...</option>';
-        select.disabled = false;
-        
-        channels.forEach(channel => {
-            const option = document.createElement('option');
-            option.value = channel.id;
-            option.textContent = `# ${channel.name}`;
-            select.appendChild(option);
-        });
-    } catch (error) {
-        console.error('Error loading channels:', error);
-    }
-}
-
-async function sendMessage(channelId, content) {
-    try {
-        const response = await fetch(`${API_URL}/api/send-message`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ channelId, content })
-        });
-
-        const data = await response.json();
-
-        const status = document.getElementById('message-status');
-        if (data.success) {
-            status.className = 'message-status success';
-            status.textContent = '✅ Сообщение успешно отправлено!';
-            document.getElementById('message-content').value = '';
-        } else {
-            throw new Error(data.error || 'Unknown error');
-        }
-    } catch (error) {
-        const status = document.getElementById('message-status');
-        status.className = 'message-status error';
-        status.textContent = `❌ Ошибка: ${error.message}`;
-    }
-
-    setTimeout(() => {
-        document.getElementById('message-status').style.display = 'none';
-    }, 5000);
-}
-
-async function readMessages(channelId) {
-    try {
-        const response = await fetch(`${API_URL}/api/channels/${channelId}/messages`);
-        const messages = await response.json();
-
-        const container = document.getElementById('messages-container');
-        const messagesList = document.getElementById('messages-list');
-
-        if (messages.length === 0) {
-            messagesList.innerHTML = '<p style="color: #a0a0a0; text-align: center; padding: 20px;">Нет сообщений в этом канале</p>';
-        } else {
-            messagesList.innerHTML = messages.map(msg => {
-                const date = new Date(msg.timestamp);
-                const timeStr = date.toLocaleString('ru-RU');
-                
-                return `
-                    <div class="message-item">
-                        <div class="message-header">
-                            <span class="message-author">${msg.author}</span>
-                            <span class="message-time">${timeStr}</span>
-                        </div>
-                        <div class="message-content">${escapeHtml(msg.content)}</div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        container.style.display = 'block';
-    } catch (error) {
-        console.error('Error reading messages:', error);
-        alert(`Ошибка чтения сообщений: ${error.message}`);
-    }
-}
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-// ============================================
 // AUTO-DELETE CHANNELS PAGE
 // ============================================
 
@@ -1198,7 +1084,7 @@ function navigateToPage(page) {
     const pageName = page.split('?')[0];
     
     // Check admin-only pages
-    const adminPages = ['server', 'analytics', 'messages', 'channels', 'admin', 'users'];
+    const adminPages = ['server', 'analytics', 'channels', 'admin', 'users'];
     if (adminPages.includes(pageName)) {
         const authData = getAuthData();
         if (!authData || !isAdmin(authData)) {
@@ -1258,8 +1144,6 @@ function navigateToPage(page) {
     if (page === 'analytics') {
         const days = parseInt(document.getElementById('period-select').value);
         loadAnalytics(days);
-    } else if (page === 'messages') {
-        loadGuilds();
     } else if (page === 'channels') {
         loadAutoDeleteChannels();
     } else if (page === 'pipette') {
@@ -2012,53 +1896,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('refresh-btn').addEventListener('click', () => {
         const days = parseInt(document.getElementById('period-select').value);
         loadAnalytics(days);
-    });
-
-    // Guild selector
-    document.getElementById('guild-select').addEventListener('change', (e) => {
-        if (e.target.value) {
-            loadChannels(e.target.value);
-        } else {
-            document.getElementById('channel-select').disabled = true;
-            document.getElementById('channel-select').innerHTML = '<option value="">Сначала выберите сервер...</option>';
-        }
-    });
-
-    // Channel selector
-    document.getElementById('channel-select').addEventListener('change', (e) => {
-        const hasChannel = !!e.target.value;
-        document.getElementById('send-message-btn').disabled = !hasChannel;
-        document.getElementById('read-messages-btn').disabled = !hasChannel;
-        
-        // Hide messages container when changing channels
-        if (!hasChannel) {
-            document.getElementById('messages-container').style.display = 'none';
-        }
-    });
-
-    // Send message button
-    document.getElementById('send-message-btn').addEventListener('click', () => {
-        const channelId = document.getElementById('channel-select').value;
-        const content = document.getElementById('message-content').value.trim();
-
-        if (!channelId || !content) {
-            alert('Выберите канал и введите сообщение!');
-            return;
-        }
-
-        sendMessage(channelId, content);
-    });
-
-    // Read messages button
-    document.getElementById('read-messages-btn').addEventListener('click', () => {
-        const channelId = document.getElementById('channel-select').value;
-
-        if (!channelId) {
-            alert('Выберите канал!');
-            return;
-        }
-
-        readMessages(channelId);
     });
 
     // Load initial data
