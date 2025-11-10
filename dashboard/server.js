@@ -2964,14 +2964,14 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                     });
                     logs.push({ 
                         type: 'error', 
-                        message: 'Установите зависимости: sudo apt-get install -y libatk-bridge2.0-0 libatk1.0-0 libcups2 libdrm2 libgtk-3-0 libgbm1 libasound2' 
+                        message: 'Установите зависимости (Ubuntu 24.04): sudo apt-get install -y libatk-bridge2.0-0t64 libatk1.0-0t64 libcups2t64 libdrm2 libgtk-3-0t64 libgbm1 libasound2t64 libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libxss1 libxshmfence1 libnspr4 libnss3 libatspi2.0-0t64 libdbus-1-3' 
                     });
                     
                     return res.status(500).json({
                         success: false,
                         logs,
                         error: 'Не удалось запустить браузер. Установите системные зависимости для Chrome.',
-                        troubleshooting: 'Выполните на сервере: sudo apt-get update && sudo apt-get install -y libatk-bridge2.0-0 libatk1.0-0 libcups2 libdrm2 libgtk-3-0 libgbm1 libasound2 libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libxss1 libasound2 libatspi2.0-0 libcups2 libdbus-1-3 libdrm2 libgbm1 libgtk-3-0 libnspr4 libnss3 libxcomposite1 libxdamage1 libxfixes3 libxkbcommon0 libxrandr2 libxss1 libxshmfence1'
+                        troubleshooting: 'sudo apt-get update && sudo apt-get install -y libatk-bridge2.0-0t64 libatk1.0-0t64 libcups2t64 libdrm2 libgtk-3-0t64 libgbm1 libasound2t64 libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libxss1 libxshmfence1 libnspr4 libnss3 libatspi2.0-0t64 libdbus-1-3'
                     });
                 }
                 throw launchError;
