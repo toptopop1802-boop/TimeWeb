@@ -788,14 +788,15 @@ function setupDemoModal() {
     // Close on outside click
     if (modal) {
         modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            modal.classList.remove('active');
-            if (demoChart) {
-                demoChart.destroy();
-                demoChart = null;
+            if (e.target === modal) {
+                modal.classList.remove('active');
+                if (demoChart) {
+                    demoChart.destroy();
+                    demoChart = null;
+                }
             }
-        }
-    });
+        });
+    }
 
     // Range tabs
     const rangeTabs = document.getElementById('demo-range-tabs');
