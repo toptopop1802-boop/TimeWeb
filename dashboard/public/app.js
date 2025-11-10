@@ -222,10 +222,15 @@ async function loadAnalytics(days = 30) {
         const data = await response.json();
 
         // Update stats cards
-        document.getElementById('stat-wipes').textContent = data.wipe_created || 0;
-        document.getElementById('stat-tickets').textContent = data.ticket_created || 0;
-        document.getElementById('stat-roles').textContent = data.tournament_role_created || 0;
-        document.getElementById('stat-deleted').textContent = data.channel_deleted || 0;
+        const statWipes = document.getElementById('stat-wipes');
+        const statTickets = document.getElementById('stat-tickets');
+        const statRoles = document.getElementById('stat-roles');
+        const statDeleted = document.getElementById('stat-deleted');
+        
+        if (statWipes) statWipes.textContent = data.wipe_created || 0;
+        if (statTickets) statTickets.textContent = data.ticket_created || 0;
+        if (statRoles) statRoles.textContent = data.tournament_role_created || 0;
+        if (statDeleted) statDeleted.textContent = data.channel_deleted || 0;
 
         // Normalize timeline: fill missing days with zeros so the line is continuous
         let timelineNormalized = [];
@@ -1888,15 +1893,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Period selector
-    document.getElementById('period-select').addEventListener('change', (e) => {
-        loadAnalytics(parseInt(e.target.value));
-    });
+    const periodSelect = document.getElementById('period-select');
+    if (periodSelect) {
+        periodSelect.addEventListener('change', (e) => {
+            loadAnalytics(parseInt(e.target.value));
+        });
+    }
 
     // Refresh button
-    document.getElementById('refresh-btn').addEventListener('click', () => {
-        const days = parseInt(document.getElementById('period-select').value);
-        loadAnalytics(days);
-    });
+    const refreshBtn = document.getElementById('refresh-btn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', () => {
+            const days = parseInt(document.getElementById('period-select')?.value || 30);
+            loadAnalytics(days);
+        });
+    }
 
     // Load initial data
     await loadAnalytics(30);
