@@ -6,12 +6,41 @@
 
 ### 1. На удаленном компьютере (который нужно мониторить)
 
-1. Установите зависимости:
+#### Вариант 1: Автоматическая установка (рекомендуется)
+
+1. Сделайте скрипты исполняемыми:
 ```bash
-pip install pillow pyautogui pynput requests
+chmod +x setup_remote_monitor.sh run_remote_monitor.sh
 ```
 
-2. Запустите клиентский скрипт:
+2. Запустите установку:
+```bash
+bash setup_remote_monitor.sh
+```
+
+3. Запустите клиент:
+```bash
+./run_remote_monitor.sh --server http://ваш-сервер.com
+```
+
+#### Вариант 2: Ручная установка
+
+1. Создайте виртуальное окружение:
+```bash
+python3 -m venv remote_monitor_env
+```
+
+2. Активируйте виртуальное окружение:
+```bash
+source remote_monitor_env/bin/activate
+```
+
+3. Установите зависимости:
+```bash
+pip install -r remote_monitor_requirements.txt
+```
+
+4. Запустите клиентский скрипт:
 ```bash
 python remote_monitor_client.py --server http://ваш-сервер.com
 ```
@@ -20,6 +49,8 @@ python remote_monitor_client.py --server http://ваш-сервер.com
 ```bash
 python remote_monitor_client.py --server http://ваш-сервер.com --session YOUR_SESSION_ID
 ```
+
+**Примечание:** Если вы используете Windows, используйте `remote_monitor_env\Scripts\activate` вместо `source remote_monitor_env/bin/activate`
 
 3. Скрипт выведет ссылку для просмотра, например:
 ```
