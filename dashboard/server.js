@@ -3145,14 +3145,17 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
 
             logs.push({ type: 'info', message: `Открытие страницы: ${url}` });
             
-            // Функция для ожидания прохождения Cloudflare
-            const waitForCloudflare = async (page, maxWait = 20000) => {
+            // Функция для ожидания прохождения Cloudflare с автоматическим нажатием на чекбокс
+            const waitForCloudflare = async (page, maxWait = 30000) => {
                 const startTime = Date.now();
+                let checkboxClicked = false;
+                
                 while (Date.now() - startTime < maxWait) {
                     const pageContent = await page.content();
                     const isCloudflare = pageContent.includes('cf-browser-verification') || 
                                         pageContent.includes('challenge-platform') ||
                                         pageContent.includes('Verifying you are human') ||
+                                        pageContent.includes('Verify you are human') ||
                                         pageContent.includes('Just a moment') ||
                                         pageContent.includes('Checking your browser');
                     
@@ -3160,9 +3163,120 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                         return true;
                     }
                     
+                    // Пытаемся найти и нажать на чекбокс Cloudflare
+                    if (!checkboxClicked) {
+                        try {
+                            // Различные селекторы для чекбокса Cloudflare
+                            const checkboxSelectors = [
+                                'input[type="checkbox"]',
+                                '.cb-lb',
+                                '#challenge-form input[type="checkbox"]',
+                                'input[name="cf_captcha_kind"]',
+                                'input[id*="challenge"]',
+                                'input[class*="cb"]',
+                                'label[for*="challenge"] input',
+                                'input[aria-label*="Verify"]',
+                                'input[aria-label*="verify"]'
+                            ];
+                            
+                            let checkboxFound = false;
+                            for (const selector of checkboxSelectors) {
+                                try {
+                                    const checkbox = await page.$(selector);
+                                    if (checkbox) {
+                                        // Проверяем, что чекбокс видимый
+                                        const isVisible = await page.evaluate((sel) => {
+                                            const el = document.querySelector(sel);
+                                            if (!el) return false;
+                                            const style = window.getComputedStyle(el);
+                                            return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
+                                        }, selector);
+                                        
+                                        if (isVisible) {
+                                            // Прокручиваем к чекбоксу
+                                            await page.evaluate((sel) => {
+                                                const el = document.querySelector(sel);
+                                                if (el) {
+                                                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                                }
+                                            }, selector);
+                                            
+                                            await new Promise(resolve => setTimeout(resolve, 500));
+                                            
+                                            // Нажимаем на чекбокс
+                                            await page.click(selector, { timeout: 3000 });
+                                            checkboxFound = true;
+                                            checkboxClicked = true;
+                                            logs.push({ type: 'info', message: `Чекбокс Cloudflare найден и нажат (селектор: ${selector})` });
+                                            break;
+                                        }
+                                    }
+                                } catch (e) {
+                                    // Пробуем следующий селектор
+                                    continue;
+                                }
+                            }
+                            
+                            // Если не нашли через селекторы, пробуем найти по тексту
+                            if (!checkboxFound) {
+                                try {
+                                    await page.evaluate(() => {
+                                        // Ищем label с текстом "Verify you are human" или похожим
+                                        const labels = Array.from(document.querySelectorAll('label'));
+                                        for (const label of labels) {
+                                            const text = label.textContent?.toLowerCase() || '';
+                                            if (text.includes('verify') || text.includes('human')) {
+                                                const checkbox = label.querySelector('input[type="checkbox"]') || 
+                                                               document.querySelector(`input[id="${label.getAttribute('for')}"]`);
+                                                if (checkbox) {
+                                                    checkbox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                                    setTimeout(() => {
+                                                        checkbox.click();
+                                                    }, 500);
+                                                    return;
+                                                }
+                                            }
+                                        }
+                                        
+                                        // Пробуем найти любой видимый чекбокс
+                                        const checkboxes = Array.from(document.querySelectorAll('input[type="checkbox"]'));
+                                        for (const cb of checkboxes) {
+                                            const style = window.getComputedStyle(cb);
+                                            if (style.display !== 'none' && style.visibility !== 'hidden') {
+                                                cb.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                                setTimeout(() => {
+                                                    cb.click();
+                                                }, 500);
+                                                checkboxClicked = true;
+                                                return;
+                                            }
+                                        }
+                                    });
+                                    
+                                    if (checkboxClicked) {
+                                        logs.push({ type: 'info', message: 'Чекбокс Cloudflare найден и нажат через поиск по тексту' });
+                                    }
+                                } catch (e) {
+                                    // Игнорируем ошибки
+                                }
+                            }
+                        } catch (e) {
+                            // Игнорируем ошибки при поиске чекбокса
+                        }
+                    }
+                    
+                    // Ждем немного перед следующей проверкой
                     await new Promise(resolve => setTimeout(resolve, 1000));
                 }
-                return false;
+                
+                // Проверяем финальный статус
+                const finalContent = await page.content();
+                const stillCloudflare = finalContent.includes('cf-browser-verification') || 
+                                       finalContent.includes('challenge-platform') ||
+                                       finalContent.includes('Verifying you are human') ||
+                                       finalContent.includes('Verify you are human');
+                
+                return !stillCloudflare;
             };
 
             try {
@@ -3176,7 +3290,7 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
             
             // Ждем прохождения Cloudflare проверки
             logs.push({ type: 'info', message: 'Ожидание прохождения проверки безопасности...' });
-            const cloudflarePassed = await waitForCloudflare(page, 20000);
+            const cloudflarePassed = await waitForCloudflare(page, 30000);
             
             if (cloudflarePassed) {
                 logs.push({ type: 'success', message: 'Проверка Cloudflare пройдена' });
@@ -3377,7 +3491,7 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                             
                             // Ждем прохождения Cloudflare на новой странице
                             logs.push({ type: 'info', message: 'Ожидание прохождения проверки безопасности на новой странице...' });
-                            const cloudflarePassed = await waitForCloudflare(newPage, 20000);
+                            const cloudflarePassed = await waitForCloudflare(newPage, 30000);
                             
                             if (cloudflarePassed) {
                                 logs.push({ type: 'success', message: 'Проверка Cloudflare пройдена на новой странице' });
@@ -3457,7 +3571,7 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                                     
                                     // Ждем прохождения Cloudflare на новой странице
                                     logs.push({ type: 'info', message: 'Ожидание прохождения проверки безопасности...' });
-                                    const cloudflarePassed = await waitForCloudflare(page, 20000);
+                                    const cloudflarePassed = await waitForCloudflare(page, 30000);
                                     
                                     if (cloudflarePassed) {
                                         logs.push({ type: 'success', message: 'Проверка Cloudflare пройдена' });
