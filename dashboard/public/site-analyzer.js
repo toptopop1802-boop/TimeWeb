@@ -13,6 +13,28 @@ class SiteAnalyzer {
                 this.analyze();
             }
         });
+        
+        // Загружать логи с сервера периодически
+        this.loadServerLogs();
+        setInterval(() => this.loadServerLogs(), 5000); // Каждые 5 секунд
+    }
+
+    async loadServerLogs() {
+        try {
+            const response = await fetch('/api/site-analyzer/logs?limit=50');
+            if (response.ok) {
+                const data = await response.json();
+                // Добавить серверные логи в общий список
+                data.logs.forEach(log => {
+                    const logMessage = `[Сервер] ${log.action}: ${JSON.stringify(log.details)}`;
+                    if (!this.logs.find(l => l.time === new Date(log.timestamp).toLocaleTimeString() && l.message === logMessage)) {
+                        this.addLog(logMessage, 'info');
+                    }
+                });
+            }
+        } catch (error) {
+            // Игнорировать ошибки загрузки логов
+        }
     }
 
     addLog(message, level = 'info') {
