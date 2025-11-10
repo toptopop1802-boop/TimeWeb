@@ -2401,6 +2401,107 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
         return attrs;
     }
 
+    // Функция для анализа элементов на странице через Puppeteer
+    async function analyzePageElements(page) {
+        const elements = await page.evaluate(() => {
+            const buttons = [];
+            const stats = {
+                buttonElements: 0,
+                linkButtons: 0,
+                inputButtons: 0,
+                divButtons: 0,
+                spanButtons: 0,
+                otherButtons: 0
+            };
+
+            // Находим все кнопки
+            document.querySelectorAll('button').forEach(btn => {
+                const text = btn.textContent?.trim() || '';
+                const id = btn.id || null;
+                const classes = btn.className || null;
+                const selector = id ? `#${id}` : (classes ? `.${classes.split(' ')[0]}` : 'button');
+                
+                buttons.push({
+                    type: 'button',
+                    text: text,
+                    id: id,
+                    classes: classes,
+                    selector: selector,
+                    html: btn.outerHTML.substring(0, 200)
+                });
+                stats.buttonElements++;
+            });
+
+            // Находим ссылки, похожие на кнопки
+            document.querySelectorAll('a').forEach(link => {
+                const text = link.textContent?.trim() || '';
+                const href = link.href || null;
+                const id = link.id || null;
+                const classes = link.className || null;
+                const hasButtonClass = classes && /button|btn|link-button/i.test(classes);
+                
+                if (hasButtonClass || text.length < 50) {
+                    const selector = id ? `#${id}` : (classes ? `.${classes.split(' ')[0]}` : 'a');
+                    buttons.push({
+                        type: 'link',
+                        text: text,
+                        href: href,
+                        id: id,
+                        classes: classes,
+                        selector: selector,
+                        html: link.outerHTML.substring(0, 200)
+                    });
+                    stats.linkButtons++;
+                }
+            });
+
+            // Находим input кнопки
+            document.querySelectorAll('input[type="button"], input[type="submit"], input[type="reset"]').forEach(input => {
+                const value = input.value || null;
+                const id = input.id || null;
+                const classes = input.className || null;
+                const type = input.type || 'button';
+                const selector = id ? `#${id}` : (classes ? `.${classes.split(' ')[0]}` : `input[type="${type}"]`);
+                
+                buttons.push({
+                    type: 'input',
+                    text: value,
+                    inputType: type,
+                    id: id,
+                    classes: classes,
+                    selector: selector,
+                    html: input.outerHTML.substring(0, 200)
+                });
+                stats.inputButtons++;
+            });
+
+            // Находим div/span с классами кнопок
+            document.querySelectorAll('div[class*="button"], div[class*="btn"], span[class*="button"], span[class*="btn"]').forEach(el => {
+                const text = el.textContent?.trim() || '';
+                if (text) {
+                    const tagName = el.tagName.toLowerCase();
+                    const id = el.id || null;
+                    const classes = el.className || null;
+                    const selector = id ? `#${id}` : (classes ? `.${classes.split(' ')[0]}` : tagName);
+                    
+                    buttons.push({
+                        type: tagName,
+                        text: text,
+                        id: id,
+                        classes: classes,
+                        selector: selector,
+                        html: el.outerHTML.substring(0, 200)
+                    });
+                    stats[`${tagName}Buttons`]++;
+                }
+            });
+
+            return { buttons, stats };
+        });
+
+        return elements;
+    }
+
     // Analyze website and find all buttons
     app.post('/api/site-analyzer/analyze', express.json(), async (req, res) => {
         const startTime = Date.now();
@@ -2979,12 +3080,119 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
 
             const page = await browser.newPage();
             page.setViewport({ width: 1920, height: 1080 });
+            
+            // Настройка для обхода Cloudflare и других защит
+            await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+            await page.setExtraHTTPHeaders({
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1',
+                'Sec-Fetch-Dest': 'document',
+                'Sec-Fetch-Mode': 'navigate',
+                'Sec-Fetch-Site': 'none',
+                'Cache-Control': 'max-age=0'
+            });
+            
+            // Удаляем признаки автоматизации для обхода Cloudflare
+            await page.evaluateOnNewDocument(() => {
+                // Удаляем webdriver
+                Object.defineProperty(navigator, 'webdriver', {
+                    get: () => undefined
+                });
+                
+                // Переопределяем plugins
+                Object.defineProperty(navigator, 'plugins', {
+                    get: () => [1, 2, 3, 4, 5]
+                });
+                
+                // Переопределяем languages
+                Object.defineProperty(navigator, 'languages', {
+                    get: () => ['en-US', 'en']
+                });
+                
+                // Добавляем chrome объект
+                window.chrome = {
+                    runtime: {}
+                };
+                
+                // Переопределяем permissions
+                const originalQuery = window.navigator.permissions.query;
+                window.navigator.permissions.query = (parameters) => (
+                    parameters.name === 'notifications' ?
+                        Promise.resolve({ state: Notification.permission }) :
+                        originalQuery(parameters)
+                );
+
+                // Скрываем признаки автоматизации
+                Object.defineProperty(navigator, 'webdriver', {
+                    get: () => false
+                });
+
+                // Переопределяем getParameter для WebGL
+                const getParameter = WebGLRenderingContext.prototype.getParameter;
+                WebGLRenderingContext.prototype.getParameter = function(parameter) {
+                    if (parameter === 37445) {
+                        return 'Intel Inc.';
+                    }
+                    if (parameter === 37446) {
+                        return 'Intel Iris OpenGL Engine';
+                    }
+                    return getParameter.call(this, parameter);
+                };
+            });
 
             logs.push({ type: 'info', message: `Открытие страницы: ${url}` });
-            await page.goto(url, { 
-                waitUntil: 'networkidle2',
-                timeout: 30000 
-            });
+            
+            // Функция для ожидания прохождения Cloudflare
+            const waitForCloudflare = async (page, maxWait = 20000) => {
+                const startTime = Date.now();
+                while (Date.now() - startTime < maxWait) {
+                    const pageContent = await page.content();
+                    const isCloudflare = pageContent.includes('cf-browser-verification') || 
+                                        pageContent.includes('challenge-platform') ||
+                                        pageContent.includes('Verifying you are human') ||
+                                        pageContent.includes('Just a moment') ||
+                                        pageContent.includes('Checking your browser');
+                    
+                    if (!isCloudflare) {
+                        return true;
+                    }
+                    
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+                return false;
+            };
+
+            try {
+                await page.goto(url, { 
+                    waitUntil: 'domcontentloaded',
+                    timeout: 30000 
+                });
+            } catch (e) {
+                // Игнорируем ошибки навигации, продолжаем
+            }
+            
+            // Ждем прохождения Cloudflare проверки
+            logs.push({ type: 'info', message: 'Ожидание прохождения проверки безопасности...' });
+            const cloudflarePassed = await waitForCloudflare(page, 20000);
+            
+            if (cloudflarePassed) {
+                logs.push({ type: 'success', message: 'Проверка Cloudflare пройдена' });
+            } else {
+                logs.push({ type: 'warning', message: 'Возможна проверка Cloudflare. Продолжаем...' });
+            }
+
+            // Дополнительное ожидание для полной загрузки страницы
+            try {
+                await page.waitForFunction(
+                    () => document.readyState === 'complete',
+                    { timeout: 10000 }
+                );
+            } catch (e) {
+                // Игнорируем ошибки
+            }
 
             logs.push({ type: 'success', message: 'Страница загружена' });
 
@@ -3085,6 +3293,49 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                             const newUrl = newPage.url();
                             logs.push({ type: 'success', message: `Новая вкладка открыта: ${newUrl}` });
                             
+                            // Ждем прохождения Cloudflare на новой странице
+                            logs.push({ type: 'info', message: 'Ожидание прохождения проверки безопасности на новой странице...' });
+                            const cloudflarePassed = await waitForCloudflare(newPage, 20000);
+                            
+                            if (cloudflarePassed) {
+                                logs.push({ type: 'success', message: 'Проверка Cloudflare пройдена на новой странице' });
+                            }
+                            
+                            // Дополнительное ожидание для полной загрузки
+                            try {
+                                await newPage.waitForFunction(
+                                    () => document.readyState === 'complete',
+                                    { timeout: 10000 }
+                                );
+                            } catch (e) {
+                                // Игнорируем ошибки
+                            }
+                            
+                            // Анализируем элементы на новой странице
+                            logs.push({ type: 'info', message: 'Анализ элементов на новой странице...' });
+                            try {
+                                const pageElements = await analyzePageElements(newPage);
+                                
+                                if (pageElements.buttons && pageElements.buttons.length > 0) {
+                                    logs.push({ type: 'info', message: `Найдено элементов на странице: ${pageElements.buttons.length}` });
+                                    
+                                    // Выводим найденные элементы в лог
+                                    pageElements.buttons.slice(0, 20).forEach((btn, index) => {
+                                        const tagName = btn.type === 'link' ? 'a' : (btn.type === 'input' ? 'input' : btn.type);
+                                        const elementInfo = `[${index + 1}] <${tagName}>${btn.text ? ` "${btn.text}"` : ''}${btn.selector ? ` (${btn.selector})` : ''}${btn.href ? ` -> ${btn.href}` : ''}`;
+                                        logs.push({ type: 'info', message: elementInfo });
+                                    });
+                                    
+                                    if (pageElements.buttons.length > 20) {
+                                        logs.push({ type: 'info', message: `... и еще ${pageElements.buttons.length - 20} элементов` });
+                                    }
+                                } else {
+                                    logs.push({ type: 'warning', message: 'Элементы на странице не найдены' });
+                                }
+                            } catch (analyzeError) {
+                                logs.push({ type: 'warning', message: `Ошибка анализа элементов: ${analyzeError.message}` });
+                            }
+                            
                             // Делаем скриншот новой страницы
                             const screenshot = await newPage.screenshot({ 
                                 encoding: 'base64',
@@ -3121,6 +3372,49 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                                     
                                     const finalUrl = page.url();
                                     logs.push({ type: 'success', message: `Переход выполнен. URL: ${finalUrl}` });
+                                    
+                                    // Ждем прохождения Cloudflare на новой странице
+                                    logs.push({ type: 'info', message: 'Ожидание прохождения проверки безопасности...' });
+                                    const cloudflarePassed = await waitForCloudflare(page, 20000);
+                                    
+                                    if (cloudflarePassed) {
+                                        logs.push({ type: 'success', message: 'Проверка Cloudflare пройдена' });
+                                    }
+                                    
+                                    // Дополнительное ожидание для полной загрузки
+                                    try {
+                                        await page.waitForFunction(
+                                            () => document.readyState === 'complete',
+                                            { timeout: 10000 }
+                                        );
+                                    } catch (e) {
+                                        // Игнорируем ошибки
+                                    }
+                                    
+                                    // Анализируем элементы на новой странице
+                                    logs.push({ type: 'info', message: 'Анализ элементов на странице...' });
+                                    try {
+                                        const pageElements = await analyzePageElements(page);
+                                        
+                                        if (pageElements.buttons && pageElements.buttons.length > 0) {
+                                            logs.push({ type: 'info', message: `Найдено элементов на странице: ${pageElements.buttons.length}` });
+                                            
+                                            // Выводим найденные элементы в лог
+                                            pageElements.buttons.slice(0, 20).forEach((btn, index) => {
+                                                const tagName = btn.type === 'link' ? 'a' : (btn.type === 'input' ? 'input' : btn.type);
+                                                const elementInfo = `[${index + 1}] <${tagName}>${btn.text ? ` "${btn.text}"` : ''}${btn.selector ? ` (${btn.selector})` : ''}${btn.href ? ` -> ${btn.href}` : ''}`;
+                                                logs.push({ type: 'info', message: elementInfo });
+                                            });
+                                            
+                                            if (pageElements.buttons.length > 20) {
+                                                logs.push({ type: 'info', message: `... и еще ${pageElements.buttons.length - 20} элементов` });
+                                            }
+                                        } else {
+                                            logs.push({ type: 'warning', message: 'Элементы на странице не найдены' });
+                                        }
+                                    } catch (analyzeError) {
+                                        logs.push({ type: 'warning', message: `Ошибка анализа элементов: ${analyzeError.message}` });
+                                    }
                                     
                                     const screenshot = await page.screenshot({ 
                                         encoding: 'base64',
@@ -3181,6 +3475,31 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                     // Получаем текущий URL
                     const currentUrl = page.url();
                     logs.push({ type: 'success', message: `Текущий URL: ${currentUrl}` });
+
+                    // Анализируем элементы на текущей странице после клика
+                    logs.push({ type: 'info', message: 'Анализ элементов на странице...' });
+                    try {
+                        const pageElements = await analyzePageElements(page);
+                        
+                        if (pageElements.buttons && pageElements.buttons.length > 0) {
+                            logs.push({ type: 'info', message: `Найдено элементов на странице: ${pageElements.buttons.length}` });
+                            
+                            // Выводим найденные элементы в лог
+                            pageElements.buttons.slice(0, 20).forEach((btn, index) => {
+                                const tagName = btn.type === 'link' ? 'a' : (btn.type === 'input' ? 'input' : btn.type);
+                                const elementInfo = `[${index + 1}] <${tagName}>${btn.text ? ` "${btn.text}"` : ''}${btn.selector ? ` (${btn.selector})` : ''}${btn.href ? ` -> ${btn.href}` : ''}`;
+                                logs.push({ type: 'info', message: elementInfo });
+                            });
+                            
+                            if (pageElements.buttons.length > 20) {
+                                logs.push({ type: 'info', message: `... и еще ${pageElements.buttons.length - 20} элементов` });
+                            }
+                        } else {
+                            logs.push({ type: 'warning', message: 'Элементы на странице не найдены' });
+                        }
+                    } catch (analyzeError) {
+                        logs.push({ type: 'warning', message: `Ошибка анализа элементов: ${analyzeError.message}` });
+                    }
 
                     // Делаем скриншот
                     const screenshot = await page.screenshot({ 
