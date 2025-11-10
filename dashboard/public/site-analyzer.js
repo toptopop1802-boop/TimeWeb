@@ -502,77 +502,34 @@ class SiteAnalyzer {
                 try {
                     const element = frameDoc.elementFromPoint(x, y);
                     if (element) {
-                        // Если это ссылка, переходим по ней
+                        // Если это ссылка, показываем код элемента
                         if (element.tagName === 'A') {
                             try {
                                 const href = element.href;
                                 if (href) {
                                     this.addLog(`Найдена ссылка: ${href}`, 'info');
-                                    setTimeout(() => {
-                                        this.openSiteViewer(href);
-                                    }, 300);
+                                    // Показываем код элемента вместо перехода
+                                    this.showElementCode(element, frameDoc);
                                     return;
                                 }
                             } catch (hrefError) {
-                                // Игнорируем ошибки доступа к href
-                            }
-                        }
-                        // Если это кнопка или элемент с обработчиком клика
-                        try {
-                            if (element.onclick || element.getAttribute('onclick')) {
-                                element.click();
-                                this.addLog(`Клик выполнен на элементе: ${element.tagName}`, 'success');
-                                // Обновляем iframe через небольшую задержку
-                                setTimeout(() => {
-                                    this.reloadFrame();
-                                }, 500);
+                                // Игнорируем ошибки доступа к href, но все равно показываем код
+                                this.showElementCode(element, frameDoc);
                                 return;
                             }
-                        } catch (clickError) {
-                            // Игнорируем ошибки клика
                         }
+                        
+                        // Для всех элементов показываем код
+                        this.showElementCode(element, frameDoc);
+                        return;
                     }
                 } catch (elementError) {
                     // Игнорируем ошибки доступа к элементам
                 }
             }
         } catch (e) {
-            // CORS или другие ограничения - используем серверный метод
-        }
-        
-        // Отправить команду клика на сервер для проксирования
-        try {
-            const response = await fetch('/api/site-analyzer/click', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    url: this.currentFrameUrl,
-                    x: Math.round(x),
-                    y: Math.round(y),
-                    button: 'left'
-                })
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                this.addLog(`Клик выполнен. Новый URL: ${data.url || 'без изменений'}`, 'success');
-                
-                // Обновить iframe если URL изменился
-                if (data.url && data.url !== this.currentFrameUrl) {
-                    setTimeout(() => {
-                        this.openSiteViewer(data.url);
-                    }, 500);
-                } else {
-                    // Обновляем iframe для отображения изменений
-                    setTimeout(() => {
-                        this.reloadFrame();
-                    }, 500);
-                }
-            }
-        } catch (error) {
-            this.addLog(`Ошибка выполнения клика: ${error.message}`, 'error');
+            // CORS или другие ограничения - используем серверный метод для получения HTML
+            this.addLog('Не удалось получить элемент напрямую. Попробуйте кликнуть еще раз.', 'warning');
         }
     }
 
@@ -653,6 +610,269 @@ class SiteAnalyzer {
         });
         
         document.body.appendChild(modal);
+    }
+
+    showElementCode(element, frameDoc) {
+        try {
+            // Получаем HTML код элемента
+            let htmlCode = '';
+            try {
+                htmlCode = element.outerHTML || element.innerHTML || '';
+            } catch (e) {
+                // Если не можем получить outerHTML, создаем вручную
+                htmlCode = `<${element.tagName.toLowerCase()}`;
+                if (element.id) htmlCode += ` id="${element.id}"`;
+                if (element.className) htmlCode += ` class="${element.className}"`;
+                // Добавляем другие атрибуты
+                if (element.attributes) {
+                    for (let attr of element.attributes) {
+                        if (attr.name !== 'id' && attr.name !== 'class') {
+                            htmlCode += ` ${attr.name}="${attr.value}"`;
+                        }
+                    }
+                }
+                htmlCode += `>${element.innerHTML || ''}</${element.tagName.toLowerCase()}>`;
+            }
+            
+            // Форматируем HTML
+            const formattedHtml = this.formatHtml(htmlCode);
+            
+            // Показываем модальное окно с кодом
+            this.showCodeModal(formattedHtml, element);
+            
+        } catch (error) {
+            this.addLog(`Ошибка при получении кода элемента: ${error.message}`, 'error');
+        }
+    }
+    
+    formatHtml(html) {
+        // Простое форматирование HTML с отступами
+        if (!html || !html.trim()) return html;
+        
+        let formatted = '';
+        let indent = 0;
+        const tab = '  ';
+        
+        // Нормализуем пробелы
+        html = html.replace(/>\s+</g, '><').trim();
+        
+        // Разбиваем на теги и текст
+        const parts = html.split(/(<[^>]+>)/);
+        
+        for (let i = 0; i < parts.length; i++) {
+            const part = parts[i];
+            if (!part.trim()) continue;
+            
+            if (part.startsWith('</')) {
+                // Закрывающий тег
+                indent = Math.max(0, indent - 1);
+                formatted += tab.repeat(indent) + part + '\n';
+            } else if (part.startsWith('<')) {
+                // Открывающий тег
+                formatted += tab.repeat(indent) + part;
+                // Проверяем, самозакрывающийся ли тег
+                if (!part.match(/\/\s*>$/)) {
+                    // Не самозакрывающийся - увеличиваем отступ
+                    formatted += '\n';
+                    indent++;
+                } else {
+                    formatted += '\n';
+                }
+            } else {
+                // Текст между тегами
+                const text = part.trim();
+                if (text) {
+                    formatted += tab.repeat(indent) + text + '\n';
+                }
+            }
+        }
+        
+        return formatted.trim();
+    }
+    
+    highlightHtml(html) {
+        // Простая подсветка синтаксиса HTML
+        return html
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/(&lt;\/?)([\w-]+)([^&]*?)(&gt;)/g, (match, open, tag, attrs, close) => {
+                let highlighted = `<span class="code-tag">${open}</span><span class="code-tag-name">${tag}</span>`;
+                
+                // Подсветка атрибутов
+                if (attrs) {
+                    highlighted += attrs.replace(/([\w-]+)(=)(["'][^"']*["'])/g, 
+                        '<span class="code-attr">$1</span><span class="code-operator">$2</span><span class="code-string">$3</span>');
+                }
+                
+                highlighted += `<span class="code-tag">${close}</span>`;
+                return highlighted;
+            })
+            .replace(/(&lt;!--[\s\S]*?--&gt;)/g, '<span class="code-comment">$1</span>');
+    }
+    
+    showCodeModal(htmlCode, element) {
+        // Создаем модальное окно
+        const modal = document.createElement('div');
+        modal.className = 'code-modal';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            padding: 20px;
+        `;
+        
+        const content = document.createElement('div');
+        content.className = 'code-modal-content';
+        content.style.cssText = `
+            background: #1e1e1e;
+            border-radius: 8px;
+            padding: 0;
+            max-width: 90%;
+            max-height: 90vh;
+            width: 800px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        `;
+        
+        // Заголовок
+        const header = document.createElement('div');
+        header.style.cssText = `
+            padding: 16px 20px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        `;
+        
+        const title = document.createElement('div');
+        title.style.cssText = `
+            color: #cccccc;
+            font-weight: 600;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        `;
+        title.innerHTML = `
+            <span style="color: #4ec9b0;">&lt;</span>
+            <span style="color: #569cd6;">${element.tagName.toLowerCase()}</span>
+            <span style="color: #4ec9b0;">&gt;</span>
+            <span style="color: #808080; font-size: 12px; margin-left: 8px;">${element.id ? `#${element.id}` : ''} ${element.className ? `.${element.className.split(' ')[0]}` : ''}</span>
+        `;
+        
+        const copyBtn = document.createElement('button');
+        copyBtn.textContent = 'Копировать';
+        copyBtn.style.cssText = `
+            padding: 6px 12px;
+            background: #0e639c;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: background 0.2s;
+        `;
+        copyBtn.onmouseover = () => copyBtn.style.background = '#1177bb';
+        copyBtn.onmouseout = () => copyBtn.style.background = '#0e639c';
+        copyBtn.onclick = () => {
+            navigator.clipboard.writeText(htmlCode).then(() => {
+                copyBtn.textContent = 'Скопировано!';
+                setTimeout(() => {
+                    copyBtn.textContent = 'Копировать';
+                }, 2000);
+            });
+        };
+        
+        header.appendChild(title);
+        header.appendChild(copyBtn);
+        
+        // Тело с кодом
+        const codeBody = document.createElement('div');
+        codeBody.style.cssText = `
+            padding: 20px;
+            overflow: auto;
+            flex: 1;
+            background: #1e1e1e;
+        `;
+        
+        const codePre = document.createElement('pre');
+        codePre.style.cssText = `
+            margin: 0;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #d4d4d4;
+        `;
+        
+        const codeElement = document.createElement('code');
+        codeElement.className = 'code-content';
+        codeElement.innerHTML = this.highlightHtml(htmlCode);
+        
+        codePre.appendChild(codeElement);
+        codeBody.appendChild(codePre);
+        
+        // Футер с кнопкой закрытия
+        const footer = document.createElement('div');
+        footer.style.cssText = `
+            padding: 12px 20px;
+            border-top: 1px solid #333;
+            display: flex;
+            justify-content: flex-end;
+        `;
+        
+        const closeBtn = document.createElement('button');
+        closeBtn.textContent = 'Закрыть';
+        closeBtn.style.cssText = `
+            padding: 8px 16px;
+            background: #3c3c3c;
+            border: none;
+            border-radius: 4px;
+            color: #cccccc;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.2s;
+        `;
+        closeBtn.onmouseover = () => closeBtn.style.background = '#4a4a4a';
+        closeBtn.onmouseout = () => closeBtn.style.background = '#3c3c3c';
+        closeBtn.onclick = () => modal.remove();
+        
+        footer.appendChild(closeBtn);
+        
+        content.appendChild(header);
+        content.appendChild(codeBody);
+        content.appendChild(footer);
+        modal.appendChild(content);
+        
+        // Закрытие по клику вне модального окна
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+        
+        // Закрытие по Escape
+        const escapeHandler = (e) => {
+            if (e.key === 'Escape') {
+                modal.remove();
+                document.removeEventListener('keydown', escapeHandler);
+            }
+        };
+        document.addEventListener('keydown', escapeHandler);
+        
+        document.body.appendChild(modal);
+        
+        // Фокус на кнопке копирования для удобства
+        copyBtn.focus();
     }
 
     escapeHtml(text) {
