@@ -3230,24 +3230,34 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                     }
 
                     // Проверяем, открывается ли ссылка в новой вкладке
-                    const linkAttributes = await page.$eval(selector, el => {
-                        return {
-                            target: el.getAttribute('target'),
-                            rel: el.getAttribute('rel'),
-                            href: el.href
-                        };
-                    }).catch(() => null);
+                    let linkAttributes = null;
+                    let opensInNewTab = false;
+                    
+                    try {
+                        // Безопасно получаем атрибуты ссылки
+                        linkAttributes = await page.evaluate((sel) => {
+                            const el = document.querySelector(sel);
+                            if (!el) return null;
+                            return {
+                                target: el.getAttribute('target'),
+                                rel: el.getAttribute('rel'),
+                                href: el.href || el.getAttribute('href')
+                            };
+                        }, selector).catch(() => null);
 
-                    const opensInNewTab = linkAttributes && (
-                        linkAttributes.target === '_blank' || 
-                        linkAttributes.rel?.includes('noopener') ||
-                        linkAttributes.rel?.includes('noreferrer')
-                    );
+                        opensInNewTab = linkAttributes && (
+                            linkAttributes.target === '_blank' || 
+                            linkAttributes.rel?.includes('noopener') ||
+                            linkAttributes.rel?.includes('noreferrer')
+                        );
+                    } catch (e) {
+                        logs.push({ type: 'warning', message: `Не удалось проверить атрибуты ссылки: ${e.message}` });
+                    }
 
                     if (opensInNewTab && element.type === 'link' && linkAttributes && linkAttributes.href) {
-                        logs.push({ type: 'info', message: 'Ссылка открывается в новой вкладке. Ожидание открытия...' });
+                        logs.push({ type: 'info', message: 'Ссылка открывается в новой вкладке. Открытие напрямую...' });
                         
-                        // Ожидаем открытия новой вкладки перед кликом
+                        // Ожидаем открытия новой вкладки
                         const pagesBefore = (await browser.pages()).length;
                         
                         // Настраиваем обработчик новых страниц
@@ -3269,9 +3279,81 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                             }, 5000);
                         });
                         
-                        // Кликаем на элемент
-                        await page.click(selector);
-                        logs.push({ type: 'success', message: 'Клик выполнен успешно!' });
+                        // Используем прямой переход по href вместо клика для надежности
+                        try {
+                            await page.evaluate((sel) => {
+                                const el = document.querySelector(sel);
+                                if (el && el.href) {
+                                    // Открываем ссылку в новой вкладке программно
+                                    window.open(el.href, '_blank');
+                                }
+                            }, selector);
+                            logs.push({ type: 'success', message: 'Ссылка открыта в новой вкладке' });
+                        } catch (clickError) {
+                            // Если не получилось через window.open, пробуем клик
+                            try {
+                                // Проверяем, что элемент все еще существует
+                                const elementExists = await page.evaluate((sel) => {
+                                    return document.querySelector(sel) !== null;
+                                }, selector);
+                                
+                                if (elementExists) {
+                                    await page.click(selector, { timeout: 5000 });
+                                    logs.push({ type: 'success', message: 'Клик выполнен успешно!' });
+                                } else {
+                                    throw new Error('Элемент больше не существует в DOM');
+                                }
+                            } catch (clickError2) {
+                                // Если клик не работает, переходим напрямую по href
+                                logs.push({ type: 'warning', message: `Клик не удался, переход напрямую по ссылке: ${linkAttributes.href}` });
+                                const targetUrl = linkAttributes.href;
+                                await page.goto(targetUrl, { 
+                                    waitUntil: 'domcontentloaded',
+                                    timeout: 30000 
+                                });
+                                const finalUrl = page.url();
+                                logs.push({ type: 'success', message: `Переход выполнен. URL: ${finalUrl}` });
+                                
+                                // Анализируем элементы на новой странице
+                                logs.push({ type: 'info', message: 'Анализ элементов на странице...' });
+                                try {
+                                    const pageElements = await analyzePageElements(page);
+                                    
+                                    if (pageElements.buttons && pageElements.buttons.length > 0) {
+                                        logs.push({ type: 'info', message: `Найдено элементов на странице: ${pageElements.buttons.length}` });
+                                        
+                                        pageElements.buttons.slice(0, 20).forEach((btn, index) => {
+                                            const tagName = btn.type === 'link' ? 'a' : (btn.type === 'input' ? 'input' : btn.type);
+                                            const elementInfo = `[${index + 1}] <${tagName}>${btn.text ? ` "${btn.text}"` : ''}${btn.selector ? ` (${btn.selector})` : ''}${btn.href ? ` -> ${btn.href}` : ''}`;
+                                            logs.push({ type: 'info', message: elementInfo });
+                                        });
+                                        
+                                        if (pageElements.buttons.length > 20) {
+                                            logs.push({ type: 'info', message: `... и еще ${pageElements.buttons.length - 20} элементов` });
+                                        }
+                                    }
+                                } catch (analyzeError) {
+                                    logs.push({ type: 'warning', message: `Ошибка анализа элементов: ${analyzeError.message}` });
+                                }
+                                
+                                const screenshot = await page.screenshot({ 
+                                    encoding: 'base64',
+                                    fullPage: false 
+                                });
+                                
+                                await browser.close();
+                                
+                                res.json({
+                                    success: true,
+                                    logs,
+                                    screenshot,
+                                    finalUrl: finalUrl,
+                                    elementFound: true,
+                                    directNavigation: true
+                                });
+                                return;
+                            }
+                        }
                         
                         // Ждем открытия новой страницы
                         const newPage = await newPagePromise;
@@ -3442,34 +3524,65 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                     // Кликаем на элемент (обычный случай или если новая вкладка не открылась)
                     if (!opensInNewTab) {
                         logs.push({ type: 'info', message: 'Выполнение клика на элемент...' });
-                    }
-                    
-                    // Если это ссылка, используем navigation promise
-                    let navigationPromise = null;
-                    if (element.type === 'link' && element.attributes && element.attributes.href && !opensInNewTab) {
-                        navigationPromise = page.waitForNavigation({ 
-                            waitUntil: 'networkidle2', 
-                            timeout: 15000 
-                        }).catch(() => null);
-                    }
-                    
-                    if (!opensInNewTab) {
-                        await page.click(selector);
-                    }
-                    elementFound = true;
-                    logs.push({ type: 'success', message: 'Клик выполнен успешно!' });
-
-                    // Ждем навигации, если это ссылка
-                    if (navigationPromise) {
-                        const navResult = await navigationPromise;
-                        if (navResult !== null) {
-                            logs.push({ type: 'success', message: 'Навигация выполнена' });
-                        } else {
-                            logs.push({ type: 'warning', message: 'Навигация не произошла в течение таймаута' });
+                        
+                        // Проверяем, что элемент все еще существует перед кликом
+                        try {
+                            const elementExists = await page.evaluate((sel) => {
+                                return document.querySelector(sel) !== null;
+                            }, selector);
+                            
+                            if (!elementExists) {
+                                throw new Error('Элемент больше не существует в DOM');
+                            }
+                            
+                            // Если это ссылка, используем navigation promise
+                            let navigationPromise = null;
+                            if (element.type === 'link' && element.attributes && element.attributes.href) {
+                                navigationPromise = page.waitForNavigation({ 
+                                    waitUntil: 'networkidle2', 
+                                    timeout: 15000 
+                                }).catch(() => null);
+                            }
+                            
+                            // Безопасный клик через evaluate
+                            await page.evaluate((sel) => {
+                                const el = document.querySelector(sel);
+                                if (el) {
+                                    el.click();
+                                } else {
+                                    throw new Error('Элемент не найден');
+                                }
+                            }, selector);
+                            
+                            elementFound = true;
+                            logs.push({ type: 'success', message: 'Клик выполнен успешно!' });
+                            
+                            // Ждем навигации, если это ссылка
+                            if (navigationPromise) {
+                                const navResult = await navigationPromise;
+                                if (navResult !== null) {
+                                    logs.push({ type: 'success', message: 'Навигация выполнена' });
+                                } else {
+                                    logs.push({ type: 'warning', message: 'Навигация не произошла в течение таймаута' });
+                                }
+                            } else {
+                                // Небольшая задержка для обработки клика
+                                await new Promise(resolve => setTimeout(resolve, 2000));
+                            }
+                        } catch (clickError) {
+                            // Если клик не удался, пробуем через page.click как fallback
+                            try {
+                                await page.click(selector, { timeout: 5000 });
+                                elementFound = true;
+                                logs.push({ type: 'success', message: 'Клик выполнен успешно (fallback метод)!' });
+                                
+                                // Небольшая задержка для обработки клика
+                                await new Promise(resolve => setTimeout(resolve, 2000));
+                            } catch (fallbackError) {
+                                logs.push({ type: 'error', message: `Ошибка при клике: ${fallbackError.message}` });
+                                throw fallbackError;
+                            }
                         }
-                    } else {
-                        // Небольшая задержка для обработки клика
-                        await new Promise(resolve => setTimeout(resolve, 2000));
                     }
 
                     // Получаем текущий URL
