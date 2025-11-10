@@ -180,20 +180,25 @@ function formatTime(seconds) {
 
 // Utility: Show loader
 function showLoader() {
-    document.getElementById('loader').style.display = 'flex';
-    document.getElementById('app').style.display = 'none';
+    const loader = document.getElementById('loader');
+    const app = document.getElementById('app');
+    if (loader) loader.style.display = 'flex';
+    if (app) app.style.display = 'none';
 }
 
 // Utility: Hide loader
 function hideLoader() {
-    document.getElementById('loader').style.display = 'none';
-    document.getElementById('app').style.display = 'flex';
+    const loader = document.getElementById('loader');
+    const app = document.getElementById('app');
+    if (loader) loader.style.display = 'none';
+    if (app) app.style.display = 'flex';
 }
 
 // Utility: Update last update time
 function updateLastUpdateTime() {
     const now = new Date();
-    document.getElementById('last-update').textContent = now.toLocaleTimeString('ru-RU');
+    const lastUpdate = document.getElementById('last-update');
+    if (lastUpdate) lastUpdate.textContent = now.toLocaleTimeString('ru-RU');
 }
 
 // Utility: HEX -> RGBA
@@ -760,24 +765,29 @@ function setupDemoModal() {
     const demoBtn = document.getElementById('demo-btn');
     const closeBtn = document.getElementById('demo-modal-close');
 
-    demoBtn.addEventListener('click', () => {
-        modal.classList.add('active');
-        // Render default demo view on open
-        demoCurrentDays = 30;
-        demoCurrentType = 'all';
-        renderDemoChart(demoCurrentDays, demoCurrentType);
-    });
+    if (demoBtn) {
+        demoBtn.addEventListener('click', () => {
+            if (modal) modal.classList.add('active');
+            // Render default demo view on open
+            demoCurrentDays = 30;
+            demoCurrentType = 'all';
+            renderDemoChart(demoCurrentDays, demoCurrentType);
+        });
+    }
 
-    closeBtn.addEventListener('click', () => {
-        modal.classList.remove('active');
-        if (demoChart) {
-            demoChart.destroy();
-            demoChart = null;
-        }
-    });
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            if (modal) modal.classList.remove('active');
+            if (demoChart) {
+                demoChart.destroy();
+                demoChart = null;
+            }
+        });
+    }
 
     // Close on outside click
-    modal.addEventListener('click', (e) => {
+    if (modal) {
+        modal.addEventListener('click', (e) => {
         if (e.target === modal) {
             modal.classList.remove('active');
             if (demoChart) {
@@ -1147,7 +1157,8 @@ function navigateToPage(page) {
         }, 100);
     }
     if (page === 'analytics') {
-        const days = parseInt(document.getElementById('period-select').value);
+        const periodSelect = document.getElementById('period-select');
+        const days = periodSelect ? parseInt(periodSelect.value) : 30;
         loadAnalytics(days);
     } else if (page === 'channels') {
         loadAutoDeleteChannels();
@@ -1235,8 +1246,12 @@ async function loadUsers() {
         
         // Update stats - используем данные из БД если доступны
         const totalUsers = dbStatus?.usersCount || users.length;
-        document.getElementById('total-users').textContent = totalUsers;
-        document.getElementById('total-admins').textContent = users.filter(u => u.role === 'admin').length;
+        const totalUsersEl = document.getElementById('total-users');
+        const totalAdminsEl = document.getElementById('total-admins');
+        const totalRegsTodayEl = document.getElementById('total-registrations-today');
+        
+        if (totalUsersEl) totalUsersEl.textContent = totalUsers;
+        if (totalAdminsEl) totalAdminsEl.textContent = users.filter(u => u.role === 'admin').length;
         
         // Count today's registrations
         const today = new Date().toDateString();
@@ -1244,7 +1259,7 @@ async function loadUsers() {
             if (!u.created_at) return false;
             return new Date(u.created_at).toDateString() === today;
         }).length;
-        document.getElementById('total-registrations-today').textContent = todayRegs;
+        if (totalRegsTodayEl) totalRegsTodayEl.textContent = todayRegs;
         
         // Показываем статус БД
         let dbStatusHtml = '';
@@ -1922,10 +1937,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Auto-refresh every minute
     autoRefreshInterval = setInterval(() => {
         const activePage = document.querySelector('.page.active');
-        if (activePage.id === 'page-analytics') {
-            const days = parseInt(document.getElementById('period-select').value);
+        if (activePage && activePage.id === 'page-analytics') {
+            const periodSelect = document.getElementById('period-select');
+            const days = periodSelect ? parseInt(periodSelect.value) : 30;
             loadAnalytics(days);
-        } else if (activePage.id === 'page-channels') {
+        } else if (activePage && activePage.id === 'page-channels') {
             loadAutoDeleteChannels();
         }
     }, 60000); // 60 seconds
@@ -3421,9 +3437,19 @@ function initGradientRolePage() {
         console.log('🌈 [Gradient Role] Форма отправлена');
         isSubmitting = true;
         
-        const roleName = document.getElementById('role-name').value.trim();
-        const color1 = document.getElementById('role-color1').value.trim();
-        const members = document.getElementById('role-members').value.trim();
+        const roleNameEl = document.getElementById('role-name');
+        const color1El = document.getElementById('role-color1');
+        const membersEl = document.getElementById('role-members');
+        
+        if (!roleNameEl || !color1El || !membersEl) {
+            showToast('Ошибка: форма не найдена', 'error');
+            isSubmitting = false;
+            return;
+        }
+        
+        const roleName = roleNameEl.value.trim();
+        const color1 = color1El.value.trim();
+        const members = membersEl.value.trim();
         const statusDiv = document.getElementById('gradient-role-status');
         const submitBtn = form.querySelector('button[type="submit"]');
         
@@ -4468,8 +4494,10 @@ async function loadAPIAnalytics() {
                     const uploadCount = actions.filter(a => a.action_type === 'map_upload' || a.action_type === 'image_upload').length;
                     const viewCount = actions.filter(a => a.action_type === 'map_download' || a.action_type === 'image_view').length;
                     
-                    document.getElementById('api-total-uploads').textContent = uploadCount;
-                    document.getElementById('api-total-views').textContent = viewCount;
+                    const apiTotalUploads = document.getElementById('api-total-uploads');
+                    const apiTotalViews = document.getElementById('api-total-views');
+                    if (apiTotalUploads) apiTotalUploads.textContent = uploadCount;
+                    if (apiTotalViews) apiTotalViews.textContent = viewCount;
                     
                     // Prepare chart data (last 30 days)
                     const chartData = prepareAPIChartData(actions);
@@ -4491,8 +4519,11 @@ async function loadAPIAnalytics() {
     } catch (error) {
         console.error('Error loading API analytics:', error);
         // Show error state
-        document.getElementById('api-status').textContent = '❌';
-        document.getElementById('api-status').style.color = 'var(--danger)';
+        const apiStatus = document.getElementById('api-status');
+        if (apiStatus) {
+            apiStatus.textContent = '❌';
+            apiStatus.style.color = 'var(--danger)';
+        }
     }
 }
 
@@ -4643,8 +4674,10 @@ function renderMockAPIChart() {
         });
     }
     
-    document.getElementById('api-total-uploads').textContent = mockData.reduce((sum, d) => sum + d.uploads, 0);
-    document.getElementById('api-total-views').textContent = mockData.reduce((sum, d) => sum + d.views, 0);
+    const apiTotalUploads = document.getElementById('api-total-uploads');
+    const apiTotalViews = document.getElementById('api-total-views');
+    if (apiTotalUploads) apiTotalUploads.textContent = mockData.reduce((sum, d) => sum + d.uploads, 0);
+    if (apiTotalViews) apiTotalViews.textContent = mockData.reduce((sum, d) => sum + d.views, 0);
     
     renderAPIChart(mockData);
 }
