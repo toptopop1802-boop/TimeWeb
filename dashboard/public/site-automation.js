@@ -93,6 +93,24 @@ class SiteAutomation {
                 });
             }
             
+            // Показываем инструкции по установке зависимостей, если есть ошибка
+            if (data.troubleshooting) {
+                const troubleshootingBox = document.createElement('div');
+                troubleshootingBox.style.cssText = `
+                    background: #fff3cd;
+                    border: 2px solid #ffc107;
+                    border-radius: 8px;
+                    padding: 16px;
+                    margin-top: 16px;
+                    color: #856404;
+                `;
+                troubleshootingBox.innerHTML = `
+                    <strong style="display: block; margin-bottom: 8px;">⚠️ Требуется установка системных зависимостей:</strong>
+                    <pre style="background: #f8f9fa; padding: 12px; border-radius: 4px; overflow-x: auto; margin: 0; font-size: 12px;">${this.escapeHtml(data.troubleshooting)}</pre>
+                `;
+                document.getElementById('resultsPanel').appendChild(troubleshootingBox);
+            }
+            
             if (data.screenshot) {
                 const previewBox = document.getElementById('previewBox');
                 const screenshotImg = document.getElementById('screenshotImg');
