@@ -283,13 +283,8 @@ class SiteAnalyzer {
             const item = document.createElement('div');
             item.className = 'button-item';
             item.addEventListener('click', () => {
-                // Если есть ссылка, открыть в просмотре, иначе показать детали
-                if (button.href) {
-                    const fullUrl = this.resolveUrl(button.href, data.url);
-                    this.openSiteViewer(fullUrl, button);
-                } else {
-                    this.analyzeButton(button, index);
-                }
+                // Всегда показываем код элемента
+                this.showButtonCode(button);
             });
             
             const typeBadge = this.getTypeBadge(button.type);
@@ -612,6 +607,66 @@ class SiteAnalyzer {
         document.body.appendChild(modal);
     }
 
+    showButtonCode(button) {
+        try {
+            // Используем сохраненный HTML, если он есть и достаточно полный
+            let htmlCode = '';
+            
+            if (button.html && button.html.length > 20) {
+                // Используем сохраненный HTML (может быть обрезан до 200 символов)
+                htmlCode = button.html;
+            } else {
+                // Строим HTML код из данных кнопки
+                const tagName = button.type === 'link' ? 'a' : (button.type === 'input' ? 'input' : button.type);
+                
+                htmlCode = `<${tagName}`;
+                
+                // Добавляем атрибуты
+                if (button.id) {
+                    htmlCode += ` id="${this.escapeHtml(button.id)}"`;
+                }
+                if (button.classes) {
+                    htmlCode += ` class="${this.escapeHtml(button.classes)}"`;
+                }
+                if (button.href) {
+                    htmlCode += ` href="${this.escapeHtml(button.href)}"`;
+                }
+                if (button.type === 'input' && button.inputType) {
+                    htmlCode += ` type="${this.escapeHtml(button.inputType)}"`;
+                }
+                if (button.type === 'input' && button.text) {
+                    htmlCode += ` value="${this.escapeHtml(button.text)}"`;
+                }
+                
+                // Завершаем тег
+                if (button.type === 'input') {
+                    htmlCode += ' />';
+                } else {
+                    htmlCode += `>${this.escapeHtml(button.text || '')}</${tagName}>`;
+                }
+            }
+            
+            // Форматируем HTML
+            const formattedHtml = this.formatHtml(htmlCode);
+            
+            // Определяем tagName для виртуального элемента
+            const tagName = button.type === 'link' ? 'a' : (button.type === 'input' ? 'input' : button.type);
+            
+            // Создаем виртуальный элемент для передачи в showCodeModal
+            const virtualElement = {
+                tagName: tagName.toUpperCase(),
+                id: button.id || null,
+                className: button.classes || ''
+            };
+            
+            // Показываем модальное окно с кодом
+            this.showCodeModal(formattedHtml, virtualElement);
+            
+        } catch (error) {
+            this.addLog(`Ошибка при получении кода кнопки: ${error.message}`, 'error');
+        }
+    }
+    
     showElementCode(element, frameDoc) {
         try {
             // Получаем HTML код элемента
