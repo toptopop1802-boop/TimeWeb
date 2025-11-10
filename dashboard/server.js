@@ -3106,8 +3106,42 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                             });
                             return;
                         } else {
-                            logs.push({ type: 'warning', message: 'Новая вкладка не была открыта. Возможно, ссылка открывается через JavaScript.' });
-                            // Продолжаем с обычной обработкой
+                            logs.push({ type: 'warning', message: 'Новая вкладка не была открыта. Пробуем прямой переход по ссылке...' });
+                            
+                            // Если новая вкладка не открылась, переходим напрямую по href
+                            if (linkAttributes && linkAttributes.href) {
+                                const targetUrl = linkAttributes.href;
+                                logs.push({ type: 'info', message: `Переход напрямую по ссылке: ${targetUrl}` });
+                                
+                                try {
+                                    await page.goto(targetUrl, { 
+                                        waitUntil: 'networkidle2',
+                                        timeout: 30000 
+                                    });
+                                    
+                                    const finalUrl = page.url();
+                                    logs.push({ type: 'success', message: `Переход выполнен. URL: ${finalUrl}` });
+                                    
+                                    const screenshot = await page.screenshot({ 
+                                        encoding: 'base64',
+                                        fullPage: false 
+                                    });
+                                    
+                                    await browser.close();
+                                    
+                                    res.json({
+                                        success: true,
+                                        logs,
+                                        screenshot,
+                                        finalUrl: finalUrl,
+                                        elementFound: true,
+                                        directNavigation: true
+                                    });
+                                    return;
+                                } catch (navError) {
+                                    logs.push({ type: 'error', message: `Ошибка прямого перехода: ${navError.message}` });
+                                }
+                            }
                         }
                     }
 
