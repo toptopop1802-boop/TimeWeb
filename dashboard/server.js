@@ -2369,6 +2369,301 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
         }
     });
 
+    // =====================
+    // SITE ANALYZER API
+    // =====================
+    const siteAnalyzerLogs = [];
+
+    // Helper function to log analyzer actions
+    function logAnalyzerAction(action, details, req) {
+        const log = {
+            timestamp: Date.now(),
+            action,
+            details,
+            ip: req?.ip || 'unknown'
+        };
+        siteAnalyzerLogs.push(log);
+        // Keep only last 1000 logs
+        if (siteAnalyzerLogs.length > 1000) {
+            siteAnalyzerLogs.shift();
+        }
+        console.log(`[Site Analyzer] ${action}:`, details);
+    }
+
+    // Helper function to extract attributes from HTML tag
+    function extractAttributes(tag) {
+        const attrs = {};
+        const attrRegex = /(\w+)=["']([^"']+)["']/g;
+        let match;
+        while ((match = attrRegex.exec(tag)) !== null) {
+            attrs[match[1]] = match[2];
+        }
+        return attrs;
+    }
+
+    // Analyze website and find all buttons
+    app.post('/api/site-analyzer/analyze', express.json(), async (req, res) => {
+        const startTime = Date.now();
+        const { url } = req.body;
+        
+        if (!url) {
+            return res.status(400).json({ error: 'URL is required' });
+        }
+
+        try {
+            logAnalyzerAction('ANALYZE_START', { url }, req);
+
+            // Fetch the website (using built-in fetch in Node.js 18+ or node-fetch)
+            let fetchFunc;
+            try {
+                // Try built-in fetch (Node.js 18+)
+                fetchFunc = global.fetch || (await import('node-fetch')).default;
+            } catch {
+                // Fallback to node-fetch if needed
+                fetchFunc = require('node-fetch');
+            }
+            const response = await fetch(url, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                },
+                timeout: 10000
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const html = await response.text();
+            logAnalyzerAction('FETCH_SUCCESS', { url, size: html.length }, req);
+
+            // Parse HTML and find buttons
+            const buttons = [];
+            const stats = {
+                buttonElements: 0,
+                linkButtons: 0,
+                inputButtons: 0,
+                divButtons: 0,
+                spanButtons: 0,
+                otherButtons: 0
+            };
+
+            // Use regex to find buttons (simple approach, can be improved with cheerio)
+            // Find <button> elements
+            const buttonRegex = /<button[^>]*>(.*?)<\/button>/gis;
+            let match;
+            while ((match = buttonRegex.exec(html)) !== null) {
+                const buttonHtml = match[0];
+                const buttonText = match[1].replace(/<[^>]*>/g, '').trim();
+                const idMatch = buttonHtml.match(/id=["']([^"']+)["']/i);
+                const classMatch = buttonHtml.match(/class=["']([^"']+)["']/i);
+                const typeMatch = buttonHtml.match(/type=["']([^"']+)["']/i);
+                
+                buttons.push({
+                    type: 'button',
+                    text: buttonText,
+                    id: idMatch ? idMatch[1] : null,
+                    classes: classMatch ? classMatch[1] : null,
+                    selector: idMatch ? `#${idMatch[1]}` : (classMatch ? `.${classMatch[1].split(' ')[0]}` : 'button'),
+                    html: buttonHtml.substring(0, 200)
+                });
+                stats.buttonElements++;
+            }
+
+            // Find <a> elements that look like buttons
+            const linkRegex = /<a[^>]*>(.*?)<\/a>/gis;
+            while ((match = linkRegex.exec(html)) !== null) {
+                const linkHtml = match[0];
+                const linkText = match[1].replace(/<[^>]*>/g, '').trim();
+                const hrefMatch = linkHtml.match(/href=["']([^"']+)["']/i);
+                const classMatch = linkHtml.match(/class=["']([^"']+)["']/i);
+                const idMatch = linkHtml.match(/id=["']([^"']+)["']/i);
+                
+                // Check if it looks like a button (has button-related classes or styles)
+                const hasButtonClass = classMatch && /button|btn|link-button/i.test(classMatch[1]);
+                const hasButtonStyle = /style=["'][^"']*button/i.test(linkHtml);
+                
+                if (hasButtonClass || hasButtonStyle || linkText.length < 50) {
+                    buttons.push({
+                        type: 'link',
+                        text: linkText,
+                        href: hrefMatch ? hrefMatch[1] : null,
+                        id: idMatch ? idMatch[1] : null,
+                        classes: classMatch ? classMatch[1] : null,
+                        selector: idMatch ? `#${idMatch[1]}` : (classMatch ? `.${classMatch[1].split(' ')[0]}` : 'a'),
+                        html: linkHtml.substring(0, 200)
+                    });
+                    stats.linkButtons++;
+                }
+            }
+
+            // Find <input type="button|submit|reset">
+            const inputRegex = /<input[^>]*type=["'](button|submit|reset)["'][^>]*>/gi;
+            while ((match = inputRegex.exec(html)) !== null) {
+                const inputHtml = match[0];
+                const valueMatch = inputHtml.match(/value=["']([^"']+)["']/i);
+                const idMatch = inputHtml.match(/id=["']([^"']+)["']/i);
+                const classMatch = inputHtml.match(/class=["']([^"']+)["']/i);
+                const typeMatch = inputHtml.match(/type=["']([^"']+)["']/i);
+                
+                buttons.push({
+                    type: 'input',
+                    text: valueMatch ? valueMatch[1] : null,
+                    inputType: typeMatch ? typeMatch[1] : 'button',
+                    id: idMatch ? idMatch[1] : null,
+                    classes: classMatch ? classMatch[1] : null,
+                    selector: idMatch ? `#${idMatch[1]}` : (classMatch ? `.${classMatch[1].split(' ')[0]}` : 'input[type="button"]'),
+                    html: inputHtml.substring(0, 200)
+                });
+                stats.inputButtons++;
+            }
+
+            // Find div/span elements with button-like classes
+            const divButtonRegex = /<(div|span)[^>]*class=["'][^"']*(?:button|btn)[^"']*["'][^>]*>(.*?)<\/\1>/gis;
+            while ((match = divButtonRegex.exec(html)) !== null) {
+                const elementHtml = match[0];
+                const tagName = match[1];
+                const elementText = match[2].replace(/<[^>]*>/g, '').trim();
+                const idMatch = elementHtml.match(/id=["']([^"']+)["']/i);
+                const classMatch = elementHtml.match(/class=["']([^"']+)["']/i);
+                
+                if (elementText) {
+                    buttons.push({
+                        type: tagName,
+                        text: elementText,
+                        id: idMatch ? idMatch[1] : null,
+                        classes: classMatch ? classMatch[1] : null,
+                        selector: idMatch ? `#${idMatch[1]}` : (classMatch ? `.${classMatch[1].split(' ')[0]}` : tagName),
+                        html: elementHtml.substring(0, 200)
+                    });
+                    stats[`${tagName}Buttons`]++;
+                }
+            }
+
+            const duration = Date.now() - startTime;
+            logAnalyzerAction('ANALYZE_COMPLETE', { 
+                url, 
+                buttonsFound: buttons.length, 
+                duration: `${duration}ms` 
+            }, req);
+
+            res.json({
+                success: true,
+                url,
+                buttons,
+                stats,
+                analyzedAt: new Date().toISOString()
+            });
+
+        } catch (error) {
+            logAnalyzerAction('ANALYZE_ERROR', { url, error: error.message }, req);
+            console.error('Site analyzer error:', error);
+            res.status(500).json({ 
+                error: error.message,
+                details: 'Не удалось проанализировать сайт. Проверьте URL и доступность сайта.'
+            });
+        }
+    });
+
+    // Analyze specific button in detail
+    app.post('/api/site-analyzer/analyze-button', express.json(), async (req, res) => {
+        const { url, button } = req.body;
+        
+        if (!url || !button) {
+            return res.status(400).json({ error: 'URL and button are required' });
+        }
+
+        try {
+            logAnalyzerAction('BUTTON_ANALYZE_START', { url, button: button.text }, req);
+
+            // Fetch the website
+            let fetchFunc;
+            try {
+                fetchFunc = global.fetch || (await import('node-fetch')).default;
+            } catch {
+                fetchFunc = require('node-fetch');
+            }
+            const response = await fetchFunc(url, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                },
+                timeout: 10000
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const html = await response.text();
+            
+            // Find all elements related to this button
+            const elements = [];
+            
+            // Try to find the button by selector
+            if (button.selector) {
+                // Simple regex search for the selector
+                const selectorRegex = new RegExp(button.selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+                const matches = html.match(selectorRegex);
+                if (matches) {
+                    elements.push({
+                        tagName: button.type,
+                        selector: button.selector,
+                        found: true
+                    });
+                }
+            }
+
+            // Find nearby elements (siblings, parents)
+            if (button.html) {
+                const buttonIndex = html.indexOf(button.html);
+                if (buttonIndex !== -1) {
+                    // Get context around the button (500 chars before and after)
+                    const context = html.substring(
+                        Math.max(0, buttonIndex - 500),
+                        Math.min(html.length, buttonIndex + button.html.length + 500)
+                    );
+                    
+                    // Find all elements in context
+                    const contextElements = context.match(/<[^>]+>/g) || [];
+                    contextElements.forEach(tag => {
+                        const tagMatch = tag.match(/<(\w+)/);
+                        if (tagMatch) {
+                            elements.push({
+                                tagName: tagMatch[1],
+                                attributes: extractAttributes(tag),
+                                text: null
+                            });
+                        }
+                    });
+                }
+            }
+
+            logAnalyzerAction('BUTTON_ANALYZE_COMPLETE', { 
+                url, 
+                button: button.text,
+                elementsFound: elements.length 
+            }, req);
+
+            res.json({
+                success: true,
+                button,
+                elements: elements.slice(0, 50), // Limit to 50 elements
+                analyzedAt: new Date().toISOString()
+            });
+
+        } catch (error) {
+            logAnalyzerAction('BUTTON_ANALYZE_ERROR', { url, error: error.message }, req);
+            console.error('Button analyzer error:', error);
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // Get analyzer logs
+    app.get('/api/site-analyzer/logs', (req, res) => {
+        const limit = parseInt(req.query.limit) || 100;
+        const logs = siteAnalyzerLogs.slice(-limit);
+        res.json({ logs });
+    });
+
     // Serve static files (after all API routes)
     // Skip /api routes to avoid conflicts
     const staticMiddleware = express.static('public');

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Анализатор сайта</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .analyzer-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .input-panel {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .input-group {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+        .input-group input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(196,5,82,0.3);
+        }
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .results-panel {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: var(--bg-darker);
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--accent-primary);
+        }
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-top: 8px;
+        }
+        .buttons-list {
+            margin-top: 24px;
+        }
+        .button-item {
+            background: var(--bg-darker);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .button-item:hover {
+            border-color: var(--accent-primary);
+            transform: translateX(4px);
+        }
+        .button-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .button-text {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .button-type {
+            background: var(--accent-primary);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .button-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-color);
+        }
+        .detail-item {
+            font-size: 13px;
+        }
+        .detail-label {
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+        .detail-value {
+            color: var(--text-primary);
+            word-break: break-all;
+        }
+        .logs-panel {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 24px;
+            margin-top: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .logs-container {
+            background: var(--bg-darker);
+            border-radius: 8px;
+            padding: 16px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .log-entry {
+            padding: 8px;
+            margin-bottom: 4px;
+            border-left: 3px solid var(--accent-primary);
+            background: var(--bg-dark);
+            border-radius: 4px;
+        }
+        .log-time {
+            color: var(--text-secondary);
+            font-size: 10px;
+        }
+        .log-level-info { border-left-color: #3b82f6; }
+        .log-level-success { border-left-color: #10b981; }
+        .log-level-error { border-left-color: #ef4444; }
+        .log-level-warning { border-left-color: #f59e0b; }
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--border-color);
+            border-top-color: var(--accent-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="analyzer-container">
+        <h1 style="margin-bottom: 24px; color: var(--text-primary);">Анализатор сайта</h1>
+        
+        <div class="input-panel">
+            <h2 style="margin-bottom: 16px; color: var(--text-primary);">Анализ сайта</h2>
+            <div class="input-group">
+                <input type="url" id="siteUrl" placeholder="Введите URL сайта (например: https://example.com)" value="">
+                <button class="btn btn-primary" id="analyzeBtn">Анализировать</button>
+            </div>
+        </div>
+
+        <div id="resultsPanel" class="results-panel" style="display: none;">
+            <h2 style="margin-bottom: 16px; color: var(--text-primary);">Результаты анализа</h2>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalButtons">0</div>
+                    <div class="stat-label">Всего кнопок</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="buttonButtons">0</div>
+                    <div class="stat-label">Элементы &lt;button&gt;</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="linkButtons">0</div>
+                    <div class="stat-label">Ссылки-кнопки</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="inputButtons">0</div>
+                    <div class="stat-label">Input кнопки</div>
+                </div>
+            </div>
+
+            <div class="buttons-list" id="buttonsList"></div>
+        </div>
+
+        <div class="logs-panel">
+            <h2 style="margin-bottom: 16px; color: var(--text-primary);">Логи</h2>
+            <div class="logs-container" id="logsContainer">
+                <div class="log-entry log-level-info">
+                    <span class="log-time">[Система]</span> Готов к анализу сайта
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="site-analyzer.js"></script>
+</body>
+</html>
+
