@@ -2422,7 +2422,7 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                 // Fallback to node-fetch if needed
                 fetchFunc = require('node-fetch');
             }
-            const response = await fetch(url, {
+            const response = await fetchFunc(url, {
                 headers: {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
                 },
