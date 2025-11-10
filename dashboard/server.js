@@ -2664,6 +2664,111 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
         res.json({ logs });
     });
 
+    // Proxy for loading websites in iframe (CORS bypass)
+    app.get('/api/site-analyzer/proxy', async (req, res) => {
+        const { url } = req.query;
+        
+        if (!url) {
+            return res.status(400).send('URL parameter is required');
+        }
+
+        try {
+            logAnalyzerAction('PROXY_REQUEST', { url }, req);
+
+            let fetchFunc;
+            try {
+                fetchFunc = global.fetch || (await import('node-fetch')).default;
+            } catch {
+                fetchFunc = require('node-fetch');
+            }
+
+            const response = await fetchFunc(url, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                },
+                timeout: 15000
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const html = await response.text();
+            
+            // Modify HTML to make relative URLs absolute
+            const baseUrl = new URL(url);
+            const modifiedHtml = html
+                .replace(/href=["']([^"']+)["']/gi, (match, href) => {
+                    if (href.startsWith('http') || href.startsWith('//') || href.startsWith('#')) {
+                        return match;
+                    }
+                    const absoluteUrl = href.startsWith('/') 
+                        ? `${baseUrl.protocol}//${baseUrl.host}${href}`
+                        : `${baseUrl.protocol}//${baseUrl.host}${baseUrl.pathname.replace(/\/[^/]*$/, '')}/${href}`;
+                    return `href="${absoluteUrl}"`;
+                })
+                .replace(/src=["']([^"']+)["']/gi, (match, src) => {
+                    if (src.startsWith('http') || src.startsWith('//') || src.startsWith('data:')) {
+                        return match;
+                    }
+                    const absoluteUrl = src.startsWith('/')
+                        ? `${baseUrl.protocol}//${baseUrl.host}${src}`
+                        : `${baseUrl.protocol}//${baseUrl.host}${baseUrl.pathname.replace(/\/[^/]*$/, '')}/${src}`;
+                    return `src="${absoluteUrl}"`;
+                });
+
+            // Set headers to allow iframe embedding
+            res.setHeader('Content-Type', 'text/html; charset=utf-8');
+            res.setHeader('X-Frame-Options', 'ALLOWALL');
+            res.setHeader('Content-Security-Policy', "frame-ancestors *");
+            
+            logAnalyzerAction('PROXY_SUCCESS', { url, size: modifiedHtml.length }, req);
+            res.send(modifiedHtml);
+
+        } catch (error) {
+            logAnalyzerAction('PROXY_ERROR', { url, error: error.message }, req);
+            res.status(500).send(`
+                <html>
+                    <body style="font-family: Arial; padding: 40px; text-align: center;">
+                        <h2>Ошибка загрузки сайта</h2>
+                        <p>${error.message}</p>
+                        <p style="color: #666;">Возможные причины: CORS, недоступность сайта, или сайт блокирует встраивание в iframe</p>
+                    </body>
+                </html>
+            `);
+        }
+    });
+
+    // Handle click on proxied website
+    app.post('/api/site-analyzer/click', express.json(), async (req, res) => {
+        const { url, x, y, button } = req.body;
+        
+        if (!url || x === undefined || y === undefined) {
+            return res.status(400).json({ error: 'URL, x, and y are required' });
+        }
+
+        try {
+            logAnalyzerAction('CLICK_REQUEST', { url, x, y, button }, req);
+            
+            // Для реального клика нужно использовать headless браузер (Puppeteer/Playwright)
+            // Пока просто возвращаем информацию о клике
+            // В будущем можно добавить Puppeteer для реального взаимодействия
+            
+            res.json({
+                success: true,
+                url: url, // URL может измениться после клика
+                clickedAt: { x, y, button },
+                message: 'Клик зарегистрирован. Для реального взаимодействия требуется headless браузер.'
+            });
+            
+            logAnalyzerAction('CLICK_SUCCESS', { url, x, y }, req);
+            
+        } catch (error) {
+            logAnalyzerAction('CLICK_ERROR', { url, error: error.message }, req);
+            res.status(500).json({ error: error.message });
+        }
+    });
+
     // Serve static files (after all API routes)
     // Skip /api routes to avoid conflicts
     const staticMiddleware = express.static('public');

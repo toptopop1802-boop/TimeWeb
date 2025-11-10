@@ -2,6 +2,8 @@ class SiteAnalyzer {
     constructor() {
         this.currentAnalysis = null;
         this.logs = [];
+        this.clickModeEnabled = false;
+        this.currentFrameUrl = null;
         
         this.init();
     }
@@ -17,6 +19,15 @@ class SiteAnalyzer {
         // Загружать логи с сервера периодически
         this.loadServerLogs();
         setInterval(() => this.loadServerLogs(), 5000); // Каждые 5 секунд
+        
+        // Обработчики для просмотра сайта
+        document.getElementById('enableClickBtn').addEventListener('click', () => this.toggleClickMode());
+        document.getElementById('reloadFrameBtn').addEventListener('click', () => this.reloadFrame());
+        document.getElementById('closeViewerBtn').addEventListener('click', () => this.closeViewer());
+        
+        // Обработчик кликов по overlay
+        const clickOverlay = document.getElementById('clickOverlay');
+        clickOverlay.addEventListener('click', (e) => this.handleFrameClick(e));
     }
 
     async loadServerLogs() {
@@ -149,7 +160,15 @@ class SiteAnalyzer {
         data.buttons.forEach((button, index) => {
             const item = document.createElement('div');
             item.className = 'button-item';
-            item.addEventListener('click', () => this.analyzeButton(button, index));
+            item.addEventListener('click', () => {
+                // Если есть ссылка, открыть в просмотре, иначе показать детали
+                if (button.href) {
+                    const fullUrl = this.resolveUrl(button.href, data.url);
+                    this.openSiteViewer(fullUrl, button);
+                } else {
+                    this.analyzeButton(button, index);
+                }
+            });
             
             const typeBadge = this.getTypeBadge(button.type);
             
@@ -211,6 +230,13 @@ class SiteAnalyzer {
     async analyzeButton(button, index) {
         this.addLog(`Анализ кнопки #${index + 1}: "${button.text || '(без текста)'}"`, 'info');
         
+        // Если есть ссылка, открыть сайт в просмотре
+        if (button.href) {
+            const fullUrl = this.resolveUrl(button.href, this.currentAnalysis.url);
+            this.openSiteViewer(fullUrl, button);
+            this.addLog(`Открыт просмотр сайта: ${fullUrl}`, 'success');
+        }
+        
         try {
             const response = await fetch('/api/site-analyzer/analyze-button', {
                 method: 'POST',
@@ -236,6 +262,118 @@ class SiteAnalyzer {
         } catch (error) {
             this.addLog(`Ошибка анализа кнопки: ${error.message}`, 'error');
         }
+    }
+
+    resolveUrl(href, baseUrl) {
+        try {
+            // Если ссылка абсолютная
+            if (href.startsWith('http://') || href.startsWith('https://')) {
+                return href;
+            }
+            // Если ссылка начинается с /
+            if (href.startsWith('/')) {
+                const base = new URL(baseUrl);
+                return `${base.protocol}//${base.host}${href}`;
+            }
+            // Относительная ссылка
+            const base = new URL(baseUrl);
+            return new URL(href, base).href;
+        } catch (e) {
+            return href;
+        }
+    }
+
+    openSiteViewer(url, button = null) {
+        const viewer = document.getElementById('siteViewer');
+        const frame = document.getElementById('siteFrame');
+        const currentUrlSpan = document.getElementById('currentFrameUrl');
+        
+        this.currentFrameUrl = url;
+        currentUrlSpan.textContent = url;
+        
+        // Загрузить сайт через прокси для обхода CORS
+        frame.src = `/api/site-analyzer/proxy?url=${encodeURIComponent(url)}`;
+        
+        viewer.style.display = 'block';
+        viewer.scrollIntoView({ behavior: 'smooth' });
+        
+        if (button) {
+            this.addLog(`Открыт просмотр сайта для кнопки: "${button.text || '(без текста)'}"`, 'info');
+        }
+    }
+
+    toggleClickMode() {
+        this.clickModeEnabled = !this.clickModeEnabled;
+        const overlay = document.getElementById('clickOverlay');
+        const btn = document.getElementById('enableClickBtn');
+        
+        if (this.clickModeEnabled) {
+            overlay.classList.add('active');
+            btn.textContent = 'Выключить клики';
+            this.addLog('Режим кликов включен. Кликните на элемент в iframe для взаимодействия', 'info');
+        } else {
+            overlay.classList.remove('active');
+            btn.textContent = 'Включить клики';
+            this.addLog('Режим кликов выключен', 'info');
+        }
+    }
+
+    async handleFrameClick(e) {
+        if (!this.clickModeEnabled) return;
+        
+        const frame = document.getElementById('siteFrame');
+        const rect = frame.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        this.addLog(`Клик по координатам: (${Math.round(x)}, ${Math.round(y)})`, 'info');
+        
+        // Отправить команду клика на сервер для проксирования
+        try {
+            const response = await fetch('/api/site-analyzer/click', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    url: this.currentFrameUrl,
+                    x: Math.round(x),
+                    y: Math.round(y),
+                    button: 'left'
+                })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                this.addLog(`Клик выполнен. Новый URL: ${data.url || 'без изменений'}`, 'success');
+                
+                // Обновить iframe если URL изменился
+                if (data.url && data.url !== this.currentFrameUrl) {
+                    setTimeout(() => {
+                        this.openSiteViewer(data.url);
+                    }, 500);
+                }
+            }
+        } catch (error) {
+            this.addLog(`Ошибка выполнения клика: ${error.message}`, 'error');
+        }
+    }
+
+    reloadFrame() {
+        const frame = document.getElementById('siteFrame');
+        if (this.currentFrameUrl) {
+            frame.src = `/api/site-analyzer/proxy?url=${encodeURIComponent(this.currentFrameUrl)}`;
+            this.addLog('Сайт обновлен', 'info');
+        }
+    }
+
+    closeViewer() {
+        const viewer = document.getElementById('siteViewer');
+        viewer.style.display = 'none';
+        this.clickModeEnabled = false;
+        document.getElementById('clickOverlay').classList.remove('active');
+        document.getElementById('enableClickBtn').textContent = 'Включить клики';
+        this.addLog('Просмотр сайта закрыт', 'info');
     }
 
     showButtonDetails(button, analysis) {
