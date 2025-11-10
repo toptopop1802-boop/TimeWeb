@@ -110,7 +110,7 @@ class SiteAutomation {
             console.error('Automation error:', error);
         } finally {
             generateBtn.disabled = false;
-            generateBtn.textContent = 'Генерация сайта';
+            generateBtn.textContent = 'Генерация аккаунта';
         }
     }
 

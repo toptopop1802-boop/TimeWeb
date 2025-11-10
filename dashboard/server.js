@@ -2914,10 +2914,68 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
             const logs = [];
             logs.push({ type: 'info', message: `Запуск браузера...` });
 
-            const browser = await puppeteer.launch({
+            // Конфигурация для запуска браузера
+            const launchOptions = {
                 headless: true,
-                args: ['--no-sandbox', '--disable-setuid-sandbox']
-            });
+                args: [
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--disable-accelerated-2d-canvas',
+                    '--no-first-run',
+                    '--no-zygote',
+                    '--disable-gpu',
+                    '--disable-extensions',
+                    '--disable-background-networking',
+                    '--disable-background-timer-throttling',
+                    '--disable-backgrounding-occluded-windows',
+                    '--disable-breakpad',
+                    '--disable-client-side-phishing-detection',
+                    '--disable-default-apps',
+                    '--disable-features=TranslateUI',
+                    '--disable-hang-monitor',
+                    '--disable-ipc-flooding-protection',
+                    '--disable-popup-blocking',
+                    '--disable-prompt-on-repost',
+                    '--disable-renderer-backgrounding',
+                    '--disable-sync',
+                    '--disable-translate',
+                    '--metrics-recording-only',
+                    '--mute-audio',
+                    '--no-default-browser-check',
+                    '--safebrowsing-disable-auto-update',
+                    '--enable-automation',
+                    '--password-store=basic',
+                    '--use-mock-keychain'
+                ],
+                ignoreHTTPSErrors: true,
+                timeout: 60000
+            };
+
+            let browser;
+            try {
+                browser = await puppeteer.launch(launchOptions);
+            } catch (launchError) {
+                // Если ошибка связана с отсутствующими библиотеками
+                if (launchError.message && launchError.message.includes('shared libraries')) {
+                    logs.push({ 
+                        type: 'error', 
+                        message: 'Ошибка запуска браузера: отсутствуют системные библиотеки' 
+                    });
+                    logs.push({ 
+                        type: 'error', 
+                        message: 'Установите зависимости: sudo apt-get install -y libatk-bridge2.0-0 libatk1.0-0 libcups2 libdrm2 libgtk-3-0 libgbm1 libasound2' 
+                    });
+                    
+                    return res.status(500).json({
+                        success: false,
+                        logs,
+                        error: 'Не удалось запустить браузер. Установите системные зависимости для Chrome.',
+                        troubleshooting: 'Выполните на сервере: sudo apt-get update && sudo apt-get install -y libatk-bridge2.0-0 libatk1.0-0 libcups2 libdrm2 libgtk-3-0 libgbm1 libasound2 libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libxss1 libasound2 libatspi2.0-0 libcups2 libdbus-1-3 libdrm2 libgbm1 libgtk-3-0 libnspr4 libnss3 libxcomposite1 libxdamage1 libxfixes3 libxkbcommon0 libxrandr2 libxss1 libxshmfence1'
+                    });
+                }
+                throw launchError;
+            }
 
             const page = await browser.newPage();
             page.setViewport({ width: 1920, height: 1080 });
