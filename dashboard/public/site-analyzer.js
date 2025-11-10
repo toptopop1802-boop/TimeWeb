@@ -650,11 +650,11 @@ class SiteAnalyzer {
             const formattedHtml = this.formatHtml(htmlCode);
             
             // Определяем tagName для виртуального элемента
-            const tagName = button.type === 'link' ? 'a' : (button.type === 'input' ? 'input' : button.type);
+            const elementTagName = button.type === 'link' ? 'a' : (button.type === 'input' ? 'input' : button.type);
             
             // Создаем виртуальный элемент для передачи в showCodeModal
             const virtualElement = {
-                tagName: tagName.toUpperCase(),
+                tagName: elementTagName.toUpperCase(),
                 id: button.id || null,
                 className: button.classes || ''
             };
