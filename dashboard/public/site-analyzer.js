@@ -69,10 +69,16 @@ class SiteAnalyzer {
                 frameLoading.style.display = 'none';
             }
             
+            // Проверяем, что загрузился правильный сайт
             try {
-                // Пытаемся добавить обработчик кликов в iframe
                 const frameDoc = siteFrame.contentDocument || siteFrame.contentWindow.document;
                 if (frameDoc) {
+                    const frameUrl = frameDoc.location.href || siteFrame.contentWindow.location.href;
+                    if (frameUrl && !frameUrl.includes('bublickrust.ru') && this.currentFrameUrl) {
+                        this.addLog(`Сайт загружен: ${frameUrl}`, 'success');
+                    }
+                    
+                    // Пытаемся добавить обработчик кликов в iframe
                     frameDoc.addEventListener('click', (e) => {
                         if (this.clickModeEnabled) {
                             // Координаты клика относительно iframe
@@ -86,7 +92,16 @@ class SiteAnalyzer {
             } catch (e) {
                 // CORS или другие ограничения безопасности
                 // Используем overlay вместо прямого доступа
+                this.addLog('CORS ограничения: используем overlay для кликов', 'info');
             }
+        });
+        
+        siteFrame.addEventListener('error', () => {
+            const frameLoading = document.getElementById('frameLoading');
+            if (frameLoading) {
+                frameLoading.style.display = 'none';
+            }
+            this.addLog('Ошибка загрузки iframe', 'error');
         });
     }
 
@@ -358,8 +373,20 @@ class SiteAnalyzer {
         const currentUrlSpan = document.getElementById('currentFrameUrl');
         const frameLoading = document.getElementById('frameLoading');
         
-        this.currentFrameUrl = url;
-        currentUrlSpan.textContent = url;
+        // Валидация и нормализация URL
+        let validUrl = url;
+        try {
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                validUrl = 'https://' + url;
+            }
+            new URL(validUrl);
+        } catch (e) {
+            this.addLog(`Ошибка: Неверный URL: ${url}`, 'error');
+            return;
+        }
+        
+        this.currentFrameUrl = validUrl;
+        currentUrlSpan.textContent = validUrl;
         
         // Показываем индикатор загрузки
         if (frameLoading) {
@@ -367,7 +394,10 @@ class SiteAnalyzer {
         }
         
         // Загрузить сайт через прокси для обхода CORS
-        frame.src = `/api/site-analyzer/proxy?url=${encodeURIComponent(url)}`;
+        const proxyUrl = `/api/site-analyzer/proxy?url=${encodeURIComponent(validUrl)}`;
+        frame.src = proxyUrl;
+        
+        this.addLog(`Загрузка сайта: ${validUrl}`, 'info');
         
         viewer.style.display = 'block';
         viewer.scrollIntoView({ behavior: 'smooth' });

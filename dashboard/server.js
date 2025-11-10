@@ -2695,27 +2695,80 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
 
             const html = await response.text();
             
-            // Modify HTML to make relative URLs absolute
+            // Modify HTML to make relative URLs absolute and add base tag
             const baseUrl = new URL(url);
-            const modifiedHtml = html
+            // Base href for <base> tag should be the full URL (origin + pathname)
+            const baseHref = `${baseUrl.protocol}//${baseUrl.host}${baseUrl.pathname}`;
+            // For URL resolution, we need the directory URL (without filename)
+            const baseDir = baseUrl.pathname.endsWith('/') 
+                ? `${baseUrl.protocol}//${baseUrl.host}${baseUrl.pathname}`
+                : `${baseUrl.protocol}//${baseUrl.host}${baseUrl.pathname.replace(/\/[^/]*$/, '/')}`;
+            
+            // Helper function to convert relative URLs to absolute
+            const makeAbsolute = (relativeUrl, base) => {
+                if (!relativeUrl || relativeUrl.startsWith('http://') || relativeUrl.startsWith('https://') || 
+                    relativeUrl.startsWith('//') || relativeUrl.startsWith('data:') || relativeUrl.startsWith('#')) {
+                    return relativeUrl;
+                }
+                try {
+                    return new URL(relativeUrl, base).href;
+                } catch (e) {
+                    return relativeUrl;
+                }
+            };
+            
+            let modifiedHtml = html;
+            
+            // Remove existing base tags to avoid conflicts
+            modifiedHtml = modifiedHtml.replace(/<base[^>]*>/gi, '');
+            
+            // Add base tag right after <head> or at the beginning if no head tag
+            if (modifiedHtml.includes('<head>')) {
+                modifiedHtml = modifiedHtml.replace('<head>', `<head><base href="${baseHref}">`);
+            } else if (modifiedHtml.includes('<html>')) {
+                modifiedHtml = modifiedHtml.replace('<html>', `<html><head><base href="${baseHref}"></head>`);
+            } else {
+                modifiedHtml = `<head><base href="${baseHref}"></head>${modifiedHtml}`;
+            }
+            
+            // Fix relative URLs in various attributes (use baseDir for proper resolution)
+            modifiedHtml = modifiedHtml
                 .replace(/href=["']([^"']+)["']/gi, (match, href) => {
-                    if (href.startsWith('http') || href.startsWith('//') || href.startsWith('#')) {
-                        return match;
-                    }
-                    const absoluteUrl = href.startsWith('/') 
-                        ? `${baseUrl.protocol}//${baseUrl.host}${href}`
-                        : `${baseUrl.protocol}//${baseUrl.host}${baseUrl.pathname.replace(/\/[^/]*$/, '')}/${href}`;
+                    const absoluteUrl = makeAbsolute(href, baseDir);
                     return `href="${absoluteUrl}"`;
                 })
                 .replace(/src=["']([^"']+)["']/gi, (match, src) => {
-                    if (src.startsWith('http') || src.startsWith('//') || src.startsWith('data:')) {
-                        return match;
-                    }
-                    const absoluteUrl = src.startsWith('/')
-                        ? `${baseUrl.protocol}//${baseUrl.host}${src}`
-                        : `${baseUrl.protocol}//${baseUrl.host}${baseUrl.pathname.replace(/\/[^/]*$/, '')}/${src}`;
+                    const absoluteUrl = makeAbsolute(src, baseDir);
                     return `src="${absoluteUrl}"`;
+                })
+                .replace(/action=["']([^"']+)["']/gi, (match, action) => {
+                    const absoluteUrl = makeAbsolute(action, baseDir);
+                    return `action="${absoluteUrl}"`;
+                })
+                .replace(/formaction=["']([^"']+)["']/gi, (match, formaction) => {
+                    const absoluteUrl = makeAbsolute(formaction, baseDir);
+                    return `formaction="${absoluteUrl}"`;
+                })
+                .replace(/data-src=["']([^"']+)["']/gi, (match, dataSrc) => {
+                    const absoluteUrl = makeAbsolute(dataSrc, baseDir);
+                    return `data-src="${absoluteUrl}"`;
+                })
+                .replace(/srcset=["']([^"']+)["']/gi, (match, srcset) => {
+                    // Handle srcset with multiple URLs
+                    const urls = srcset.split(',').map(url => {
+                        const parts = url.trim().split(/\s+/);
+                        const urlPart = parts[0];
+                        const rest = parts.slice(1).join(' ');
+                        const absoluteUrl = makeAbsolute(urlPart, baseDir);
+                        return rest ? `${absoluteUrl} ${rest}` : absoluteUrl;
+                    });
+                    return `srcset="${urls.join(', ')}"`;
                 });
+
+            // Remove X-Frame-Options and CSP headers from proxied content
+            modifiedHtml = modifiedHtml
+                .replace(/<meta[^>]*http-equiv=["']X-Frame-Options["'][^>]*>/gi, '')
+                .replace(/<meta[^>]*http-equiv=["']Content-Security-Policy["'][^>]*>/gi, '');
 
             // Set headers to allow iframe embedding
             res.setHeader('Content-Type', 'text/html; charset=utf-8');
