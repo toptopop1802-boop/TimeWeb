@@ -52,7 +52,7 @@ python remote_monitor_client.py --server http://ваш-сервер.com --sessio
 
 **Примечание:** Если вы используете Windows, используйте `remote_monitor_env\Scripts\activate` вместо `source remote_monitor_env/bin/activate`
 
-3. Скрипт выведет ссылку для просмотра, например:
+После запуска скрипт выведет ссылку для просмотра, например:
 ```
 ✓ Сессия зарегистрирована: abc123def456...
 ✓ Ссылка для просмотра: http://ваш-сервер.com/remote-monitor.html?session=abc123def456...
