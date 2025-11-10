@@ -9,9 +9,41 @@ class SiteAnalyzer {
     }
 
     init() {
-        document.getElementById('analyzeBtn').addEventListener('click', () => this.analyze());
-        document.getElementById('siteUrl').addEventListener('keypress', (e) => {
+        const urlInput = document.getElementById('siteUrl');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        
+        analyzeBtn.addEventListener('click', () => this.analyze());
+        
+        // Автоматический предпросмотр при вводе URL (с задержкой)
+        let previewTimeout;
+        urlInput.addEventListener('input', (e) => {
+            const url = e.target.value.trim();
+            if (!url) {
+                return;
+            }
+            
+            // Очищаем предыдущий таймаут
+            clearTimeout(previewTimeout);
+            
+            // Устанавливаем новый таймаут для предпросмотра
+            previewTimeout = setTimeout(() => {
+                try {
+                    let validUrl = url;
+                    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                        validUrl = 'https://' + url;
+                    }
+                    new URL(validUrl);
+                    // Если URL валидный, открываем предпросмотр
+                    this.openSiteViewer(validUrl);
+                } catch (e) {
+                    // URL невалидный, игнорируем
+                }
+            }, 1000); // Задержка 1 секунда после окончания ввода
+        });
+        
+        urlInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
+                clearTimeout(previewTimeout);
                 this.analyze();
             }
         });
@@ -28,6 +60,34 @@ class SiteAnalyzer {
         // Обработчик кликов по overlay
         const clickOverlay = document.getElementById('clickOverlay');
         clickOverlay.addEventListener('click', (e) => this.handleFrameClick(e));
+        
+        // Обработчик кликов напрямую в iframe (если возможно)
+        const siteFrame = document.getElementById('siteFrame');
+        siteFrame.addEventListener('load', () => {
+            const frameLoading = document.getElementById('frameLoading');
+            if (frameLoading) {
+                frameLoading.style.display = 'none';
+            }
+            
+            try {
+                // Пытаемся добавить обработчик кликов в iframe
+                const frameDoc = siteFrame.contentDocument || siteFrame.contentWindow.document;
+                if (frameDoc) {
+                    frameDoc.addEventListener('click', (e) => {
+                        if (this.clickModeEnabled) {
+                            // Координаты клика относительно iframe
+                            const rect = siteFrame.getBoundingClientRect();
+                            const x = e.clientX - rect.left;
+                            const y = e.clientY - rect.top;
+                            this.handleFrameClick({ clientX: x + rect.left, clientY: y + rect.top });
+                        }
+                    });
+                }
+            } catch (e) {
+                // CORS или другие ограничения безопасности
+                // Используем overlay вместо прямого доступа
+            }
+        });
     }
 
     async loadServerLogs() {
@@ -88,18 +148,27 @@ class SiteAnalyzer {
         }
 
         // Валидация URL
+        let validUrl = url;
         try {
-            new URL(url);
+            // Если URL не начинается с http:// или https://, добавляем https://
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                validUrl = 'https://' + url;
+            }
+            new URL(validUrl);
         } catch (e) {
             this.addLog('Ошибка: Неверный формат URL', 'error');
             return;
         }
 
+        // Сразу открываем предпросмотр сайта
+        this.openSiteViewer(validUrl);
+        this.addLog(`Открыт предпросмотр сайта: ${validUrl}`, 'info');
+
         const analyzeBtn = document.getElementById('analyzeBtn');
         analyzeBtn.disabled = true;
         analyzeBtn.innerHTML = '<span class="loading"></span> Анализ...';
 
-        this.addLog(`Начало анализа сайта: ${url}`, 'info');
+        this.addLog(`Начало анализа сайта: ${validUrl}`, 'info');
 
         try {
             const response = await fetch('/api/site-analyzer/analyze', {
@@ -107,7 +176,7 @@ class SiteAnalyzer {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ url })
+                body: JSON.stringify({ url: validUrl })
             });
 
             if (!response.ok) {
@@ -287,9 +356,15 @@ class SiteAnalyzer {
         const viewer = document.getElementById('siteViewer');
         const frame = document.getElementById('siteFrame');
         const currentUrlSpan = document.getElementById('currentFrameUrl');
+        const frameLoading = document.getElementById('frameLoading');
         
         this.currentFrameUrl = url;
         currentUrlSpan.textContent = url;
+        
+        // Показываем индикатор загрузки
+        if (frameLoading) {
+            frameLoading.style.display = 'flex';
+        }
         
         // Загрузить сайт через прокси для обхода CORS
         frame.src = `/api/site-analyzer/proxy?url=${encodeURIComponent(url)}`;
@@ -306,14 +381,29 @@ class SiteAnalyzer {
         this.clickModeEnabled = !this.clickModeEnabled;
         const overlay = document.getElementById('clickOverlay');
         const btn = document.getElementById('enableClickBtn');
+        const frame = document.getElementById('siteFrame');
         
         if (this.clickModeEnabled) {
             overlay.classList.add('active');
+            overlay.style.pointerEvents = 'auto';
             btn.textContent = 'Выключить клики';
+            btn.style.background = 'rgba(196,5,82,0.9)';
             this.addLog('Режим кликов включен. Кликните на элемент в iframe для взаимодействия', 'info');
+            
+            // Пытаемся сделать iframe интерактивным
+            try {
+                const frameDoc = frame.contentDocument || frame.contentWindow.document;
+                if (frameDoc) {
+                    frameDoc.body.style.cursor = 'pointer';
+                }
+            } catch (e) {
+                // CORS ограничения
+            }
         } else {
             overlay.classList.remove('active');
+            overlay.style.pointerEvents = 'none';
             btn.textContent = 'Включить клики';
+            btn.style.background = '';
             this.addLog('Режим кликов выключен', 'info');
         }
     }
@@ -326,7 +416,43 @@ class SiteAnalyzer {
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         
+        // Проверяем, что клик внутри iframe
+        if (x < 0 || y < 0 || x > rect.width || y > rect.height) {
+            return;
+        }
+        
         this.addLog(`Клик по координатам: (${Math.round(x)}, ${Math.round(y)})`, 'info');
+        
+        // Пытаемся кликнуть напрямую в iframe
+        try {
+            const frameDoc = frame.contentDocument || frame.contentWindow.document;
+            if (frameDoc) {
+                const element = frameDoc.elementFromPoint(x, y);
+                if (element) {
+                    // Если это ссылка, переходим по ней
+                    if (element.tagName === 'A' && element.href) {
+                        const href = element.href;
+                        this.addLog(`Найдена ссылка: ${href}`, 'info');
+                        setTimeout(() => {
+                            this.openSiteViewer(href);
+                        }, 300);
+                        return;
+                    }
+                    // Если это кнопка или элемент с обработчиком клика
+                    if (element.onclick || element.getAttribute('onclick')) {
+                        element.click();
+                        this.addLog(`Клик выполнен на элементе: ${element.tagName}`, 'success');
+                        // Обновляем iframe через небольшую задержку
+                        setTimeout(() => {
+                            this.reloadFrame();
+                        }, 500);
+                        return;
+                    }
+                }
+            }
+        } catch (e) {
+            // CORS или другие ограничения - используем серверный метод
+        }
         
         // Отправить команду клика на сервер для проксирования
         try {
@@ -352,6 +478,11 @@ class SiteAnalyzer {
                     setTimeout(() => {
                         this.openSiteViewer(data.url);
                     }, 500);
+                } else {
+                    // Обновляем iframe для отображения изменений
+                    setTimeout(() => {
+                        this.reloadFrame();
+                    }, 500);
                 }
             }
         } catch (error) {
@@ -361,7 +492,12 @@ class SiteAnalyzer {
 
     reloadFrame() {
         const frame = document.getElementById('siteFrame');
+        const frameLoading = document.getElementById('frameLoading');
+        
         if (this.currentFrameUrl) {
+            if (frameLoading) {
+                frameLoading.style.display = 'flex';
+            }
             frame.src = `/api/site-analyzer/proxy?url=${encodeURIComponent(this.currentFrameUrl)}`;
             this.addLog('Сайт обновлен', 'info');
         }
