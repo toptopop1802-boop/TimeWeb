@@ -61,9 +61,13 @@ class RemoteMonitorClient:
         self.mouse_listener = None
         self.keyboard_listener = None
         
-        # Настройки PyAutoGUI
-        pyautogui.FAILSAFE = False
-        pyautogui.PAUSE = 0.01
+        # Настройки PyAutoGUI (только если доступен)
+        if HAS_GUI_CONTROL and HAS_DISPLAY:
+            try:
+                pyautogui.FAILSAFE = False
+                pyautogui.PAUSE = 0.01
+            except:
+                pass
         
     def register_session(self):
         """Регистрирует новую сессию на сервере"""
