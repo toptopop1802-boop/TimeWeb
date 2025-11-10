@@ -32,11 +32,16 @@ class SiteAnalyzer {
                     if (!url.startsWith('http://') && !url.startsWith('https://')) {
                         validUrl = 'https://' + url;
                     }
-                    new URL(validUrl);
-                    // Если URL валидный, открываем предпросмотр
-                    this.openSiteViewer(validUrl);
+                    // Валидация URL
+                    try {
+                        new URL(validUrl);
+                        // Если URL валидный, открываем предпросмотр
+                        this.openSiteViewer(validUrl);
+                    } catch (urlError) {
+                        // URL невалидный, игнорируем
+                    }
                 } catch (e) {
-                    // URL невалидный, игнорируем
+                    // Игнорируем все ошибки при автоматическом предпросмотре
                 }
             }, 1000); // Задержка 1 секунда после окончания ввода
         });
@@ -71,32 +76,41 @@ class SiteAnalyzer {
             
             // Проверяем, что загрузился правильный сайт
             try {
-                const frameDoc = siteFrame.contentDocument || siteFrame.contentWindow.document;
+                const frameDoc = siteFrame.contentDocument || siteFrame.contentWindow?.document;
                 if (frameDoc) {
-                    const frameUrl = frameDoc.location.href || siteFrame.contentWindow.location.href;
-                    if (frameUrl && !frameUrl.includes('bublickrust.ru') && this.currentFrameUrl) {
-                        this.addLog(`Сайт загружен: ${frameUrl}`, 'success');
+                    // Пытаемся получить URL (может вызвать ошибку безопасности)
+                    try {
+                        const frameUrl = frameDoc.location?.href || siteFrame.contentWindow?.location?.href;
+                        if (frameUrl && !frameUrl.includes('bublickrust.ru') && this.currentFrameUrl) {
+                            this.addLog(`Сайт загружен: ${frameUrl}`, 'success');
+                        }
+                    } catch (urlError) {
+                        // Игнорируем ошибки доступа к location
                     }
                     
                     // Пытаемся добавить обработчик кликов в iframe
-                    frameDoc.addEventListener('click', (e) => {
-                        if (this.clickModeEnabled) {
-                            // Координаты клика относительно iframe
-                            const rect = siteFrame.getBoundingClientRect();
-                            const x = e.clientX - rect.left;
-                            const y = e.clientY - rect.top;
-                            this.handleFrameClick({ clientX: x + rect.left, clientY: y + rect.top });
-                        }
-                    });
+                    try {
+                        frameDoc.addEventListener('click', (e) => {
+                            if (this.clickModeEnabled) {
+                                // Координаты клика относительно iframe
+                                const rect = siteFrame.getBoundingClientRect();
+                                const x = e.clientX - rect.left;
+                                const y = e.clientY - rect.top;
+                                this.handleFrameClick({ clientX: x + rect.left, clientY: y + rect.top });
+                            }
+                        });
+                    } catch (eventError) {
+                        // Игнорируем ошибки добавления обработчиков
+                    }
                 }
             } catch (e) {
                 // CORS или другие ограничения безопасности
                 // Используем overlay вместо прямого доступа
-                this.addLog('CORS ограничения: используем overlay для кликов', 'info');
+                // Не логируем, чтобы не спамить
             }
         });
         
-        siteFrame.addEventListener('error', () => {
+        siteFrame.addEventListener('error', (e) => {
             const frameLoading = document.getElementById('frameLoading');
             if (frameLoading) {
                 frameLoading.style.display = 'none';
@@ -422,9 +436,13 @@ class SiteAnalyzer {
             
             // Пытаемся сделать iframe интерактивным
             try {
-                const frameDoc = frame.contentDocument || frame.contentWindow.document;
-                if (frameDoc) {
-                    frameDoc.body.style.cursor = 'pointer';
+                const frameDoc = frame.contentDocument || frame.contentWindow?.document;
+                if (frameDoc && frameDoc.body) {
+                    try {
+                        frameDoc.body.style.cursor = 'pointer';
+                    } catch (styleError) {
+                        // Игнорируем ошибки стилей
+                    }
                 }
             } catch (e) {
                 // CORS ограничения
@@ -455,29 +473,43 @@ class SiteAnalyzer {
         
         // Пытаемся кликнуть напрямую в iframe
         try {
-            const frameDoc = frame.contentDocument || frame.contentWindow.document;
+            const frameDoc = frame.contentDocument || frame.contentWindow?.document;
             if (frameDoc) {
-                const element = frameDoc.elementFromPoint(x, y);
-                if (element) {
-                    // Если это ссылка, переходим по ней
-                    if (element.tagName === 'A' && element.href) {
-                        const href = element.href;
-                        this.addLog(`Найдена ссылка: ${href}`, 'info');
-                        setTimeout(() => {
-                            this.openSiteViewer(href);
-                        }, 300);
-                        return;
+                try {
+                    const element = frameDoc.elementFromPoint(x, y);
+                    if (element) {
+                        // Если это ссылка, переходим по ней
+                        if (element.tagName === 'A') {
+                            try {
+                                const href = element.href;
+                                if (href) {
+                                    this.addLog(`Найдена ссылка: ${href}`, 'info');
+                                    setTimeout(() => {
+                                        this.openSiteViewer(href);
+                                    }, 300);
+                                    return;
+                                }
+                            } catch (hrefError) {
+                                // Игнорируем ошибки доступа к href
+                            }
+                        }
+                        // Если это кнопка или элемент с обработчиком клика
+                        try {
+                            if (element.onclick || element.getAttribute('onclick')) {
+                                element.click();
+                                this.addLog(`Клик выполнен на элементе: ${element.tagName}`, 'success');
+                                // Обновляем iframe через небольшую задержку
+                                setTimeout(() => {
+                                    this.reloadFrame();
+                                }, 500);
+                                return;
+                            }
+                        } catch (clickError) {
+                            // Игнорируем ошибки клика
+                        }
                     }
-                    // Если это кнопка или элемент с обработчиком клика
-                    if (element.onclick || element.getAttribute('onclick')) {
-                        element.click();
-                        this.addLog(`Клик выполнен на элементе: ${element.tagName}`, 'success');
-                        // Обновляем iframe через небольшую задержку
-                        setTimeout(() => {
-                            this.reloadFrame();
-                        }, 500);
-                        return;
-                    }
+                } catch (elementError) {
+                    // Игнорируем ошибки доступа к элементам
                 }
             }
         } catch (e) {
