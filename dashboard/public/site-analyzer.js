@@ -117,6 +117,30 @@ class SiteAnalyzer {
             }
             this.addLog('Ошибка загрузки iframe', 'error');
         });
+        
+        // Global error handler for unhandled errors from iframe
+        window.addEventListener('error', (e) => {
+            // Check if error is related to iframe
+            if (e.message && (
+                e.message.includes('bublickrust.ru') || 
+                e.message.includes('Application error') ||
+                e.message.includes('cross-origin')
+            )) {
+                e.preventDefault(); // Suppress error
+                return false;
+            }
+        }, true);
+        
+        // Handle unhandled promise rejections
+        window.addEventListener('unhandledrejection', (e) => {
+            if (e.reason && typeof e.reason === 'string' && (
+                e.reason.includes('bublickrust.ru') || 
+                e.reason.includes('Application error') ||
+                e.reason.includes('cross-origin')
+            )) {
+                e.preventDefault(); // Suppress error
+            }
+        });
     }
 
     async loadServerLogs() {

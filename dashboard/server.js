@@ -2770,6 +2770,74 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                 .replace(/<meta[^>]*http-equiv=["']X-Frame-Options["'][^>]*>/gi, '')
                 .replace(/<meta[^>]*http-equiv=["']Content-Security-Policy["'][^>]*>/gi, '');
 
+            // Inject error handling script to catch and suppress client-side errors
+            const errorHandlerScript = `
+<script>
+(function() {
+    // Override window.onerror to prevent error messages
+    const originalOnerror = window.onerror;
+    window.onerror = function(msg, url, line, col, error) {
+        // Suppress errors related to origin checks
+        if (msg && typeof msg === 'string' && (
+            msg.includes('bublickrust.ru') || 
+            msg.includes('Application error') ||
+            msg.includes('origin') ||
+            msg.includes('cross-origin')
+        )) {
+            return true; // Suppress error
+        }
+        // Call original handler if exists
+        if (originalOnerror) {
+            return originalOnerror.apply(this, arguments);
+        }
+        return false;
+    };
+    
+    // Override console.error to filter out origin-related errors
+    const originalConsoleError = console.error;
+    console.error = function(...args) {
+        const message = args.join(' ');
+        if (message && (
+            message.includes('bublickrust.ru') || 
+            message.includes('Application error') ||
+            message.includes('cross-origin')
+        )) {
+            return; // Suppress error logging
+        }
+        originalConsoleError.apply(console, args);
+    };
+    
+    // Wrap fetch/XHR to handle CORS errors gracefully
+    const originalFetch = window.fetch;
+    window.fetch = function(...args) {
+        return originalFetch.apply(this, args).catch(function(error) {
+            // Suppress CORS errors
+            if (error.message && error.message.includes('CORS')) {
+                return Promise.reject(new Error('Network error'));
+            }
+            return Promise.reject(error);
+        });
+    };
+})();
+</script>`;
+
+            // Inject error handler script right after base tag (or at the beginning of head)
+            // This ensures it runs before any other scripts on the page
+            if (modifiedHtml.includes('<base')) {
+                // Insert right after base tag
+                const baseIndex = modifiedHtml.indexOf('<base');
+                const baseEndIndex = modifiedHtml.indexOf('>', baseIndex) + 1;
+                modifiedHtml = modifiedHtml.slice(0, baseEndIndex) + errorHandlerScript + modifiedHtml.slice(baseEndIndex);
+            } else if (modifiedHtml.includes('<head>')) {
+                // Insert right after <head> tag if no base tag
+                const headIndex = modifiedHtml.indexOf('<head>');
+                const afterHead = modifiedHtml.indexOf('>', headIndex) + 1;
+                modifiedHtml = modifiedHtml.slice(0, afterHead) + errorHandlerScript + modifiedHtml.slice(afterHead);
+            } else {
+                // If no head tag, add it at the beginning
+                modifiedHtml = `<head>${errorHandlerScript}</head>${modifiedHtml}`;
+            }
+
             // Set headers to allow iframe embedding
             res.setHeader('Content-Type', 'text/html; charset=utf-8');
             res.setHeader('X-Frame-Options', 'ALLOWALL');
