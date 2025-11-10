@@ -2890,6 +2890,154 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
         }
     });
 
+    // Site automation endpoint - execute actions on website using Puppeteer
+    app.post('/api/site-automation/execute', express.json(), async (req, res) => {
+        const { url, element } = req.body;
+        
+        if (!url || !element) {
+            return res.status(400).json({ error: 'URL and element configuration are required' });
+        }
+
+        try {
+            let puppeteer;
+            try {
+                puppeteer = require('puppeteer');
+            } catch (e) {
+                return res.status(500).json({ 
+                    error: 'Puppeteer не установлен. Установите: npm install puppeteer',
+                    logs: [
+                        { type: 'error', message: 'Puppeteer не найден. Установите зависимость.' }
+                    ]
+                });
+            }
+
+            const logs = [];
+            logs.push({ type: 'info', message: `Запуск браузера...` });
+
+            const browser = await puppeteer.launch({
+                headless: true,
+                args: ['--no-sandbox', '--disable-setuid-sandbox']
+            });
+
+            const page = await browser.newPage();
+            page.setViewport({ width: 1920, height: 1080 });
+
+            logs.push({ type: 'info', message: `Открытие страницы: ${url}` });
+            await page.goto(url, { 
+                waitUntil: 'networkidle2',
+                timeout: 30000 
+            });
+
+            logs.push({ type: 'success', message: 'Страница загружена' });
+
+            // Поиск элемента по селектору или другим атрибутам
+            let elementFound = false;
+            let selector = element.selector || null;
+            
+            // Если селектор не указан, пытаемся построить его из атрибутов
+            if (!selector) {
+                if (element.attributes && element.attributes.id) {
+                    selector = `#${element.attributes.id}`;
+                } else if (element.attributes && element.attributes.classes) {
+                    const classes = element.attributes.classes.split(' ').filter(c => c).join('.');
+                    selector = `.${classes}`;
+                } else if (element.tag) {
+                    selector = element.tag;
+                }
+            }
+
+            if (selector) {
+                logs.push({ type: 'info', message: `Поиск элемента по селектору: ${selector}` });
+                
+                try {
+                    // Ждем появления элемента
+                    await page.waitForSelector(selector, { timeout: 10000 });
+                    
+                    // Если указан текст, проверяем его
+                    if (element.text) {
+                        const elementText = await page.$eval(selector, el => el.textContent?.trim());
+                        if (elementText && elementText.includes(element.text)) {
+                            logs.push({ type: 'success', message: `Элемент найден с текстом: "${elementText}"` });
+                        } else {
+                            logs.push({ type: 'warning', message: `Элемент найден, но текст не совпадает. Найден: "${elementText}"` });
+                        }
+                    }
+
+                    // Кликаем на элемент
+                    logs.push({ type: 'info', message: 'Выполнение клика на элемент...' });
+                    await page.click(selector);
+                    elementFound = true;
+                    logs.push({ type: 'success', message: 'Клик выполнен успешно!' });
+
+                    // Ждем навигации, если это ссылка
+                    if (element.type === 'link' && element.attributes && element.attributes.href) {
+                        await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 10000 }).catch(() => {
+                            logs.push({ type: 'info', message: 'Навигация не произошла или уже завершена' });
+                        });
+                    }
+
+                    // Получаем текущий URL
+                    const currentUrl = page.url();
+                    logs.push({ type: 'success', message: `Текущий URL: ${currentUrl}` });
+
+                    // Делаем скриншот
+                    const screenshot = await page.screenshot({ 
+                        encoding: 'base64',
+                        fullPage: false 
+                    });
+                    logs.push({ type: 'success', message: 'Скриншот сделан' });
+
+                    await browser.close();
+                    logs.push({ type: 'success', message: 'Браузер закрыт' });
+
+                    res.json({
+                        success: true,
+                        logs,
+                        screenshot,
+                        finalUrl: currentUrl,
+                        elementFound: true
+                    });
+
+                } catch (error) {
+                    logs.push({ type: 'error', message: `Ошибка при работе с элементом: ${error.message}` });
+                    
+                    // Делаем скриншот для отладки
+                    const screenshot = await page.screenshot({ 
+                        encoding: 'base64',
+                        fullPage: false 
+                    }).catch(() => null);
+
+                    await browser.close();
+
+                    res.json({
+                        success: false,
+                        logs,
+                        screenshot,
+                        error: error.message
+                    });
+                }
+            } else {
+                logs.push({ type: 'error', message: 'Селектор не найден. Укажите selector, id или classes в конфигурации.' });
+                await browser.close();
+                
+                res.json({
+                    success: false,
+                    logs,
+                    error: 'Селектор не указан'
+                });
+            }
+
+        } catch (error) {
+            console.error('Automation error:', error);
+            res.status(500).json({ 
+                error: error.message,
+                logs: [
+                    { type: 'error', message: `Критическая ошибка: ${error.message}` }
+                ]
+            });
+        }
+    });
+
     // Serve static files (after all API routes)
     // Skip /api routes to avoid conflicts
     const staticMiddleware = express.static('public');
