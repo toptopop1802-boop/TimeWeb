@@ -1384,15 +1384,20 @@
     
     // Проверяем, не завершена ли уже регистрация (пользователь на dashboard/app)
     const currentUrl = window.location.href;
-    const isAlreadyRegistered = currentUrl.includes('/dashboard') || 
-                                currentUrl.includes('/app') ||
-                                (!currentUrl.includes('/sign-up') && !currentUrl.includes('/authenticator') && !currentUrl.includes('/login'));
+    const pathname = window.location.pathname;
+    
+    // Только dashboard и app страницы означают что пользователь уже зарегистрирован
+    const isAlreadyRegistered = pathname.includes('/dashboard') || 
+                                pathname.includes('/app');
     
     if (isAlreadyRegistered) {
-      Logger.info('register', 'Пользователь уже зарегистрирован, пропускаем регистрацию', { url: currentUrl });
+      Logger.info('register', 'Пользователь уже зарегистрирован, пропускаем регистрацию', { url: currentUrl, pathname });
       console.log('✓ Пользователь уже зарегистрирован, регистрация не нужна');
       return false;
     }
+    
+    // Главная страница cursor.com/ - НЕ означает что пользователь зарегистрирован
+    console.log('📍 Pathname:', pathname, '- пользователь НЕ зарегистрирован');
     
     // Проверяем, была ли недавно очистка данных
     chrome.storage.local.get(['clearDataApproved', 'lastClearTimestamp', 'autoCleanEnabled', 'registrationCompleted'], (result) => {

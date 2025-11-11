@@ -10,10 +10,11 @@
   function checkIfAlreadyCleared() {
     return new Promise((resolve) => {
       chrome.storage.local.get(['clearDataApproved', 'lastClearTimestamp'], (result) => {
-        // Если очистка была одобрена и прошло менее 1 часа, не показываем диалог
+        // Если очистка была одобрена и прошло менее 10 минут, не показываем диалог
         if (result.clearDataApproved && result.lastClearTimestamp) {
-          const hourAgo = Date.now() - (60 * 60 * 1000);
-          if (result.lastClearTimestamp > hourAgo) {
+          const tenMinutesAgo = Date.now() - (10 * 60 * 1000);
+          if (result.lastClearTimestamp > tenMinutesAgo) {
+            console.log('⏰ Очистка была недавно (менее 10 минут назад), пропускаем диалог');
             resolve(true);
             return;
           }
@@ -22,6 +23,16 @@
       });
     });
   }
+  
+  // Функция принудительного сброса флага очистки (для тестирования)
+  window.resetClearFlag = function() {
+    chrome.storage.local.set({ 
+      clearDataApproved: false,
+      lastClearTimestamp: 0
+    }, () => {
+      console.log('✅ Флаг очистки сброшен. Обновите страницу.');
+    });
+  };
   
   // Создание и показ диалога очистки данных
   async function showClearDataDialog() {
@@ -200,6 +211,8 @@
     showClearDataDialog();
   };
   
-  console.log('💡 Для тестирования диалога введите в консоль: testCursorDialog()');
+  console.log('💡 Полезные команды для консоли:');
+  console.log('  testCursorDialog() - показать диалог очистки');
+  console.log('  resetClearFlag() - сбросить флаг "данные очищены" (если диалог не показывается)');
 })();
 
