@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cursor Auto Register</title>
+  <link rel="stylesheet" href="popup-styles.css">
+</head>
+<body>
+  <div class="popup-container">
+    <div class="popup-header">
+      <h1>Cursor Auto Register</h1>
+      <p class="popup-version">v1.4.0</p>
+    </div>
+    
+    <div class="popup-content">
+      <div class="setting-item">
+        <div class="setting-info">
+          <h3>Автозаполнение Stripe</h3>
+          <p>Автоматически заполнять данные карты на checkout.stripe.com</p>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="autoFillToggle" checked>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      
+      <div class="divider"></div>
+      
+      <div class="info-section">
+        <h3>Использование</h3>
+        <ol>
+          <li>Откройте <strong>cursor.com</strong></li>
+          <li>Подтвердите очистку данных</li>
+          <li>Перейдите на страницу оплаты</li>
+          <li>Расширение автоматически заполнит форму</li>
+        </ol>
+      </div>
+      
+      <div class="divider"></div>
+      
+      <div class="status-section">
+        <h3>Статус</h3>
+        <div class="status-item">
+          <span class="status-label">Расширение</span>
+          <span class="status-value status-active">Активно</span>
+        </div>
+        <div class="status-item">
+          <span class="status-label">Автозаполнение</span>
+          <span class="status-value" id="autoFillStatus">Включено</span>
+        </div>
+      </div>
+      
+      <div class="divider"></div>
+      
+      <div class="credentials-section" id="credentialsSection" style="display: none;">
+        <h3>Последняя регистрация</h3>
+        <div class="credential-item">
+          <span class="credential-label">Email:</span>
+          <span class="credential-value" id="savedEmail">-</span>
+        </div>
+        <div class="credential-item">
+          <span class="credential-label">Пароль:</span>
+          <div class="password-container">
+            <span class="credential-value password-hidden" id="savedPassword">••••••••••••</span>
+            <button class="btn-toggle-password" id="togglePasswordBtn">👁</button>
+          </div>
+        </div>
+        <div class="credential-item">
+          <span class="credential-label">Время:</span>
+          <span class="credential-value" id="savedTime">-</span>
+        </div>
+      </div>
+      
+      <div class="divider"></div>
+      
+      <div class="actions-section">
+        <button id="openCursorBtn" class="btn btn-primary">
+          Открыть Cursor и очистить
+        </button>
+        <button id="openLogsBtn" class="btn btn-secondary">
+          📊 Открыть логи
+        </button>
+        <button id="clearStorageBtn" class="btn btn-secondary">
+          Очистить историю
+        </button>
+      </div>
+    </div>
+    
+    <div class="popup-footer">
+      <p>Made for automation</p>
+    </div>
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>
+

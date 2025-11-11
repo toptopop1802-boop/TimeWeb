@@ -1,0 +1,55 @@
+{
+  "manifest_version": 3,
+  "name": "Cursor Auto Register",
+  "version": "1.4.0",
+  "description": "Автоматическая регистрация на чистом cursor.com и автозаполнение Stripe checkout",
+  "permissions": [
+    "storage",
+    "tabs",
+    "scripting",
+    "browsingData",
+    "cookies"
+  ],
+  "host_permissions": [
+    "https://cursor.com/*",
+    "https://*.cursor.com/*",
+    "https://authenticator.cursor.sh/*",
+    "https://checkout.stripe.com/*",
+    "https://*.stripe.com/*",
+    "https://api.notletters.com/*",
+    "https://bublickrust.ru/*",
+    "https://ipapi.co/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://cursor.com/*", "https://*.cursor.com/*", "https://authenticator.cursor.sh/*"],
+      "js": ["cursor-content.js", "cursor-register.js"],
+      "css": ["styles.css"],
+      "run_at": "document_end"
+    },
+    {
+      "matches": ["https://checkout.stripe.com/*"],
+      "js": ["stripe-content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_end"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "cursor.png",
+      "48": "cursor.png",
+      "128": "cursor.png"
+    }
+  },
+  "options_page": "logs.html",
+  "icons": {
+    "16": "cursor.png",
+    "48": "cursor.png",
+    "128": "cursor.png"
+  }
+}
+

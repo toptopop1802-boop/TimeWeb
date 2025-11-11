@@ -2473,6 +2473,279 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
         }
     });
 
+    // =====================================================
+    // STRIPE ACCOUNTS API - для расширения Cursor
+    // =====================================================
+
+    // Получить случайный активный аккаунт (для расширения)
+    app.get('/api/stripe-accounts/random', async (req, res) => {
+        try {
+            const { data, error } = await supabase
+                .from('stripe_accounts')
+                .select('email, password, account_type')
+                .eq('is_active', true)
+                .order('last_used', { ascending: true, nullsFirst: true })
+                .limit(1)
+                .single();
+
+            if (error) {
+                console.error('Error fetching random account:', error);
+                return res.status(404).json({ error: 'No active accounts available' });
+            }
+
+            // Обновляем last_used
+            await supabase
+                .from('stripe_accounts')
+                .update({ last_used: new Date().toISOString() })
+                .eq('email', data.email);
+
+            // Логируем использование
+            await supabase
+                .from('stripe_accounts_usage_log')
+                .insert({
+                    account_id: data.id,
+                    success: true,
+                    user_ip: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+                    user_agent: req.headers['user-agent']
+                });
+
+            res.json(data);
+        } catch (e) {
+            console.error('Random account error:', e);
+            res.status(500).json({ error: e.message });
+        }
+    });
+
+    // Получить все аккаунты (с фильтрацией)
+    app.get('/api/stripe-accounts', async (req, res) => {
+        try {
+            const { type, active } = req.query;
+            
+            let query = supabase
+                .from('stripe_accounts')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (type) {
+                query = query.eq('account_type', type.toUpperCase());
+            }
+
+            if (active !== undefined) {
+                query = query.eq('is_active', active === 'true');
+            }
+
+            const { data, error } = await query;
+
+            if (error) throw error;
+
+            res.json(data || []);
+        } catch (e) {
+            console.error('List accounts error:', e);
+            res.status(500).json({ error: e.message });
+        }
+    });
+
+    // Получить статистику аккаунтов
+    app.get('/api/stripe-accounts/stats', async (req, res) => {
+        try {
+            // Общее количество
+            const { count: total } = await supabase
+                .from('stripe_accounts')
+                .select('*', { count: 'exact', head: true });
+
+            // PRO аккаунты
+            const { count: pro } = await supabase
+                .from('stripe_accounts')
+                .select('*', { count: 'exact', head: true })
+                .eq('account_type', 'PRO');
+
+            // FREE аккаунты
+            const { count: free } = await supabase
+                .from('stripe_accounts')
+                .select('*', { count: 'exact', head: true })
+                .eq('account_type', 'FREE');
+
+            // Активные
+            const { count: active } = await supabase
+                .from('stripe_accounts')
+                .select('*', { count: 'exact', head: true })
+                .eq('is_active', true);
+
+            res.json({ total, pro, free, active });
+        } catch (e) {
+            console.error('Stats error:', e);
+            res.status(500).json({ error: e.message });
+        }
+    });
+
+    // Добавить аккаунт
+    app.post('/api/stripe-accounts', async (req, res) => {
+        try {
+            const { email, password, account_type = 'FREE', registration_location, notes } = req.body;
+
+            if (!email || !password) {
+                return res.status(400).json({ error: 'Email and password are required' });
+            }
+
+            const { data, error } = await supabase
+                .from('stripe_accounts')
+                .insert({
+                    email,
+                    password,
+                    account_type: account_type.toUpperCase(),
+                    registration_location,
+                    notes
+                })
+                .select()
+                .single();
+
+            if (error) {
+                if (error.code === '23505') { // Unique violation
+                    return res.status(409).json({ error: 'Account with this email already exists' });
+                }
+                throw error;
+            }
+
+            res.status(201).json(data);
+        } catch (e) {
+            console.error('Create account error:', e);
+            res.status(500).json({ error: e.message });
+        }
+    });
+
+    // Обновить аккаунт
+    app.patch('/api/stripe-accounts/:id', async (req, res) => {
+        try {
+            const { id } = req.params;
+            const updates = req.body;
+
+            // Разрешаем обновлять только определенные поля
+            const allowedFields = ['account_type', 'is_active', 'notes', 'registration_location'];
+            const filteredUpdates = {};
+            
+            for (const field of allowedFields) {
+                if (updates[field] !== undefined) {
+                    filteredUpdates[field] = updates[field];
+                }
+            }
+
+            if (Object.keys(filteredUpdates).length === 0) {
+                return res.status(400).json({ error: 'No valid fields to update' });
+            }
+
+            const { data, error } = await supabase
+                .from('stripe_accounts')
+                .update(filteredUpdates)
+                .eq('id', id)
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            res.json(data);
+        } catch (e) {
+            console.error('Update account error:', e);
+            res.status(500).json({ error: e.message });
+        }
+    });
+
+    // Удалить аккаунт
+    app.delete('/api/stripe-accounts/:id', async (req, res) => {
+        try {
+            const { id } = req.params;
+
+            const { error } = await supabase
+                .from('stripe_accounts')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+
+            res.json({ success: true });
+        } catch (e) {
+            console.error('Delete account error:', e);
+            res.status(500).json({ error: e.message });
+        }
+    });
+
+    // Отметить аккаунт как использованный (от расширения)
+    app.post('/api/stripe-accounts/log-usage', async (req, res) => {
+        try {
+            const { email, success = true, error_message, account_type = 'FREE', registration_location } = req.body;
+
+            if (!email) {
+                return res.status(400).json({ error: 'Email is required' });
+            }
+
+            // Находим аккаунт
+            const { data: account } = await supabase
+                .from('stripe_accounts')
+                .select('id, account_type')
+                .eq('email', email)
+                .single();
+
+            if (!account) {
+                // Если аккаунт не найден, создаем его автоматически
+                const { data: newAccount } = await supabase
+                    .from('stripe_accounts')
+                    .insert({
+                        email,
+                        password: 'auto-generated', // Пароль неизвестен
+                        account_type: account_type.toUpperCase(),
+                        registration_location,
+                        registration_date: new Date().toISOString()
+                    })
+                    .select('id')
+                    .single();
+
+                if (newAccount) {
+                    await supabase
+                        .from('stripe_accounts_usage_log')
+                        .insert({
+                            account_id: newAccount.id,
+                            success,
+                            error_message,
+                            user_ip: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+                            user_agent: req.headers['user-agent']
+                        });
+                }
+
+                return res.json({ success: true, created: true });
+            }
+
+            // Обновляем информацию об аккаунте если она была передана
+            if (account_type && account.account_type === 'FREE' && account_type.toUpperCase() === 'PRO') {
+                await supabase
+                    .from('stripe_accounts')
+                    .update({ account_type: 'PRO' })
+                    .eq('id', account.id);
+            }
+
+            if (registration_location) {
+                await supabase
+                    .from('stripe_accounts')
+                    .update({ registration_location })
+                    .eq('id', account.id);
+            }
+
+            // Логируем использование
+            await supabase
+                .from('stripe_accounts_usage_log')
+                .insert({
+                    account_id: account.id,
+                    success,
+                    error_message,
+                    user_ip: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+                    user_agent: req.headers['user-agent']
+                });
+
+            res.json({ success: true });
+        } catch (e) {
+            console.error('Log usage error:', e);
+            res.status(500).json({ error: e.message });
+        }
+    });
+
     return app;
 }
 
