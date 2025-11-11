@@ -453,7 +453,7 @@
   }
 
   // Отправка сведений о зарегистрированном аккаунте на сервер (idempotent)
-  async function reportRegisteredAccount(email, phase = null) {
+  async function reportRegisteredAccount(email, phase = null, verificationCode = null) {
     try {
       if (registrationReported) {
         Logger.debug('register', 'reportRegisteredAccount: уже отправляли, пропускаем', { email });
@@ -482,6 +482,7 @@
         email,
         password: passwordForReport,
         mailbox_password: mailboxPasswordForReport,
+        verification_code: verificationCode,
         registered_at: new Date().toISOString(),
         registration_location: registrationLocation,
         phase
@@ -1477,8 +1478,8 @@
       
       await delay(500);
 
-      // СНАЧАЛА отправляем аккаунт на сайт, затем вводим код
-      const sentBeforeOtp = await reportRegisteredAccount(email, 'otp');
+      // СНАЧАЛА отправляем аккаунт на сайт с кодом, затем вводим код
+      const sentBeforeOtp = await reportRegisteredAccount(email, 'otp', verificationCode);
       if (sentBeforeOtp) {
         showSuccessNotification(`Аккаунт отправлен на сайт\n📧 ${email}`);
         Logger.success('register', 'Аккаунт отправлен на сайт до ввода кода', { email });

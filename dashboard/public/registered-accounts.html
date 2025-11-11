@@ -151,17 +151,29 @@
         }
 
         function updateCodesInTable() {
+            // Обновляем только те ячейки, где код из базы данных отсутствует (показываем последний общий код)
             const codeCells = document.querySelectorAll('.code-cell');
-            codeCells.forEach(cell => {
-                if (lastCodeData.code) {
+            codeCells.forEach((cell, index) => {
+                // Проверяем, есть ли код из базы данных для этого аккаунта
+                const row = cell.closest('tr');
+                if (row) {
+                    const emailCell = row.querySelector('td:nth-child(2) .mono');
+                    if (emailCell) {
+                        // Если код уже есть из базы, не обновляем
+                        const currentCode = cell.textContent.trim();
+                        if (currentCode && currentCode !== '—') {
+                            // Код уже есть, возможно из базы данных
+                            return;
+                        }
+                    }
+                }
+                // Обновляем только если код отсутствует
+                if (lastCodeData.code && (!cell.textContent.trim() || cell.textContent.trim() === '—')) {
                     cell.textContent = lastCodeData.code;
                     cell.style.color = '#4CAF50';
                     cell.style.fontSize = '16px';
                     cell.style.letterSpacing = '2px';
                     cell.style.fontWeight = '600';
-                } else {
-                    cell.textContent = '—';
-                    cell.style.color = '#666';
                 }
             });
         }
@@ -217,8 +229,9 @@
                         </div>
                     `;
 
-                    // Код для этого аккаунта (показываем последний код всегда)
-                    const codeCell = `<td class="code-cell mono" style="font-size: 16px; letter-spacing: 2px; font-weight: 600; color: ${lastCodeData.code ? '#4CAF50' : '#666'};">${lastCodeData.code || '—'}</td>`;
+                    // Код для этого аккаунта (из базы данных или последний общий)
+                    const accountCode = it.verification_code || lastCodeData.code || null;
+                    const codeCell = `<td class="code-cell mono" style="font-size: 16px; letter-spacing: 2px; font-weight: 600; color: ${accountCode ? '#4CAF50' : '#666'};">${accountCode || '—'}</td>`;
 
                     tr.innerHTML = `
                         <td>${idx + 1}</td>

@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS registered_accounts (
     email TEXT NOT NULL UNIQUE,
     password TEXT NOT NULL,
     mailbox_password TEXT NULL,
+    verification_code TEXT NULL,
     registered_at TIMESTAMP WITH TIME ZONE NOT NULL,
     registration_location TEXT NULL,
     exported_at TIMESTAMP WITH TIME ZONE NULL,

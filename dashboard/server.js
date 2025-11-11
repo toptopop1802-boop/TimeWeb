@@ -2549,7 +2549,7 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
     // Добавить зарегистрированный аккаунт
     app.post('/api/registered-accounts', async (req, res) => {
         try {
-            const { email, password, mailbox_password, registered_at, registration_location } = req.body;
+            const { email, password, mailbox_password, verification_code, registered_at, registration_location } = req.body;
 
             if (!email || !password) {
                 return res.status(400).json({ error: 'Email and password are required' });
@@ -2564,24 +2564,28 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                     email,
                     password,
                     mailbox_password,
+                    verification_code,
                     registered_at: isoRegisteredAt,
                     registration_location
                 }, { onConflict: 'email' })
                 .select()
                 .single();
 
-            // Fallback: если нет колонок registration_location или mailbox_password, пишем без них
+            // Fallback: если нет колонок registration_location, mailbox_password или verification_code, пишем без них
             if (error && (String(error.code) === '42703' || String(error.code) === 'PGRST204' || 
-                (error.message && (error.message.includes('registration_location') || error.message.includes('mailbox_password'))))) {
+                (error.message && (error.message.includes('registration_location') || error.message.includes('mailbox_password') || error.message.includes('verification_code'))))) {
                 console.log('⚠️ Некоторые колонки отсутствуют, сохраняем без них');
                 const retryData = {
                     email,
                     password,
                     registered_at: isoRegisteredAt
                 };
-                // Пробуем добавить mailbox_password если колонка есть
+                // Пробуем добавить поля если колонки есть
                 if (mailbox_password && !error.message.includes('mailbox_password')) {
                     retryData.mailbox_password = mailbox_password;
+                }
+                if (verification_code && !error.message.includes('verification_code')) {
+                    retryData.verification_code = verification_code;
                 }
                 const retry = await supabase
                     .from('registered_accounts')
@@ -2594,7 +2598,7 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
 
             if (error) throw error;
 
-            console.log(`✅ Зарегистрированный аккаунт сохранен: ${email}${mailbox_password ? ' (с паролем почты)' : ''}`);
+            console.log(`✅ Зарегистрированный аккаунт сохранен: ${email}${mailbox_password ? ' (с паролем почты)' : ''}${verification_code ? ' (с кодом)' : ''}`);
             res.status(201).json(data);
         } catch (e) {
             console.error('Registered account create error:', e);
