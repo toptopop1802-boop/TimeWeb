@@ -271,12 +271,7 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
     // Authenticated upload, public read
     app.post('/api/images/upload', imageUpload.single('image'), async (req, res) => {
         try {
-            console.log('📤 [Image Upload] Request received');
-            console.log('   Headers:', JSON.stringify(req.headers, null, 2));
-            console.log('   File:', req.file ? `${req.file.originalname} (${req.file.size} bytes)` : 'NO FILE');
-            
             if (!supabase) {
-                console.log('   ❌ Supabase not configured');
                 return res.status(503).json({ error: 'Supabase not configured' });
             }
 
@@ -284,11 +279,8 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
             let currentUser = null;
             await requireAuth(req, res, async () => { currentUser = req.user; }, supabase);
             if (!currentUser) {
-                console.log('   ❌ Auth failed');
                 return;
             }
-            
-            console.log('   ✅ Authenticated as:', currentUser.username || currentUser.id);
 
             // API usage log (per token)
             try {
@@ -298,7 +290,7 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                         .insert({ token_id: req.apiTokenId, endpoint: 'images/upload' });
                 }
             } catch (e) {
-                console.warn('   ⚠️ Failed to log API usage:', e.message);
+                // API usage logging failed - non-critical
             }
 
             if (!req.file) return res.status(400).json({ error: 'Файл не получен' });
@@ -340,13 +332,8 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                         short_code: shortCode
                     });
                 
-                if (metaError) {
-                    console.error('   ⚠️  Failed to save image metadata:', metaError);
-                } else {
-                    console.log('   ✅ Image metadata saved:', shortCode);
-                }
             } catch (metaErr) {
-                console.error('   ⚠️  Image metadata error:', metaErr);
+                // Metadata save error - non-critical
             }
 
             // Логируем действие пользователя
@@ -360,8 +347,6 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
             // Public direct URL via our domain
             const base = process.env.PUBLIC_BASE_URL || (req.headers['x-forwarded-proto'] ? `${req.headers['x-forwarded-proto']}://${req.headers.host}` : `${req.protocol}://${req.get('host')}`);
             const directUrl = `${base}/i/${shortCode}`;
-
-            console.log('   🎉 Upload complete:', directUrl);
 
             res.json({ success: true, id, shortCode, directUrl });
         } catch (error) {
