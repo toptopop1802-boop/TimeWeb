@@ -24,9 +24,18 @@ const Logger = {
       chrome.storage.local.set({ extensionLogs: logs });
     });
 
-    // Также выводим в консоль
+    // Также выводим в консоль (безопасное форматирование)
     const prefix = `[${source}]`;
-    const logMessage = data ? `${message} | Data: ${JSON.stringify(data)}` : message;
+    let logMessage = message;
+    
+    if (data) {
+      try {
+        logMessage = `${message} | Data: ${JSON.stringify(data)}`;
+      } catch (e) {
+        // Fallback если JSON.stringify не работает (циклические ссылки и т.п.)
+        logMessage = `${message} | Data: [Object]`;
+      }
+    }
     
     switch(level) {
       case 'error':
@@ -213,16 +222,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     (async () => {
       try {
         const payload = request.payload || {};
-        Logger.info('background', 'Отправка зарегистрированного аккаунта на API', { email: payload.email });
+        Logger.info('background', 'Отправка зарегистрированного аккаунта на API', { email: payload.email, phase: payload.phase || null });
         const resp = await fetch('https://bublickrust.ru/api/registered-accounts', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
-        Logger.info('background', 'Ответ API при отправке зарегистрированного аккаунта', { ok: resp.ok, status: resp.status });
+        Logger.info('background', 'Ответ API при отправке зарегистрированного аккаунта', { ok: resp.ok, status: resp.status, phase: payload.phase || null });
         sendResponse({ success: resp.ok, status: resp.status });
       } catch (e) {
-        Logger.error('background', 'Ошибка отправки зарегистрированного аккаунта', { error: e.message });
+        Logger.error('background', 'Ошибка отправки зарегистрированного аккаунта', { error: e.message, phase: (request.payload && request.payload.phase) || null });
         sendResponse({ success: false, error: e.message });
       }
     })();
@@ -233,6 +242,33 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'addLog') {
     Logger.log(request.log.level, request.log.source, request.log.message, request.log.data);
     sendResponse({ success: true });
+  }
+
+  // Получение stripe account с сервера (через background чтобы обойти CORS)
+  if (request.action === 'getStripeAccount') {
+    (async () => {
+      try {
+        Logger.info('background', 'Запрос stripe account с сервера');
+        const response = await fetch('https://bublickrust.ru/api/stripe-accounts/random');
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const account = await response.json();
+        Logger.success('background', 'Stripe account получен с сервера', { email: account.email });
+        
+        sendResponse({ 
+          success: true, 
+          email: account.email, 
+          password: account.password 
+        });
+      } catch (error) {
+        Logger.error('background', 'Ошибка получения stripe account', { error: error.message });
+        sendResponse({ success: false, error: error.message });
+      }
+    })();
+    return true; // Асинхронный ответ
   }
 
   // Обработка запроса на получение email от NotLetters

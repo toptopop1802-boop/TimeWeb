@@ -28,9 +28,18 @@
         });
       });
 
-      // Также выводим в консоль
+      // Также выводим в консоль (безопасное форматирование)
       const prefix = `[${source}]`;
-      const logMessage = data ? `${message} | Data: ${JSON.stringify(data)}` : message;
+      let logMessage = message;
+      
+      if (data) {
+        try {
+          logMessage = `${message} | Data: ${JSON.stringify(data)}`;
+        } catch (e) {
+          // Fallback если JSON.stringify не работает (циклические ссылки и т.п.)
+          logMessage = `${message} | Data: [Object]`;
+        }
+      }
       
       switch(level) {
         case 'error':
@@ -444,14 +453,18 @@
   }
 
   // Отправка сведений о зарегистрированном аккаунте на сервер (idempotent)
-  async function reportRegisteredAccount(email) {
+  async function reportRegisteredAccount(email, phase = null) {
     try {
       if (registrationReported) {
         Logger.debug('register', 'reportRegisteredAccount: уже отправляли, пропускаем', { email });
         return true;
       }
-      const stored = await new Promise(resolve => chrome.storage.local.get(['registrationPassword'], resolve));
-      const passwordForReport = stored?.registrationPassword || null;
+      const stored = await new Promise(resolve => chrome.storage.local.get(['registrationPassword', 'registrationDraft'], resolve));
+      let passwordForReport = stored?.registrationPassword || null;
+      if (!passwordForReport && stored?.registrationDraft?.password) {
+        passwordForReport = stored.registrationDraft.password;
+        Logger.info('register', 'reportRegisteredAccount: пароль взят из черновика', { email, phase });
+      }
       if (!passwordForReport) {
         Logger.warning('register', 'reportRegisteredAccount: пароль не найден в storage, пропуск');
         return false;
@@ -466,7 +479,8 @@
         email,
         password: passwordForReport,
         registered_at: new Date().toISOString(),
-        registration_location: registrationLocation
+        registration_location: registrationLocation,
+        phase
       };
       // Отправляем через background, чтобы не прервалось при навигации/перезагрузке
       const bgResp = await new Promise(resolve => {
@@ -783,6 +797,9 @@
     showProgressIndicator();
     
     try {
+      // Будущий пароль генерируем заранее, чтобы всегда иметь данные для отправки
+      let chosenPassword = null;
+      
       // Генерируем данные
       const firstName = randomGenerator.getFirstName();
       const lastName = randomGenerator.getLastName();
@@ -794,20 +811,28 @@
       let mailboxPassword = null;
       
       if (USE_SERVER_EMAILS) {
-        // Получаем email с вашего сайта
-        console.log('🌐 Получаем email с сервера bublickrust.ru...');
+        // Получаем email с вашего сайта через background script (чтобы обойти CORS)
+        console.log('🌐 Получаем email с сервера bublickrust.ru через background...');
         try {
-          const response = await fetch('https://bublickrust.ru/api/stripe-accounts/random');
-          if (response.ok) {
-            const account = await response.json();
-            email = account.email;
-            mailboxPassword = account.password || null;
-            console.log('✅ Email получен с сервера:', email);
-          } else {
-            throw new Error('Сервер вернул ошибку: ' + response.status);
-          }
+          const result = await new Promise((resolve, reject) => {
+            chrome.runtime.sendMessage({ action: 'getStripeAccount' }, (response) => {
+              if (chrome.runtime.lastError) {
+                return reject(new Error(chrome.runtime.lastError.message));
+              }
+              if (response && response.success) {
+                resolve(response);
+              } else {
+                reject(new Error(response ? response.error : 'Unknown error'));
+              }
+            });
+          });
+          
+          email = result.email;
+          mailboxPassword = result.password || null;
+          console.log('✅ Email получен с сервера:', email);
         } catch (error) {
           console.error('❌ Ошибка получения email с сервера:', error);
+          Logger.error('register', 'Не удалось получить stripe account', { error: error.message });
           // Строгий режим: не используем NotLetters fallback
           throw new Error('Не удалось получить аккаунт с сервера. Регистрация остановлена.');
         }
@@ -822,6 +847,38 @@
       }
       
       console.log('📝 Данные для регистрации:', { firstName, lastName, email });
+      
+      // Предварительно генерируем и сохраняем пароль для отчета (не логируем сам пароль)
+      try {
+        chosenPassword = generateSecurePassword();
+        chrome.storage.local.set({ 
+          registrationCompleted: false,
+          registrationEmail: email,
+          registrationPassword: chosenPassword,
+          registrationTimestamp: Date.now()
+        });
+        Logger.info('register', 'Пароль сгенерирован и сохранен для отчета (предварительно)', { email });
+      } catch (e) {
+        Logger.warning('register', 'Не удалось сохранить предварительный пароль', { error: e.message, email });
+      }
+      
+      // Сохраняем черновик регистрации как можно раньше (без пароля)
+      try {
+        const draft = {
+          firstName,
+          lastName,
+          email,
+          registrationDraftCreatedAt: Date.now()
+        };
+        // Если пароль уже сгенерирован — добавим в черновик
+        if (chosenPassword) {
+          draft.password = chosenPassword;
+        }
+        chrome.storage.local.set({ registrationDraft: draft });
+        Logger.info('register', 'Черновик регистрации сохранен (без пароля)', draft);
+      } catch (e) {
+        Logger.warning('register', 'Не удалось сохранить черновик регистрации', { error: e.message, email });
+      }
       
       // Шаг 1: Прямой переход на страницу регистрации (упрощенный вариант)
       updateProgress(1, 'Переход на страницу регистрации...');
@@ -1043,9 +1100,13 @@
         console.log('✅ Поле пароля обнаружено!');
         console.log('🔐 Начинаем автоматическую установку пароля...');
         
-        // Генерируем надежный пароль
-        const password = generateSecurePassword();
-        console.log('🔑 Пароль сгенерирован');
+        // Используем заранее сгенерированный пароль (или, на крайний случай, сгенерируем сейчас)
+        let password = chosenPassword;
+        if (!password) {
+          password = generateSecurePassword();
+          chosenPassword = password;
+          Logger.warning('register', 'Предварительный пароль отсутствовал, сгенерировали на шаге ввода', { email });
+        }
         
         // Ждем немного перед вводом пароля
         await delay(1000 + Math.random() * 1000);
@@ -1076,6 +1137,35 @@
           });
           
           console.log('💾 Пароль сохранен в storage');
+          
+          // Обновляем черновик регистрации паролем
+          try {
+            const storedDraft = await new Promise(resolve => chrome.storage.local.get(['registrationDraft'], resolve));
+            const draft = storedDraft?.registrationDraft || {};
+            const updatedDraft = {
+              ...draft,
+              password,
+              registrationPasswordSavedAt: Date.now()
+            };
+            chrome.storage.local.set({ registrationDraft: updatedDraft });
+            Logger.info('register', 'Черновик регистрации обновлен паролем', { email });
+          } catch (e) {
+            Logger.warning('register', 'Не удалось обновить черновик регистрации паролем', { error: e.message, email });
+          }
+          
+          // Ранняя отправка аккаунта на сайт (до появления OTP)
+          try {
+            Logger.info('register', 'Ранняя попытка отправки аккаунта на сайт (до OTP)', { email });
+            const sentEarly = await reportRegisteredAccount(email, 'early');
+            if (sentEarly) {
+              Logger.success('register', 'Аккаунт отправлен на сайт (ранняя отправка)', { email });
+              showSuccessNotification(`Аккаунт отправлен на сайт\n📧 ${email}`);
+            } else {
+              Logger.warning('register', 'Ранняя отправка аккаунта не удалась (продолжим на этапе OTP)', { email });
+            }
+          } catch (e) {
+            Logger.error('register', 'Ошибка ранней отправки аккаунта', { error: e.message, email });
+          }
           
           // Ищем кнопку "Продолжить" / "Submit" / "Create account"
           await delay(1000);
@@ -1361,7 +1451,7 @@
       await delay(500);
 
       // СНАЧАЛА отправляем аккаунт на сайт, затем вводим код
-      const sentBeforeOtp = await reportRegisteredAccount(email);
+      const sentBeforeOtp = await reportRegisteredAccount(email, 'otp');
       if (sentBeforeOtp) {
         showSuccessNotification(`Аккаунт отправлен на сайт\n📧 ${email}`);
         Logger.success('register', 'Аккаунт отправлен на сайт до ввода кода', { email });

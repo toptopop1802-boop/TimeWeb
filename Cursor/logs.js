@@ -123,12 +123,22 @@ function renderLogs() {
     const time = formatTime(log.timestamp);
     const source = log.source || 'unknown';
     const message = escapeHtml(String(log.message));
+    let dataHtml = '';
+    if (log.data !== undefined && log.data !== null) {
+      try {
+        const pretty = JSON.stringify(log.data, null, 2);
+        dataHtml = `<div class="log-data" style="margin-top:6px;"><pre style="margin:0; white-space:pre-wrap; color:#9aa0a6;">${escapeHtml(pretty)}</pre></div>`;
+      } catch {
+        dataHtml = `<div class="log-data" style="margin-top:6px;"><pre style="margin:0; white-space:pre-wrap; color:#9aa0a6;">${escapeHtml(String(log.data))}</pre></div>`;
+      }
+    }
     
     return `
       <div class="log-entry ${log.level}">
         <span class="log-time">${time}</span>
         <span class="log-source">[${source}]</span>
         <span class="log-message">${message}</span>
+        ${dataHtml}
       </div>
     `;
   }).join('');

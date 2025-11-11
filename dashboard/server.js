@@ -2521,8 +2521,10 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                 .select()
                 .single();
 
-            // Fallback: если нет колонки registration_location (ошибка 42703), пишем без нее
-            if (error && String(error.code) === '42703') {
+            // Fallback: если нет колонки registration_location (ошибки 42703 или PGRST204), пишем без нее
+            if (error && (String(error.code) === '42703' || String(error.code) === 'PGRST204' || 
+                (error.message && error.message.includes('registration_location')))) {
+                console.log('⚠️ Колонка registration_location отсутствует, сохраняем без неё');
                 const retry = await supabase
                     .from('registered_accounts')
                     .upsert({
