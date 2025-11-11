@@ -550,6 +550,7 @@
             }
 
             let success = 0;
+            let skipped = 0;
             let failed = 0;
 
             for (const line of lines) {
@@ -569,6 +570,9 @@
 
                     if (response.ok) {
                         success++;
+                    } else if (response.status === 409) {
+                        // Аккаунт уже существует - это не ошибка
+                        skipped++;
                     } else {
                         failed++;
                     }
@@ -577,7 +581,8 @@
                 }
             }
 
-            showToast(`Добавлено: ${success}, Ошибок: ${failed}`, success > 0 ? 'success' : 'error');
+            const message = `✅ Добавлено: ${success} | ⚠️ Уже существует: ${skipped}${failed > 0 ? ` | ❌ Ошибок: ${failed}` : ''}`;
+            showToast(message, success > 0 ? 'success' : (skipped > 0 ? 'success' : 'error'));
             textarea.value = '';
             loadAccounts();
             loadStats();
@@ -600,17 +605,19 @@
                 });
 
                 if (response.ok) {
-                    showToast('Аккаунт успешно добавлен', 'success');
+                    showToast('✅ Аккаунт успешно добавлен', 'success');
                     document.getElementById('single-email').value = '';
                     document.getElementById('single-password').value = '';
                     loadAccounts();
                     loadStats();
+                } else if (response.status === 409) {
+                    showToast('⚠️ Аккаунт с таким email уже существует', 'error');
                 } else {
                     const error = await response.json();
                     showToast(error.error || 'Ошибка добавления аккаунта', 'error');
                 }
             } catch (error) {
-                showToast('Ошибка сети', 'error');
+                showToast('❌ Ошибка сети', 'error');
             }
         }
 
