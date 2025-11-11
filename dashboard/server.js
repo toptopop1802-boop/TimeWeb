@@ -2481,6 +2481,38 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
     // REGISTERED ACCOUNTS API - учет успешно созданных аккаунтов Cursor
     // =====================================================
 
+    // Хранение последнего кода подтверждения в памяти (без БД)
+    let lastVerificationCode = {
+        code: null,
+        email: null,
+        updatedAt: null
+    };
+
+    // Получить последний код подтверждения
+    app.get('/api/registered-accounts/last-code', (req, res) => {
+        res.json({
+            code: lastVerificationCode.code,
+            email: lastVerificationCode.email,
+            updatedAt: lastVerificationCode.updatedAt
+        });
+    });
+
+    // Обновить последний код подтверждения (вызывается расширением)
+    app.post('/api/registered-accounts/last-code', (req, res) => {
+        const { code, email } = req.body;
+        if (code) {
+            lastVerificationCode = {
+                code: String(code),
+                email: email || null,
+                updatedAt: new Date().toISOString()
+            };
+            console.log(`✅ Код обновлен: ${code}${email ? ` для ${email}` : ''}`);
+            res.json({ success: true, updatedAt: lastVerificationCode.updatedAt });
+        } else {
+            res.status(400).json({ error: 'Code is required' });
+        }
+    });
+
     // Список зарегистрированных аккаунтов (новые сверху)
     app.get('/api/registered-accounts', async (req, res) => {
         try {

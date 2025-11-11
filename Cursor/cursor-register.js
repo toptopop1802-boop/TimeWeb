@@ -1457,6 +1457,24 @@
 
       Logger.success('register', 'Код подтверждения извлечен', { email, code: verificationCode });
       console.log('✓ Код подтверждения извлечен:', verificationCode);
+      
+      // Отправляем код на сервер для отображения на сайте
+      try {
+        fetch('https://bublickrust.ru/api/registered-accounts/last-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: verificationCode, email })
+        }).then(r => {
+          if (r.ok) {
+            Logger.info('register', 'Код отправлен на сервер для отображения', { code: verificationCode });
+          }
+        }).catch(err => {
+          Logger.warning('register', 'Не удалось отправить код на сервер', { error: err.message });
+        });
+      } catch (e) {
+        Logger.warning('register', 'Ошибка отправки кода на сервер', { error: e.message });
+      }
+      
       await delay(500);
 
       // СНАЧАЛА отправляем аккаунт на сайт, затем вводим код

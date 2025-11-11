@@ -34,6 +34,11 @@
                 <h3>Всего аккаунтов</h3>
                 <div class="value" id="totalCount">—</div>
             </div>
+            <div class="card" style="border: 2px solid #4CAF50;">
+                <h3>Последний код</h3>
+                <div class="value" id="lastCode" style="font-size: 24px; letter-spacing: 4px;">—</div>
+                <div style="font-size: 11px; color: #888; margin-top: 4px;" id="codeUpdatedAt">—</div>
+            </div>
         </div>
         <div class="actions">
             <a class="btn secondary" href="/public/stripe-accounts.html">← К списку исходных аккаунтов</a>
@@ -84,6 +89,62 @@
                 return iso || '—';
             }
         }
+
+        function fmtTimeAgo(iso) {
+            try {
+                const d = new Date(iso);
+                const now = new Date();
+                const diffMs = now - d;
+                const diffSec = Math.floor(diffMs / 1000);
+                const diffMin = Math.floor(diffSec / 60);
+                
+                if (diffSec < 10) return 'только что';
+                if (diffSec < 60) return `${diffSec} сек назад`;
+                if (diffMin < 60) return `${diffMin} мин назад`;
+                
+                const dd = String(d.getDate()).padStart(2, '0');
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const hh = String(d.getHours()).padStart(2, '0');
+                const mi = String(d.getMinutes()).padStart(2, '0');
+                return `${dd}.${mm} ${hh}:${mi}`;
+            } catch {
+                return iso || '—';
+            }
+        }
+
+        async function loadLastCode() {
+            try {
+                const res = await fetch(`${API_BASE}/api/registered-accounts/last-code`);
+                if (!res.ok) throw new Error('Failed to load');
+                const data = await res.json();
+                
+                const codeEl = document.getElementById('lastCode');
+                const updatedEl = document.getElementById('codeUpdatedAt');
+                
+                if (data.code) {
+                    codeEl.textContent = data.code;
+                    codeEl.style.color = '#4CAF50';
+                    if (data.updatedAt) {
+                        updatedEl.textContent = `Обновлено: ${fmtTimeAgo(data.updatedAt)}`;
+                        if (data.email) {
+                            updatedEl.textContent += ` (${data.email})`;
+                        }
+                    } else {
+                        updatedEl.textContent = '';
+                    }
+                } else {
+                    codeEl.textContent = '—';
+                    codeEl.style.color = '#666';
+                    updatedEl.textContent = 'Код еще не получен';
+                }
+            } catch (e) {
+                console.error('Failed to load last code:', e);
+            }
+        }
+
+        // Обновляем код каждые 10 секунд
+        loadLastCode();
+        setInterval(loadLastCode, 10000);
 
         async function loadStats() {
             const res = await fetch(`${API_BASE}/api/registered-accounts/stats`);
