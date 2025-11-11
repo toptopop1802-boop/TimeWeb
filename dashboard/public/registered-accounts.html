@@ -38,6 +38,11 @@
         <div class="actions">
             <a class="btn secondary" href="/public/stripe-accounts.html">← К списку исходных аккаунтов</a>
             <button id="refreshBtn">Обновить</button>
+            <div style="margin-left:auto; display:flex; gap:8px; align-items:center;">
+                <label class="muted" for="exportCount">Кол-во на экспорт</label>
+                <input id="exportCount" type="number" min="1" max="1000" value="10" style="width:90px; background:#0f0f0f; border:1px solid #222; color:#fff; border-radius:8px; padding:6px 8px;" />
+                <button id="exportBtn">Экспорт TXT</button>
+            </div>
         </div>
 
         <table class="table">
@@ -47,6 +52,8 @@
                     <th>Email</th>
                     <th>Пароль</th>
                     <th>Зарегистрирован</th>
+                    <th>Локация</th>
+                    <th>Экспорт</th>
                 </tr>
             </thead>
             <tbody id="tableBody">
@@ -60,6 +67,8 @@
 
     <script>
         const API_BASE = location.origin;
+
+        const svgCopy = '<svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M9 9H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-4\" stroke=\"#9aa0a6\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><rect x=\"9\" y=\"3\" width=\"12\" height=\"12\" rx=\"2\" stroke=\"#9aa0a6\" stroke-width=\"1.5\"/></svg>';
 
         function fmtDate(iso) {
             try {
@@ -85,30 +94,62 @@
 
         async function loadList() {
             const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = `<tr><td class="empty" colspan="4">Загрузка...</td></tr>`;
+            tbody.innerHTML = `<tr><td class="empty" colspan="6">Загрузка...</td></tr>`;
             try {
                 const res = await fetch(`${API_BASE}/api/registered-accounts`);
                 if (!res.ok) throw new Error('Failed to load');
                 const items = await res.json();
 
                 if (!items || items.length === 0) {
-                    tbody.innerHTML = `<tr><td class="empty" colspan="4">Пока нет записей</td></tr>`;
+                    tbody.innerHTML = `<tr><td class="empty" colspan="6">Пока нет записей</td></tr>`;
                     return;
                 }
 
                 tbody.innerHTML = '';
                 items.forEach((it, idx) => {
                     const tr = document.createElement('tr');
+                    const exportCell = it.exported_at ? `Экспортирован: ${fmtDate(it.exported_at)}` : `<span class="pill">Не экспортирован</span>`;
+
+                    const emailCell = `
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span class="mono">${it.email}</span>
+                            <button class="btn secondary" data-copy="${it.email}" title="Копировать email" style="padding:4px 6px;">${svgCopy}</button>
+                        </div>
+                    `;
+
+                    const passwordCell = `
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span class="mono">${it.password}</span>
+                            <button class="btn secondary" data-copy="${it.password}" title="Копировать пароль" style="padding:4px 6px;">${svgCopy}</button>
+                        </div>
+                    `;
+
                     tr.innerHTML = `
                         <td>${idx + 1}</td>
-                        <td class="mono">${it.email}</td>
-                        <td class="mono">${it.password}</td>
+                        <td>${emailCell}</td>
+                        <td>${passwordCell}</td>
                         <td>${fmtDate(it.registered_at)}</td>
+                        <td>${it.registration_location || '—'}</td>
+                        <td>${exportCell}</td>
                     `;
                     tbody.appendChild(tr);
                 });
+
+                // Копирование
+                tbody.querySelectorAll('button[data-copy]').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        const text = btn.getAttribute('data-copy');
+                        try {
+                            await navigator.clipboard.writeText(text);
+                            btn.innerHTML = '✓';
+                            setTimeout(() => btn.innerHTML = svgCopy, 1000);
+                        } catch (e) {
+                            console.error('Copy failed', e);
+                        }
+                    });
+                });
             } catch (e) {
-                tbody.innerHTML = `<tr><td class="empty" colspan="4">Ошибка загрузки</td></tr>`;
+                tbody.innerHTML = `<tr><td class="empty" colspan="6">Ошибка загрузки</td></tr>`;
                 console.error(e);
             }
         }
@@ -116,6 +157,31 @@
         document.getElementById('refreshBtn').addEventListener('click', () => {
             loadStats();
             loadList();
+        });
+
+        // Экспорт TXT
+        document.getElementById('exportBtn').addEventListener('click', async () => {
+            const cnt = Math.max(1, Math.min(1000, parseInt(document.getElementById('exportCount').value || '10', 10)));
+            try {
+                const res = await fetch(`${API_BASE}/api/registered-accounts/export.txt?count=${cnt}`);
+                if (!res.ok) {
+                    alert('Ошибка экспорта');
+                    return;
+                }
+                const text = await res.text();
+                const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `accounts-${new Date().toISOString().slice(0,16).replace(/[:T]/g,'-')}.txt`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(url);
+                loadList(); // обновить статусы "Экспортирован"
+            } catch (e) {
+                console.error('Export failed', e);
+            }
         });
 
         // Первичная загрузка

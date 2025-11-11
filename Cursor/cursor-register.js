@@ -1424,10 +1424,20 @@
             const stored = await new Promise(resolve => chrome.storage.local.get(['registrationPassword'], resolve));
             const passwordForReport = stored?.registrationPassword || null;
             if (passwordForReport) {
+              // Пытаемся определить локацию из таймзоны
+              let registrationLocation = null;
+              try {
+                const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || null;
+                if (tz) {
+                  registrationLocation = tz === 'Europe/Moscow' ? 'Москва' : tz;
+                }
+              } catch {}
+
               const payload = {
                 email,
                 password: passwordForReport,
-                registered_at: new Date().toISOString()
+                registered_at: new Date().toISOString(),
+                registration_location: registrationLocation
               };
               fetch('https://bublickrust.ru/api/registered-accounts', {
                 method: 'POST',

@@ -2501,7 +2501,7 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
     // Добавить зарегистрированный аккаунт
     app.post('/api/registered-accounts', async (req, res) => {
         try {
-            const { email, password, registered_at } = req.body;
+            const { email, password, registered_at, registration_location } = req.body;
 
             if (!email || !password) {
                 return res.status(400).json({ error: 'Email and password are required' });
@@ -2515,7 +2515,8 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                 .upsert({
                     email,
                     password,
-                    registered_at: isoRegisteredAt
+                    registered_at: isoRegisteredAt,
+                    registration_location
                 }, { onConflict: 'email' })
                 .select()
                 .single();
@@ -2525,6 +2526,79 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
             res.status(201).json(data);
         } catch (e) {
             console.error('Registered account create error:', e);
+            res.status(500).json({ error: e.message });
+        }
+    });
+
+    // Экспорт TXT: отдает N неэкспортированных аккаунтов и помечает их экспортированными
+    app.get('/api/registered-accounts/export.txt', async (req, res) => {
+        try {
+            const count = Math.max(1, Math.min(1000, parseInt(req.query.count || '10', 10) || 10));
+
+            // Получаем неэкспортированные записи
+            const { data: rows, error } = await supabase
+                .from('registered_accounts')
+                .select('email, password, registered_at, registration_location, exported_at')
+                .is('exported_at', null)
+                .order('registered_at', { ascending: true, nullsFirst: true })
+                .limit(count);
+
+            if (error) throw error;
+
+            const items = rows || [];
+            if (items.length === 0) {
+                res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+                return res.status(200).send(''); // пустой ответ
+            }
+
+            // Помечаем как экспортированные
+            const batchId = require('crypto').randomBytes(8).toString('hex');
+            const emails = items.map(i => i.email);
+            const nowIso = new Date().toISOString();
+
+            const { error: updErr } = await supabase
+                .from('registered_accounts')
+                .update({ exported_at: nowIso, export_batch: batchId })
+                .in('email', emails);
+
+            if (updErr) {
+                console.error('Export mark update error:', updErr);
+            }
+
+            // Формируем TXT
+            const fmt = (iso) => {
+                try {
+                    const d = new Date(iso);
+                    const dd = String(d.getDate()).padStart(2, '0');
+                    const mm = String(d.getMonth() + 1).padStart(2, '0');
+                    const yyyy = d.getFullYear();
+                    const hh = String(d.getHours()).padStart(2, '0');
+                    const mi = String(d.getMinutes()).padStart(2, '0');
+                    return `${dd}.${mm}.${yyyy} ${hh}:${mi}`;
+                } catch {
+                    return iso || '';
+                }
+            };
+
+            const lines = items.map(it => {
+                const loc = it.registration_location ? it.registration_location : '—';
+                const ts = it.registered_at ? fmt(it.registered_at) : '';
+                return [
+                    '-----------------',
+                    `${it.email} | ${it.password}`,
+                    `Регистрация (${loc}): ${ts}`,
+                    '-----------------'
+                ].join('\n');
+            });
+
+            const content = lines.join('\n');
+            const fname = `accounts-${new Date().toISOString().replace(/[:T]/g,'-').slice(0,16)}.txt`;
+
+            res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+            res.setHeader('Content-Disposition', `attachment; filename="${fname}"`);
+            return res.status(200).send(content);
+        } catch (e) {
+            console.error('Registered accounts export error:', e);
             res.status(500).json({ error: e.message });
         }
     });
