@@ -1,4 +1,17 @@
-// Отключаем предупреждения Node.js
+// Отключаем предупреждения Node.js и библиотек
+const originalWarn = console.warn;
+console.warn = function(...args) {
+    const message = args.join(' ');
+    // Пропускаем только предупреждения о Node.js версии и discord.js ready event
+    if (message.includes('Node.js 18 and below') || 
+        message.includes('deprecated') ||
+        message.includes('ready event has been renamed') ||
+        message.includes('DeprecationWarning')) {
+        return;
+    }
+    originalWarn.apply(console, args);
+};
+
 process.removeAllListeners('warning');
 process.on('warning', () => {});
 
