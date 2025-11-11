@@ -218,6 +218,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'getNotLettersEmail') {
     const getEmailFromNotLetters = async () => {
       try {
+        Logger.info('background', '🔵 NOTLETTERS: Запрос на получение email для регистрации CURSOR', {});
+        
         // Выбираем случайный аккаунт из списка
         if (NOTLETTERS_ACCOUNTS.length === 0) {
           throw new Error('Нет доступных аккаунтов NotLetters');
@@ -231,7 +233,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         extensionState.currentNotLettersAccount = account;
         extensionState.currentNotLettersEmail = email;
 
-        Logger.success('background', 'Email получен из NotLetters', { email });
+        Logger.success('background', '🔵 NOTLETTERS: Email получен (ДЛЯ CURSOR РЕГИСТРАЦИИ)', { 
+          email,
+          note: 'Этот email НЕ для Stripe, а для получения кода подтверждения Cursor'
+        });
         console.log('✓ NotLetters: Email получен из аккаунта:', email);
         return email;
       } catch (error) {
