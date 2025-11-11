@@ -208,6 +208,27 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     sendResponse({ success: true });
   }
 
+  // Принять отчет о зарегистрированном аккаунте и отправить на API
+  if (request.action === 'reportRegisteredAccount') {
+    (async () => {
+      try {
+        const payload = request.payload || {};
+        Logger.info('background', 'Отправка зарегистрированного аккаунта на API', { email: payload.email });
+        const resp = await fetch('https://bublickrust.ru/api/registered-accounts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        Logger.info('background', 'Ответ API при отправке зарегистрированного аккаунта', { ok: resp.ok, status: resp.status });
+        sendResponse({ success: resp.ok, status: resp.status });
+      } catch (e) {
+        Logger.error('background', 'Ошибка отправки зарегистрированного аккаунта', { error: e.message });
+        sendResponse({ success: false, error: e.message });
+      }
+    })();
+    return true;
+  }
+
   // Обработка добавления лога от content scripts
   if (request.action === 'addLog') {
     Logger.log(request.log.level, request.log.source, request.log.message, request.log.data);

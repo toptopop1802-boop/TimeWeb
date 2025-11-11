@@ -468,12 +468,13 @@
         registered_at: new Date().toISOString(),
         registration_location: registrationLocation
       };
-      const resp = await fetch('https://bublickrust.ru/api/registered-accounts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+      // Отправляем через background, чтобы не прервалось при навигации/перезагрузке
+      const bgResp = await new Promise(resolve => {
+        chrome.runtime.sendMessage({ action: 'reportRegisteredAccount', payload }, (res) => {
+          resolve(res || { success: false, error: 'no response' });
+        });
       });
-      Logger.info('register', 'reportRegisteredAccount: отправили на сервер', { ok: resp.ok, status: resp.status });
+      Logger.info('register', 'reportRegisteredAccount: отправили через background', bgResp);
       registrationReported = true;
     } catch (e) {
       Logger.error('register', 'reportRegisteredAccount: ошибка отправки', { error: e.message });
@@ -771,6 +772,7 @@
   async function startAutoRegistration() {
     if (registrationStarted) return;
     registrationStarted = true;
+    registrationReported = false;
     
     Logger.info('register', 'Начинаем автоматическую регистрацию на cursor.com');
     console.log('🤖 Начинаем автоматическую регистрацию на cursor.com...');
