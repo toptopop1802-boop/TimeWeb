@@ -16,18 +16,39 @@
   async function getStripeAccountFromServer() {
     try {
       console.log('🌐 Запрашиваем аккаунт Stripe с сервера...');
+      console.log('📍 URL:', `${API_BASE}/api/stripe-accounts/random`);
+      
       const response = await fetch(`${API_BASE}/api/stripe-accounts/random`);
       
+      console.log('📊 Ответ сервера:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
+      });
+      
       if (!response.ok) {
-        console.error('❌ Ошибка получения аккаунта:', response.status);
+        const errorText = await response.text();
+        console.error('❌ Ошибка получения аккаунта:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorText.substring(0, 200)
+        });
         return null;
       }
       
       const data = await response.json();
-      console.log('✅ Аккаунт получен с сервера:', data.email);
+      console.log('✅ Аккаунт получен с сервера:', {
+        email: data.email,
+        type: data.account_type,
+        hasPassword: !!data.password
+      });
       return data;
     } catch (error) {
       console.error('❌ Ошибка сети при получении аккаунта:', error);
+      console.error('Проверьте:');
+      console.error('1. Сервер доступен:', API_BASE);
+      console.error('2. CORS настроен правильно');
+      console.error('3. В базе есть активные аккаунты');
       return null;
     }
   }
@@ -766,7 +787,9 @@
       await delay(2000);
       
       // Получаем аккаунт с сервера
-      console.log('🔄 Получаем данные аккаунта с сервера...');
+      console.log('═══════════════════════════════════════');
+      console.log('🔄 ПОЛУЧЕНИЕ АККАУНТА С СЕРВЕРА');
+      console.log('═══════════════════════════════════════');
       const serverAccount = await getStripeAccountFromServer();
       
       // Определяем тип аккаунта и email/password
@@ -776,10 +799,18 @@
         accountEmail = serverAccount.email;
         accountPassword = serverAccount.password;
         accountType = serverAccount.account_type || 'FREE';
-        console.log(`✅ Используем аккаунт с сервера: ${accountEmail} (${accountType})`);
+        console.log('═══════════════════════════════════════');
+        console.log('✅ ИСПОЛЬЗУЕМ АККАУНТ С СЕРВЕРА:');
+        console.log(`   Email: ${accountEmail}`);
+        console.log(`   Password: ${accountPassword ? '***' + accountPassword.slice(-4) : 'НЕТ'}`);
+        console.log(`   Тип: ${accountType}`);
+        console.log('═══════════════════════════════════════');
       } else {
         // Фолбэк: генерируем случайный email если сервер недоступен
-        console.log('⚠️ Сервер недоступен, генерируем случайные данные');
+        console.log('═══════════════════════════════════════');
+        console.log('⚠️ ФОЛБЭК: Сервер недоступен');
+        console.log('   Генерируем случайные данные');
+        console.log('═══════════════════════════════════════');
         accountEmail = randomGenerator.getRandomEmail();
         accountPassword = null;
       }
