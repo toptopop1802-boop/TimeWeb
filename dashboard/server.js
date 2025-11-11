@@ -2543,7 +2543,14 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                 .order('registered_at', { ascending: true, nullsFirst: true })
                 .limit(count);
 
-            if (error) throw error;
+            if (error) {
+                // Если таблицы еще нет — отдаём пустой txt, а не 500
+                if (String(error.message || '').toLowerCase().includes('relation') && String(error.message || '').toLowerCase().includes('does not exist')) {
+                    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+                    return res.status(200).send('');
+                }
+                throw error;
+            }
 
             const items = rows || [];
             if (items.length === 0) {
@@ -2561,9 +2568,7 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                 .update({ exported_at: nowIso, export_batch: batchId })
                 .in('email', emails);
 
-            if (updErr) {
-                console.error('Export mark update error:', updErr);
-            }
+            if (updErr) console.error('Export mark update error:', updErr);
 
             // Формируем TXT
             const fmt = (iso) => {
@@ -2599,7 +2604,9 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
             return res.status(200).send(content);
         } catch (e) {
             console.error('Registered accounts export error:', e);
-            res.status(500).json({ error: e.message });
+            // На фронт отдадим пустой файл, чтобы не ломать UX
+            res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+            res.status(200).send('');
         }
     });
 
