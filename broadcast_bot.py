@@ -1220,55 +1220,8 @@ def main() -> None:
 
     @bot.event
     async def on_ready() -> None:
-        # Выводим информацию о доступных командах при запуске
-        print("=" * 50)
-        print("БОТ ЗАПУЩЕН УСПЕШНО!")
-        print("=" * 50)
-        print("ДОСТУПНЫЕ КОМАНДЫ:")
-        print()
-        
-        # Префикс-команды
-        prefix_commands = []
-        for command in sorted(bot.commands, key=lambda c: c.name):
-            if command.hidden:
-                continue
-            description = command.help or command.brief or command.short_doc or "Без описания"
-            if description.strip().lower() == "no help available.":
-                description = "Без описания"
-            description = description.replace("`", "")
-            prefix_commands.append(f"  {prefix}{command.name} — {description}")
-        
-        if prefix_commands:
-            print("ПРЕФИКС-КОМАНДЫ:")
-            for cmd in prefix_commands:
-                print(cmd)
-            print()
-        
-        # Slash-команды
-        slash_commands = []
-        for command in sorted(bot.tree.get_commands(), key=lambda c: c.qualified_name):
-            description = command.description or "Без описания"
-            description = description.replace("`", "")
-            note = ""
-            if command.name == "clear":
-                note = " (доступно владельцу сервера)"
-            slash_commands.append(f"  /{command.qualified_name} — {description}{note}")
-        
-        if slash_commands:
-            print("SLASH-КОМАНДЫ:")
-            for cmd in slash_commands:
-                try:
-                    print(cmd)
-                except UnicodeEncodeError:
-                    # Удаляем эмодзи для Windows консоли
-                    import re
-                    clean_cmd = re.sub(r'[^\x00-\x7F]+', '', cmd)
-                    print(clean_cmd)
-            print()
-        
-        print("=" * 50)
-        print("Бот готов к работе!")
-        print("=" * 50)
+        # Бот запущен успешно - без вывода списка команд
+        pass
     
     @bot.event
     async def on_interaction(interaction: discord.Interaction) -> None:

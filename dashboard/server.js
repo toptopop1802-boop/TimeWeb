@@ -1,3 +1,7 @@
+// Отключаем предупреждения Node.js
+process.removeAllListeners('warning');
+process.on('warning', () => {});
+
 const express = require('express');
 const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
