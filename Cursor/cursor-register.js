@@ -713,15 +713,39 @@
       const firstName = randomGenerator.getFirstName();
       const lastName = randomGenerator.getLastName();
       
-      // Получаем email через NotLetters
-      console.log('📧 Получаем email через NotLetters...');
-      const email = await NotLettersAPI.getRandomEmail();
+      // ВЫБИРАЕМ ИСТОЧНИК EMAIL: NotLetters ИЛИ с сайта
+      const USE_SERVER_EMAILS = true; // Установите false для NotLetters
+      
+      let email;
+      
+      if (USE_SERVER_EMAILS) {
+        // Получаем email с вашего сайта
+        console.log('🌐 Получаем email с сервера bublickrust.ru...');
+        try {
+          const response = await fetch('https://bublickrust.ru/api/stripe-accounts/random');
+          if (response.ok) {
+            const account = await response.json();
+            email = account.email;
+            console.log('✅ Email получен с сервера:', email);
+          } else {
+            throw new Error('Сервер вернул ошибку: ' + response.status);
+          }
+        } catch (error) {
+          console.error('❌ Ошибка получения email с сервера:', error);
+          console.log('⚠️ Переключаемся на NotLetters...');
+          email = await NotLettersAPI.getRandomEmail();
+        }
+      } else {
+        // Получаем email через NotLetters (старый способ)
+        console.log('📧 Получаем email через NotLetters...');
+        email = await NotLettersAPI.getRandomEmail();
+      }
 
       if (!email) {
-        throw new Error('Не удалось получить email через NotLetters');
+        throw new Error('Не удалось получить email');
       }
       
-      console.log('📝 Сгенерированные данные:', { firstName, lastName, email });
+      console.log('📝 Данные для регистрации:', { firstName, lastName, email });
       
       // Шаг 1: Прямой переход на страницу регистрации (упрощенный вариант)
       updateProgress(1, 'Переход на страницу регистрации...');
