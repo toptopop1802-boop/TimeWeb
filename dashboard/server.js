@@ -2576,7 +2576,7 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
             const count = Math.max(1, Math.min(1000, parseInt(req.query.count || '10', 10) || 10));
             console.log(`📥 Запрос экспорта: запрошено ${count} аккаунтов`);
 
-            // Получаем неэкспортированные записи (с mailbox_password если есть)
+            // Сначала проверяем есть ли колонка exported_at - пробуем простой запрос
             let { data: rows, error } = await supabase
                 .from('registered_accounts')
                 .select('email, password, mailbox_password, registered_at, registration_location, exported_at')
@@ -2584,21 +2584,32 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                 .order('registered_at', { ascending: true, nullsFirst: true })
                 .limit(count);
 
-            console.log(`📊 Запрос к БД: найдено ${rows?.length || 0} записей, ошибка: ${error ? error.message : 'нет'}`);
+            console.log(`📊 Первый запрос: найдено ${rows?.length || 0} записей, ошибка: ${error ? error.message : 'нет'}`);
 
             // Fallback: если ошибка из-за отсутствующих колонок
             if (error && (String(error.code) === '42703' || String(error.code) === 'PGRST204' || 
-                (error.message && (error.message.includes('registration_location') || error.message.includes('mailbox_password'))))) {
-                console.log('⚠️ Некоторые колонки отсутствуют, запрашиваем базовые поля');
-                const retry = await supabase
+                (error.message && (error.message.includes('registration_location') || error.message.includes('mailbox_password') || error.message.includes('exported_at'))))) {
+                console.log('⚠️ Некоторые колонки отсутствуют, пробуем базовые поля');
+                
+                // Пробуем запрос без exported_at (возможно все записи неэкспортированы)
+                let retry = await supabase
                     .from('registered_accounts')
-                    .select('email, password, registered_at, exported_at')
-                    .is('exported_at', null)
+                    .select('email, password, registered_at')
                     .order('registered_at', { ascending: true, nullsFirst: true })
                     .limit(count);
+                
+                if (retry.error) {
+                    console.log(`⚠️ Ошибка базового запроса: ${retry.error.message}, пробуем только email и password`);
+                    // Последняя попытка - только email и password
+                    retry = await supabase
+                        .from('registered_accounts')
+                        .select('email, password')
+                        .limit(count);
+                }
+                
                 rows = retry.data;
                 error = retry.error;
-                console.log(`📊 Повторный запрос: найдено ${rows?.length || 0} записей`);
+                console.log(`📊 Повторный запрос: найдено ${rows?.length || 0} записей, ошибка: ${error ? error.message : 'нет'}`);
             }
 
             if (error) {
@@ -2617,12 +2628,19 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
             console.log(`📋 Обработка экспорта: ${items.length} аккаунтов для экспорта`);
             
             if (items.length === 0) {
-                console.log('⚠️ Нет неэкспортированных записей для экспорта');
+                // Проверяем есть ли вообще записи в таблице
+                const { count: totalCount } = await supabase
+                    .from('registered_accounts')
+                    .select('*', { count: 'exact', head: true });
+                console.log(`⚠️ Нет неэкспортированных записей. Всего записей в таблице: ${totalCount || 0}`);
+                if (totalCount > 0) {
+                    console.log('💡 Все записи уже экспортированы (exported_at не null)');
+                }
                 res.setHeader('Content-Type', 'text/plain; charset=utf-8');
                 return res.status(200).send(''); // пустой ответ
             }
 
-            // Помечаем как экспортированные
+            // Помечаем как экспортированные (если колонка exported_at существует)
             const batchId = require('crypto').randomBytes(8).toString('hex');
             const emails = items.map(i => i.email);
             const nowIso = new Date().toISOString();
@@ -2633,11 +2651,17 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
               .in('email', emails);
 
             // Fallback: если колонок нет — просто не помечаем, отдаем файл
-            if (updErr && String(updErr.code) === '42703') {
+            if (updErr && (String(updErr.code) === '42703' || String(updErr.code) === 'PGRST204' || 
+                (updErr.message && (updErr.message.includes('exported_at') || updErr.message.includes('export_batch'))))) {
+                console.log('⚠️ Колонки exported_at/export_batch отсутствуют, пропускаем пометку экспорта');
                 updErr = null;
             }
 
-            if (updErr) console.error('Export mark update error:', updErr);
+            if (updErr) {
+                console.error('❌ Export mark update error:', updErr);
+            } else {
+                console.log(`✅ Помечено как экспортировано: ${emails.length} аккаунтов`);
+            }
 
             // Формируем TXT
             const fmt = (iso) => {
@@ -2656,15 +2680,20 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
 
             const lines = items.map(it => {
                 const loc = (it.registration_location !== undefined && it.registration_location !== null) ? it.registration_location : '—';
-                const ts = it.registered_at ? fmt(it.registered_at) : '';
+                const ts = (it.registered_at !== undefined && it.registered_at !== null) ? fmt(it.registered_at) : '—';
                 const mailboxPwd = (it.mailbox_password !== undefined && it.mailbox_password !== null) ? it.mailbox_password : '—';
-                return [
+                const parts = [
                     '-----------------',
-                    `${it.email} | ${it.password}`,
-                    `Пароль почты: ${mailboxPwd}`,
-                    `Регистрация (${loc}): ${ts}`,
-                    '-----------------'
-                ].join('\n');
+                    `${it.email} | ${it.password}`
+                ];
+                if (mailboxPwd !== '—') {
+                    parts.push(`Пароль почты: ${mailboxPwd}`);
+                }
+                if (ts !== '—' || loc !== '—') {
+                    parts.push(`Регистрация (${loc}): ${ts}`);
+                }
+                parts.push('-----------------');
+                return parts.join('\n');
             });
 
             const content = lines.join('\n');
