@@ -316,6 +316,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           lettersCount: data.data?.letters?.length || 0
         });
         
+        console.log('📨 NotLetters RAW Response:', {
+          hasData: !!data.data,
+          lettersCount: data.data?.letters?.length || 0,
+          letters: data.data?.letters?.map(l => ({
+            sender: l.sender,
+            subject: l.subject,
+            hasLetter: !!l.letter,
+            hasHtml: !!l.letter?.html,
+            hasText: !!l.letter?.text
+          }))
+        });
+        
         return data.data?.letters || [];
       } catch (error) {
         Logger.error('background', 'Ошибка при получении писем от NotLetters', { 
@@ -331,6 +343,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     const extractCodeFromLetter = (letterContent) => {
       console.log('🔍 Извлекаем код из письма...');
+      console.log('📧 Структура письма:', {
+        hasHtml: !!letterContent.html,
+        hasText: !!letterContent.text,
+        htmlLength: letterContent.html?.length || 0,
+        textLength: letterContent.text?.length || 0
+      });
+      
+      // Выводим первые 500 символов для отладки
+      if (letterContent.html) {
+        console.log('📝 HTML (первые 500 символов):', letterContent.html.substring(0, 500));
+      }
+      if (letterContent.text) {
+        console.log('📝 TEXT (первые 500 символов):', letterContent.text.substring(0, 500));
+      }
       
       // Более точные паттерны (по приоритету)
       const patterns = [
@@ -353,8 +379,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         /ваш\s*код[:\s]*(\d{6})/i
       ];
 
-      const checkContent = (content) => {
-        if (!content) return null;
+      const checkContent = (content, contentType) => {
+        if (!content) {
+          console.log(`⚠️ ${contentType} пустой`);
+          return null;
+        }
+        
+        console.log(`🔍 Проверяем ${contentType}...`);
         
         for (const pattern of patterns) {
           const match = content.match(pattern);
@@ -366,7 +397,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
               console.log(`⚠️ Пропускаем подозрительный код ${code} (все цифры одинаковые)`);
               continue;
             }
-            console.log(`✓ Код найден: ${code}`);
+            console.log(`✅ Код найден в ${contentType}: ${code} (паттерн: ${pattern})`);
             return code;
           }
         }
@@ -374,11 +405,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         // Фолбэк: ищем любое 6-значное число, НО исключаем повторяющиеся
         const allSixDigits = content.match(/\b\d{6}\b/g);
         if (allSixDigits && allSixDigits.length > 0) {
-          console.log('🔍 Найдено 6-значных чисел:', allSixDigits);
+          console.log(`🔍 Найдено 6-значных чисел в ${contentType}:`, allSixDigits);
           for (const code of allSixDigits) {
             const uniqueDigits = new Set(code.split('')).size;
             if (uniqueDigits > 1) {
-              console.log(`✓ Код найден (фолбэк): ${code}`);
+              console.log(`✅ Код найден (фолбэк) в ${contentType}: ${code}`);
               return code;
             } else {
               console.log(`⚠️ Пропускаем ${code} (все цифры одинаковые)`);
@@ -386,21 +417,23 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           }
         }
         
+        console.log(`❌ Код не найден в ${contentType}`);
         return null;
       };
 
       // Проверяем HTML содержимое
       if (letterContent.html) {
-        const code = checkContent(letterContent.html);
+        const code = checkContent(letterContent.html, 'HTML');
         if (code) return code;
       }
 
       // Проверяем текстовое содержимое
       if (letterContent.text) {
-        const code = checkContent(letterContent.text);
+        const code = checkContent(letterContent.text, 'TEXT');
         if (code) return code;
       }
 
+      console.log('❌ Код не найден ни в HTML, ни в TEXT');
       return null;
     };
 
@@ -451,6 +484,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
               const letters = await getLettersFromNotLetters(account.email, account.password, searchQuery);
               
               Logger.debug('background', 'Получены письма от NotLetters', { count: letters.length, searchQuery });
+              console.log(`📬 Получено писем: ${letters.length} для запроса "${searchQuery}"`);
               
               // Ищем письмо от Cursor
               for (const letter of letters) {
