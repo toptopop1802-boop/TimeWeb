@@ -330,41 +330,75 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     };
 
     const extractCodeFromLetter = (letterContent) => {
+      console.log('🔍 Извлекаем код из письма...');
+      
+      // Более точные паттерны (по приоритету)
       const patterns = [
-        /\b\d{6}\b/,
-        /code\s*is[:\s]*?(\d{6})/i,
+        // Специфичные паттерны для Cursor (высокий приоритет)
+        /(?:код|code)[^\d]*(\d{6})/i,
+        /verification[^\d]*(\d{6})/i,
+        /confirm[^\d]*(\d{6})/i,
+        /введите[^\d]*(\d{6})/i,
+        /enter[^\d]*(\d{6})/i,
+        
+        // Поиск изолированного 6-значного числа в HTML тегах
         />\s*(\d{6})\s*</,
-        /code[:\s]*(\d{6})/i,
-        /verification[:\s]*(\d{6})/i,
-        /код[:\s]*(\d{6})/i
+        /<p[^>]*>\s*(\d{6})\s*<\/p>/,
+        /<div[^>]*>\s*(\d{6})\s*<\/div>/,
+        /<h\d[^>]*>\s*(\d{6})\s*<\/h\d>/,
+        
+        // Общие паттерны (низкий приоритет)
+        /code\s*is[:\s]*(\d{6})/i,
+        /your\s*code[:\s]*(\d{6})/i,
+        /ваш\s*код[:\s]*(\d{6})/i
       ];
+
+      const checkContent = (content) => {
+        if (!content) return null;
+        
+        for (const pattern of patterns) {
+          const match = content.match(pattern);
+          if (match && match[1]) {
+            const code = match[1];
+            // Проверяем что это не повторяющиеся цифры (666666, 111111)
+            const uniqueDigits = new Set(code.split('')).size;
+            if (uniqueDigits === 1) {
+              console.log(`⚠️ Пропускаем подозрительный код ${code} (все цифры одинаковые)`);
+              continue;
+            }
+            console.log(`✓ Код найден: ${code}`);
+            return code;
+          }
+        }
+        
+        // Фолбэк: ищем любое 6-значное число, НО исключаем повторяющиеся
+        const allSixDigits = content.match(/\b\d{6}\b/g);
+        if (allSixDigits && allSixDigits.length > 0) {
+          console.log('🔍 Найдено 6-значных чисел:', allSixDigits);
+          for (const code of allSixDigits) {
+            const uniqueDigits = new Set(code.split('')).size;
+            if (uniqueDigits > 1) {
+              console.log(`✓ Код найден (фолбэк): ${code}`);
+              return code;
+            } else {
+              console.log(`⚠️ Пропускаем ${code} (все цифры одинаковые)`);
+            }
+          }
+        }
+        
+        return null;
+      };
 
       // Проверяем HTML содержимое
       if (letterContent.html) {
-        for (const pattern of patterns) {
-          const match = letterContent.html.match(pattern);
-          if (match && match[1]) {
-            return match[1];
-          }
-          if (match && match[0] && !match[1]) {
-            const digits = match[0].replace(/\D/g, '');
-            if (digits.length === 6) return digits;
-          }
-        }
+        const code = checkContent(letterContent.html);
+        if (code) return code;
       }
 
       // Проверяем текстовое содержимое
       if (letterContent.text) {
-        for (const pattern of patterns) {
-          const match = letterContent.text.match(pattern);
-          if (match && match[1]) {
-            return match[1];
-          }
-          if (match && match[0] && !match[1]) {
-            const digits = match[0].replace(/\D/g, '');
-            if (digits.length === 6) return digits;
-          }
-        }
+        const code = checkContent(letterContent.text);
+        if (code) return code;
       }
 
       return null;
