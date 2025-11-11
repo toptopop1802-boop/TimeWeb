@@ -1024,7 +1024,15 @@
       
     } catch (error) {
       console.error('❌ Ошибка автоматической регистрации:', error);
-      showErrorNotification('Ошибка регистрации: ' + error.message);
+      
+      // Специальная обработка ошибки контекста расширения
+      if (error.message && error.message.includes('Extension context invalidated')) {
+        console.log('⚠️ Расширение было перезагружено. Перезагрузите страницу вручную.');
+        showErrorNotification('Расширение перезагружено. Обновите страницу (F5)');
+      } else {
+        showErrorNotification('Ошибка регистрации: ' + error.message);
+      }
+      
       hideProgressIndicator(3000);
     }
   }

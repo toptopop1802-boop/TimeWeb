@@ -82,8 +82,9 @@ const NOTLETTERS_ACCOUNTS = [
   { email: 'andrews197937@bublickrust.ru', password: 'oyc1YAfSzrw4' }
 ];
 
-// Токен NotLetters API (если требуется для авторизации)
-const NOTLETTERS_TOKEN = 'y0iRqPnAEihzo2qdHV9YPFwLv6CASSHJ';
+// Токен NotLetters API - ВАЖНО: обновите этот токен на актуальный!
+// Получить токен можно на https://notletters.com/account
+const NOTLETTERS_TOKEN = 'y0iRqPnAEihzo2qdHV9YPFwLv6CASSHJ'; // TODO: Обновить токен
 const NOTLETTERS_API_URL = 'https://api.notletters.com/v1/letters';
 
 // Слушатель установки расширения
@@ -145,12 +146,16 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'clearCursorData') {
     // Очистка всех данных для cursor.com
-    const tabId = request.tabId || sender.tab?.id;
+    const tabId = sender.tab?.id;
     
     if (!tabId) {
-      Logger.error('background', 'Не указан tabId для очистки данных');
+      Logger.error('background', 'Не указан tabId для очистки данных', { 
+        hasRequest: !!request, 
+        hasSender: !!sender,
+        senderTab: sender.tab
+      });
       sendResponse({ success: false, error: 'Tab ID не указан' });
-      return;
+      return true; // Важно для async ответа
     }
     
     clearCursorData(tabId)
@@ -288,7 +293,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             statusText: response.statusText,
             errorText: errorText.substring(0, 500)
           });
-          throw new Error(`NotLetters API error: ${response.status} ${response.statusText} - ${errorText.substring(0, 200)}`);
+          
+          // Специальная обработка ошибок
+          if (response.status === 401) {
+            throw new Error('NotLetters API: Неверный токен или пароль. Проверьте NOTLETTERS_TOKEN и пароль аккаунта в background.js');
+          }
+          if (response.status === 523) {
+            throw new Error('NotLetters API: Сервис временно недоступен (523). Попробуйте позже.');
+          }
+          
+          throw new Error(`NotLetters API error: ${response.status} - ${errorText.substring(0, 100)}`);
         }
 
         const data = await response.json();
@@ -485,16 +499,13 @@ async function clearCursorData(tabId) {
     'cursor.com',
     '.cursor.com',
     'www.cursor.com',
-    'authenticator.cursor.sh',
-    '.authenticator.cursor.sh'
+    'authenticator.cursor.sh'
   ];
   
   const origins = [
     'https://cursor.com',
     'https://www.cursor.com',
-    'https://*.cursor.com',
-    'https://authenticator.cursor.sh',
-    'https://*.authenticator.cursor.sh'
+    'https://authenticator.cursor.sh'
   ];
   
   try {
