@@ -4,35 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Управление Stripe аккаунтами</title>
-    <link rel="stylesheet" href="style.css">
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #0a0a0a;
             min-height: 100vh;
             padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #e0e0e0;
         }
 
         .container {
             max-width: 1400px;
             margin: 0 auto;
-        }
-
-        .header {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            margin-bottom: 30px;
-        }
-
-        .header h1 {
-            margin: 0 0 10px 0;
-            color: #333;
-        }
-
-        .header p {
-            margin: 0;
-            color: #666;
         }
 
         .stats-grid {
@@ -43,37 +32,42 @@
         }
 
         .stat-card {
-            background: white;
+            background: #1a1a1a;
             padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            border: 1px solid #333;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
         }
 
         .stat-card h3 {
-            margin: 0 0 5px 0;
-            font-size: 14px;
-            color: #666;
+            margin: 0 0 8px 0;
+            font-size: 13px;
+            color: #888;
             text-transform: uppercase;
             letter-spacing: 1px;
+            font-weight: 500;
         }
 
         .stat-card .value {
-            font-size: 32px;
-            font-weight: bold;
-            color: #667eea;
+            font-size: 36px;
+            font-weight: 600;
+            color: #fff;
         }
 
         .controls {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            background: #1a1a1a;
+            padding: 24px;
+            border-radius: 12px;
+            border: 1px solid #333;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
             margin-bottom: 20px;
         }
 
         .controls h2 {
             margin: 0 0 20px 0;
-            color: #333;
+            color: #fff;
+            font-size: 18px;
+            font-weight: 600;
         }
 
         .form-group {
@@ -82,88 +76,104 @@
 
         .form-group label {
             display: block;
-            margin-bottom: 5px;
-            color: #555;
+            margin-bottom: 8px;
+            color: #a0a0a0;
             font-weight: 500;
+            font-size: 14px;
         }
 
         .form-group input,
         .form-group select,
         .form-group textarea {
             width: 100%;
-            padding: 10px;
-            border: 2px solid #e0e0e0;
-            border-radius: 5px;
+            padding: 12px;
+            background: #0a0a0a;
+            border: 1px solid #333;
+            border-radius: 8px;
             font-size: 14px;
-            transition: border-color 0.3s;
+            color: #fff;
+            transition: all 0.2s;
+            font-family: inherit;
         }
 
         .form-group input:focus,
         .form-group select:focus,
         .form-group textarea:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #fff;
+            background: #111;
         }
 
         .form-group textarea {
             min-height: 100px;
             resize: vertical;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
         }
 
         .bulk-input {
-            font-family: 'Courier New', monospace;
-            font-size: 13px;
             min-height: 200px;
         }
 
         .btn {
-            background: #667eea;
-            color: white;
-            border: none;
+            background: #fff;
+            color: #000;
+            border: 1px solid #fff;
             padding: 12px 24px;
             border-radius: 8px;
             cursor: pointer;
             font-size: 14px;
             font-weight: 600;
-            transition: all 0.3s;
+            transition: all 0.2s;
             margin-right: 10px;
         }
 
         .btn:hover {
-            background: #5568d3;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            background: #f0f0f0;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
+        }
+
+        .btn:active {
+            transform: translateY(0);
         }
 
         .btn-danger {
-            background: #ef4444;
+            background: #ff4444;
+            border-color: #ff4444;
+            color: #fff;
         }
 
         .btn-danger:hover {
-            background: #dc2626;
+            background: #ff2222;
         }
 
         .btn-success {
-            background: #10b981;
+            background: #4ade80;
+            border-color: #4ade80;
+            color: #000;
         }
 
         .btn-success:hover {
-            background: #059669;
+            background: #3bc970;
         }
 
         .accounts-table {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            background: #1a1a1a;
+            border-radius: 12px;
+            border: 1px solid #333;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
             overflow: hidden;
         }
 
         .accounts-table h2 {
             margin: 0;
-            padding: 20px;
-            background: #f9fafb;
-            border-bottom: 2px solid #e5e7eb;
-            color: #333;
+            padding: 24px;
+            background: #1a1a1a;
+            border-bottom: 1px solid #333;
+            color: #fff;
+            font-size: 18px;
+            font-weight: 600;
         }
 
         .table-container {
@@ -176,34 +186,62 @@
         }
 
         table thead {
-            background: #f3f4f6;
+            background: #0a0a0a;
         }
 
         table th {
-            padding: 15px;
+            padding: 16px;
             text-align: left;
             font-weight: 600;
-            color: #374151;
-            border-bottom: 2px solid #e5e7eb;
+            color: #888;
+            border-bottom: 1px solid #333;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         table td {
-            padding: 15px;
-            border-bottom: 1px solid #f3f4f6;
-            color: #1f2937;
+            padding: 16px;
+            border-bottom: 1px solid #222;
+            color: #e0e0e0;
+            font-size: 14px;
         }
 
         table tr:hover {
-            background: #f9fafb;
+            background: #222;
+        }
+
+        table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .copy-cell {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .copy-icon {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+            flex-shrink: 0;
+        }
+
+        .copy-icon:hover {
+            opacity: 1;
         }
 
         .badge {
             display: inline-block;
             padding: 4px 12px;
             border-radius: 12px;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .badge-pro {
@@ -234,18 +272,22 @@
         .btn-small {
             padding: 6px 12px;
             font-size: 12px;
+            margin: 0;
         }
 
         .toast {
             position: fixed;
             top: 20px;
             right: 20px;
-            background: white;
-            padding: 15px 20px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            padding: 16px 20px;
             border-radius: 8px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
             z-index: 1000;
             animation: slideIn 0.3s ease;
+            color: #fff;
+            max-width: 400px;
         }
 
         @keyframes slideIn {
@@ -260,11 +302,11 @@
         }
 
         .toast-success {
-            border-left: 4px solid #10b981;
+            border-left: 3px solid #4ade80;
         }
 
         .toast-error {
-            border-left: 4px solid #ef4444;
+            border-left: 3px solid #ff4444;
         }
 
         .loading {
@@ -274,8 +316,8 @@
         }
 
         .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
+            border: 3px solid #333;
+            border-top: 3px solid #fff;
             border-radius: 50%;
             width: 40px;
             height: 40px;
@@ -291,14 +333,14 @@
         .empty-state {
             text-align: center;
             padding: 60px 20px;
-            color: #9ca3af;
+            color: #666;
         }
 
         .empty-state svg {
             width: 80px;
             height: 80px;
             margin-bottom: 20px;
-            opacity: 0.5;
+            opacity: 0.3;
         }
 
         .tabs {
@@ -308,19 +350,25 @@
         }
 
         .tab {
-            background: white;
+            background: #1a1a1a;
+            border: 1px solid #333;
             padding: 12px 24px;
             border-radius: 8px 8px 0 0;
             cursor: pointer;
             font-weight: 600;
             color: #666;
-            transition: all 0.3s;
+            transition: all 0.2s;
         }
 
         .tab.active {
-            background: white;
-            color: #667eea;
-            box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
+            background: #1a1a1a;
+            color: #fff;
+            border-bottom-color: #1a1a1a;
+        }
+
+        .tab:hover:not(.active) {
+            background: #222;
+            color: #aaa;
         }
 
         .tab-content {
@@ -335,6 +383,14 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 15px;
+        }
+
+        code {
+            background: #0a0a0a;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-family: 'Courier New', monospace;
         }
     </style>
 </head>
@@ -369,7 +425,7 @@
                 <h2>Массовое добавление аккаунтов</h2>
                 <div class="form-group">
                     <label>Формат: email:password (каждый аккаунт на новой строке)</label>
-                    <textarea class="bulk-input" id="bulk-accounts" placeholder="hodson00737@bublickrust.ru:Qfwm8yhrkyBB&#10;burton_9495@bublickrust.ru:cuurg!DfCFT1&#10;feofilakt_7693@bublickrust.ru:J6KY!S)N6jWT"></textarea>
+                    <textarea class="bulk-input" id="bulk-accounts" placeholder="hodson00737@bublickrust.ru:Qfwm8yhrkyBB&#10;burton_9495@bublickrust.ru:cuurg!DfCFT1"></textarea>
                 </div>
                 <button class="btn" onclick="bulkAddAccounts()">📥 Добавить все аккаунты</button>
             </div>
@@ -453,6 +509,20 @@
     <script>
         const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '';
 
+        // SVG иконка копирования
+        const copyIconSVG = `<svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+        </svg>`;
+
+        // Функция копирования в буфер обмена
+        function copyToClipboard(text, type) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast(`✓ ${type} скопирован`, 'success');
+            }).catch(() => {
+                showToast(`✗ Ошибка копирования`, 'error');
+            });
+        }
+
         // Tabs
         document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', () => {
@@ -518,8 +588,18 @@
                 tbody.innerHTML = accounts.map(acc => `
                     <tr>
                         <td>${acc.id}</td>
-                        <td>${acc.email}</td>
-                        <td><code>${acc.password}</code></td>
+                        <td>
+                            <div class="copy-cell">
+                                <span>${acc.email}</span>
+                                <div onclick="copyToClipboard('${acc.email}', 'Email')">${copyIconSVG}</div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="copy-cell">
+                                <code>${acc.password}</code>
+                                <div onclick="copyToClipboard('${acc.password}', 'Пароль')">${copyIconSVG}</div>
+                            </div>
+                        </td>
                         <td><span class="badge badge-${acc.account_type.toLowerCase()}">${acc.account_type}</span></td>
                         <td>${acc.registration_location || '-'}</td>
                         <td>${acc.registration_date ? new Date(acc.registration_date).toLocaleString('ru-RU') : '-'}</td>
@@ -571,7 +651,6 @@
                     if (response.ok) {
                         success++;
                     } else if (response.status === 409) {
-                        // Аккаунт уже существует - это не ошибка
                         skipped++;
                     } else {
                         failed++;
@@ -664,8 +743,7 @@
         // Load on page load
         loadAccounts();
         loadStats();
-        setInterval(loadStats, 30000); // Update stats every 30 seconds
+        setInterval(loadStats, 30000);
     </script>
 </body>
 </html>
-
