@@ -2510,7 +2510,7 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
             const isoRegisteredAt = registered_at || new Date().toISOString();
 
             // Вставляем или обновляем при конфликте email
-            const { data, error } = await supabase
+            let { data, error } = await supabase
                 .from('registered_accounts')
                 .upsert({
                     email,
@@ -2520,6 +2520,21 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                 }, { onConflict: 'email' })
                 .select()
                 .single();
+
+            // Fallback: если нет колонки registration_location (ошибка 42703), пишем без нее
+            if (error && String(error.code) === '42703') {
+                const retry = await supabase
+                    .from('registered_accounts')
+                    .upsert({
+                        email,
+                        password,
+                        registered_at: isoRegisteredAt
+                    }, { onConflict: 'email' })
+                    .select()
+                    .single();
+                data = retry.data;
+                error = retry.error;
+            }
 
             if (error) throw error;
 
@@ -2544,8 +2559,9 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                 .limit(count);
 
             if (error) {
-                // Если таблицы еще нет — отдаём пустой txt, а не 500
-                if (String(error.message || '').toLowerCase().includes('relation') && String(error.message || '').toLowerCase().includes('does not exist')) {
+                // Если таблицы или колонок еще нет — отдаём пустой txt, а не 500
+                const msg = String(error.message || '').toLowerCase();
+                if ((msg.includes('relation') && msg.includes('does not exist')) || String(error.code) === '42703') {
                     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
                     return res.status(200).send('');
                 }
@@ -2563,10 +2579,15 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
             const emails = items.map(i => i.email);
             const nowIso = new Date().toISOString();
 
-            const { error: updErr } = await supabase
-                .from('registered_accounts')
-                .update({ exported_at: nowIso, export_batch: batchId })
-                .in('email', emails);
+            let { error: updErr } = await supabase
+              .from('registered_accounts')
+              .update({ exported_at: nowIso, export_batch: batchId })
+              .in('email', emails);
+
+            // Fallback: если колонок нет — просто не помечаем, отдаем файл
+            if (updErr && String(updErr.code) === '42703') {
+                updErr = null;
+            }
 
             if (updErr) console.error('Export mark update error:', updErr);
 
