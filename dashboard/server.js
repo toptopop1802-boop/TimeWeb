@@ -1,5 +1,8 @@
 // Отключаем предупреждения Node.js и библиотек
 const originalWarn = console.warn;
+const originalError = console.error;
+const originalEmitWarning = process.emitWarning;
+
 console.warn = function(...args) {
     const message = args.join(' ');
     // Пропускаем только предупреждения о Node.js версии и discord.js ready event
@@ -10,6 +13,27 @@ console.warn = function(...args) {
         return;
     }
     originalWarn.apply(console, args);
+};
+
+console.error = function(...args) {
+    const message = args.join(' ');
+    // Пропускаем предупреждения о Node.js версии из @supabase/supabase-js
+    if (message.includes('Node.js 18 and below') || 
+        message.includes('deprecated')) {
+        return;
+    }
+    originalError.apply(console, args);
+};
+
+process.emitWarning = function(...args) {
+    const message = args.join(' ');
+    if (message.includes('ready event has been renamed') ||
+        message.includes('DeprecationWarning')) {
+        return;
+    }
+    if (originalEmitWarning) {
+        return originalEmitWarning.apply(process, args);
+    }
 };
 
 process.removeAllListeners('warning');
