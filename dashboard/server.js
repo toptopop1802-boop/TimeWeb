@@ -2477,6 +2477,72 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
     // STRIPE ACCOUNTS API - для расширения Cursor
     // =====================================================
 
+    // =====================================================
+    // REGISTERED ACCOUNTS API - учет успешно созданных аккаунтов Cursor
+    // =====================================================
+
+    // Список зарегистрированных аккаунтов (новые сверху)
+    app.get('/api/registered-accounts', async (req, res) => {
+        try {
+            const { data, error } = await supabase
+                .from('registered_accounts')
+                .select('*')
+                .order('registered_at', { ascending: false, nullsFirst: false });
+
+            if (error) throw error;
+
+            res.json(data || []);
+        } catch (e) {
+            console.error('Registered accounts list error:', e);
+            res.status(500).json({ error: e.message });
+        }
+    });
+
+    // Добавить зарегистрированный аккаунт
+    app.post('/api/registered-accounts', async (req, res) => {
+        try {
+            const { email, password, registered_at } = req.body;
+
+            if (!email || !password) {
+                return res.status(400).json({ error: 'Email and password are required' });
+            }
+
+            const isoRegisteredAt = registered_at || new Date().toISOString();
+
+            // Вставляем или обновляем при конфликте email
+            const { data, error } = await supabase
+                .from('registered_accounts')
+                .upsert({
+                    email,
+                    password,
+                    registered_at: isoRegisteredAt
+                }, { onConflict: 'email' })
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            res.status(201).json(data);
+        } catch (e) {
+            console.error('Registered account create error:', e);
+            res.status(500).json({ error: e.message });
+        }
+    });
+
+    // Статистика зарегистрированных аккаунтов
+    app.get('/api/registered-accounts/stats', async (req, res) => {
+        try {
+            const { count: total } = await supabase
+                .from('registered_accounts')
+                .select('*', { count: 'exact', head: true });
+
+            res.json({ total: total || 0 });
+        } catch (e) {
+            console.error('Registered accounts stats error:', e);
+            res.status(500).json({ error: e.message });
+        }
+    });
+
     // Получить случайный активный аккаунт (для расширения)
     app.get('/api/stripe-accounts/random', async (req, res) => {
         try {

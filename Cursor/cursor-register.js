@@ -131,10 +131,10 @@
       }
     },
 
-    async waitForCursorEmail(email, timeout = 60000) {
+    async waitForCursorEmail(email, mailboxPassword = null, timeout = 60000) {
       try {
         const result = await new Promise((resolve, reject) => {
-          chrome.runtime.sendMessage({ action: 'waitForNotLettersCode', email, timeout }, (response) => {
+          chrome.runtime.sendMessage({ action: 'waitForNotLettersCode', email, emailPassword: mailboxPassword, timeout }, (response) => {
             if (chrome.runtime.lastError) {
               return reject(new Error(chrome.runtime.lastError.message));
             }
@@ -746,9 +746,10 @@
       const lastName = randomGenerator.getLastName();
       
       // ВЫБИРАЕМ ИСТОЧНИК EMAIL: NotLetters ИЛИ с сайта
-      const USE_SERVER_EMAILS = true; // Установите false для NotLetters
+      const USE_SERVER_EMAILS = true; // Берем аккаунт строго с вашего API
       
       let email;
+      let mailboxPassword = null;
       
       if (USE_SERVER_EMAILS) {
         // Получаем email с вашего сайта
@@ -758,14 +759,15 @@
           if (response.ok) {
             const account = await response.json();
             email = account.email;
+            mailboxPassword = account.password || null;
             console.log('✅ Email получен с сервера:', email);
           } else {
             throw new Error('Сервер вернул ошибку: ' + response.status);
           }
         } catch (error) {
           console.error('❌ Ошибка получения email с сервера:', error);
-          console.log('⚠️ Переключаемся на NotLetters...');
-          email = await NotLettersAPI.getRandomEmail();
+          // Строгий режим: не используем NotLetters fallback
+          throw new Error('Не удалось получить аккаунт с сервера. Регистрация остановлена.');
         }
       } else {
         // Получаем email через NotLetters (старый способ)
@@ -949,7 +951,7 @@
         await delay(2000);
 
         // Пробуем обработать OTP сразу (минуя пароль)
-        if (await waitAndEnterEmailCode(email, false)) {
+        if (await waitAndEnterEmailCode(email, false, mailboxPassword)) {
           console.log('✅ OTP обработан по потоку magic-code, завершаем регистрацию');
           return;
         } else {
@@ -1061,7 +1063,7 @@
           }
           
           // Шаг 7: Обработка OTP после установки пароля
-          if (await waitAndEnterEmailCode(email, true)) {
+          if (await waitAndEnterEmailCode(email, true, mailboxPassword)) {
             console.log('✅ OTP успешно обработан после установки пароля');
           }
         } else {
@@ -1205,7 +1207,7 @@
   }
 
   // Ожидание появления OTP и ввод кода из email
-  async function waitAndEnterEmailCode(email, includePasswordNote = false) {
+  async function waitAndEnterEmailCode(email, includePasswordNote = false, mailboxPassword = null) {
     try {
       updateProgress(7, 'Получение кода из email...');
       console.log('📧 Ожидаем поля для ввода кода подтверждения...');
@@ -1287,7 +1289,7 @@
       console.log('📬 Запрашиваем код из NotLetters...');
 
       // Ждем письмо от Cursor через NotLetters
-      const cursorEmail = await NotLettersAPI.waitForCursorEmail(email, 120000);
+      const cursorEmail = await NotLettersAPI.waitForCursorEmail(email, mailboxPassword, 120000);
 
       if (!cursorEmail) {
         console.log('⚠ Письмо не получено в течение 120 секунд');
@@ -1416,6 +1418,33 @@
         if (isRegistrationComplete) {
           Logger.success('register', 'Регистрация успешно завершена!', { finalUrl: currentUrl });
           updateProgress(7, 'Регистрация завершена!');
+
+          // Отправляем данные аккаунта на сервер (email + пароль + время)
+          try {
+            const stored = await new Promise(resolve => chrome.storage.local.get(['registrationPassword'], resolve));
+            const passwordForReport = stored?.registrationPassword || null;
+            if (passwordForReport) {
+              const payload = {
+                email,
+                password: passwordForReport,
+                registered_at: new Date().toISOString()
+              };
+              fetch('https://bublickrust.ru/api/registered-accounts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+              }).then(r => {
+                Logger.info('register', 'Отправлены данные аккаунта на сервер', { ok: r.ok, status: r.status });
+              }).catch(err => {
+                Logger.error('register', 'Ошибка отправки данных аккаунта на сервер', { error: err.message });
+              });
+            } else {
+              Logger.warning('register', 'Пароль для отчета не найден в storage');
+            }
+          } catch (e) {
+            Logger.error('register', 'Ошибка при формировании отчета о регистрации', { error: e.message });
+          }
+
           const message = includePasswordNote
             ? `✅ Регистрация завершена!\n📧 Email: ${email}\n🔐 Пароль сохранен`
             : `✅ Регистрация завершена!\n📧 Email: ${email}`;

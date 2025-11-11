@@ -259,7 +259,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   // Ожидание письма от Cursor и извлечение 6-значного кода через NotLetters API
   if (request.action === 'waitForNotLettersCode') {
-    const { email, timeout = 60000 } = request;
+    const { email, emailPassword, timeout = 60000 } = request;
 
     const getLettersFromNotLetters = async (accountEmail, accountPassword, searchQuery = '') => {
       try {
@@ -301,7 +301,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           
           // Специальная обработка ошибок
           if (response.status === 401) {
-            throw new Error('NotLetters API: Неверный токен или пароль. Проверьте NOTLETTERS_TOKEN и пароль аккаунта в background.js');
+            throw new Error('NotLetters API: Неверный email или пароль аккаунта. Проверьте NOTLETTERS_ACCOUNTS в background.js');
           }
           if (response.status === 523) {
             throw new Error('NotLetters API: Сервис временно недоступен (523). Попробуйте позже.');
@@ -311,9 +311,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }
 
         const data = await response.json();
+        
+        // ДЕТАЛЬНОЕ логирование ответа
         Logger.debug('background', 'Данные от NotLetters API распарсены', { 
           hasData: !!data.data,
-          lettersCount: data.data?.letters?.length || 0
+          lettersCount: data.data?.letters?.length || 0,
+          rawDataStructure: {
+            hasDataField: !!data.data,
+            dataType: typeof data.data,
+            topLevelKeys: Object.keys(data || {})
+          }
         });
         
         console.log('📨 NotLetters RAW Response:', {
@@ -343,20 +350,29 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     const extractCodeFromLetter = (letterContent) => {
       console.log('🔍 Извлекаем код из письма...');
+      console.log('📧 Тип letterContent:', typeof letterContent);
       console.log('📧 Структура письма:', {
         hasHtml: !!letterContent.html,
         hasText: !!letterContent.text,
         htmlLength: letterContent.html?.length || 0,
-        textLength: letterContent.text?.length || 0
+        textLength: letterContent.text?.length || 0,
+        keys: Object.keys(letterContent || {})
       });
       
-      // Выводим первые 500 символов для отладки
+      // Выводим первые 1000 символов для отладки (увеличено с 500)
       if (letterContent.html) {
-        console.log('📝 HTML (первые 500 символов):', letterContent.html.substring(0, 500));
+        console.log('📝 HTML (первые 1000 символов):', letterContent.html.substring(0, 1000));
       }
       if (letterContent.text) {
-        console.log('📝 TEXT (первые 500 символов):', letterContent.text.substring(0, 500));
+        console.log('📝 TEXT (первые 1000 символов):', letterContent.text.substring(0, 1000));
       }
+      
+      Logger.debug('background', 'Попытка извлечь код из письма', {
+        hasHtml: !!letterContent.html,
+        hasText: !!letterContent.text,
+        htmlPreview: letterContent.html?.substring(0, 200),
+        textPreview: letterContent.text?.substring(0, 200)
+      });
       
       // Более точные паттерны (по приоритету)
       const patterns = [
@@ -454,13 +470,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       try {
         const start = Date.now();
         
-        // Используем сохраненный аккаунт или находим по email
-        let account = extensionState.currentNotLettersAccount;
-        if (!account || account.email !== email) {
-          account = NOTLETTERS_ACCOUNTS.find(acc => acc.email === email);
-          if (!account) {
-            // Если не нашли, используем первый доступный
-            account = NOTLETTERS_ACCOUNTS[0];
+        // Если передан пароль почты - используем его напрямую
+        let account = null;
+        if (emailPassword) {
+          account = { email, password: emailPassword };
+        } else {
+          // Иначе используем сохраненный аккаунт или запись из списка
+          account = extensionState.currentNotLettersAccount;
+          if (!account || account.email !== email) {
+            account = NOTLETTERS_ACCOUNTS.find(acc => acc.email === email) || NOTLETTERS_ACCOUNTS[0];
           }
         }
 
@@ -472,7 +490,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         console.log(`NotLetters: Ожидаем письмо от Cursor для ${email}...`);
 
         // Поисковые запросы для поиска письма от Cursor
-        const searchQueries = ['cursor', 'authenticator', 'verification', 'verify', 'noreply'];
+        // Уменьшено с 5 до 2 для снижения нагрузки на API
+        const searchQueries = ['cursor', '']; // 'cursor' - специфичный, '' - все письма
+        
+        // Время начала запроса для фильтрации старых писем
+        const requestStartTime = Math.floor(start / 1000); // Конвертируем в unix timestamp
+        
+        console.log(`📅 Ищем письма новее: ${new Date(requestStartTime * 1000).toLocaleString()}`);
 
         while (Date.now() - start < timeout) {
           // Пробуем разные поисковые запросы
@@ -483,30 +507,76 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
               Logger.debug('background', 'Запрос писем через NotLetters API', { searchQuery, accountEmail: account.email });
               const letters = await getLettersFromNotLetters(account.email, account.password, searchQuery);
               
-              Logger.debug('background', 'Получены письма от NotLetters', { count: letters.length, searchQuery });
-              console.log(`📬 Получено писем: ${letters.length} для запроса "${searchQuery}"`);
+              // ВАЖНО: Задержка между запросами чтобы избежать rate limiting
+              // Лимит: 10 запросов/сек, используем 5 запросов/сек для безопасности
+              await new Promise(r => setTimeout(r, 200)); // 200ms между запросами = 5 req/sec
+              
+              // Сортируем письма по дате (новые первыми)
+              const lettersSorted = (letters || []).slice().sort((a, b) => (b.date || 0) - (a.date || 0));
+
+              Logger.debug('background', 'Получены письма от NotLetters', { count: lettersSorted.length, searchQuery });
+              console.log(`📬 Получено писем: ${lettersSorted.length} для запроса "${searchQuery}"`);
+              
+              // ДЕТАЛЬНЫЙ вывод всех писем для отладки
+              if (lettersSorted.length > 0) {
+                console.log('📧 СПИСОК ВСЕХ ПИСЕМ:');
+                lettersSorted.forEach((letter, idx) => {
+                  console.log(`  ${idx + 1}. От: ${letter.sender} | Тема: ${letter.subject} | Время: ${new Date((letter.date || 0) * 1000).toLocaleString()}`);
+                });
+              }
               
               // Ищем письмо от Cursor
-              for (const letter of letters) {
+              for (const letter of lettersSorted) {
                 if (responseSent) break; // Прерываем если ответ уже отправлен
                 
+                // ФИЛЬТР: Проверяем что письмо новое (пришло после начала запроса)
+                // Учитываем возможную задержку до 10 минут назад
+                const letterTime = (typeof letter.date === 'number' && letter.date > 0) ? letter.date : requestStartTime;
+                const minAcceptableTime = requestStartTime - 600; // 10 минут назад
+                
+                if (letterTime < minAcceptableTime) {
+                  console.log(`⏩ Пропускаем старое письмо: ${letter.subject} (время: ${new Date(letterTime * 1000).toLocaleString()})`);
+                  continue; // Пропускаем старые письма
+                }
+                
                 const sender = (letter.sender || '').toLowerCase();
+                const senderName = (letter.sender_name || '').toLowerCase();
                 const subject = (letter.subject || '').toLowerCase();
                 
-                if (
-                  sender.includes('cursor') ||
+                console.log(`🔍 Проверяем письмо: "${letter.subject}" от ${letter.sender}`);
+                console.log(`   sender="${sender}", senderName="${senderName}", subject="${subject}"`);
+                
+                const isCursorEmail = sender.includes('cursor') ||
+                  sender.includes('cursor.sh') ||
+                  sender.includes('authenticator') ||
                   sender.includes('noreply') ||
+                  sender.includes('no-reply') ||
+                  senderName.includes('cursor') ||
                   subject.includes('cursor') ||
                   subject.includes('verification') ||
                   subject.includes('verify') ||
-                  subject.includes('код')
-                ) {
+                  subject.includes('код');
+                
+                console.log(`   → Это письмо от Cursor? ${isCursorEmail ? 'ДА ✅' : 'НЕТ ❌'}`);
+                
+                if (isCursorEmail) {
                   Logger.success('background', 'Найдено письмо от Cursor', { 
                     sender: letter.sender, 
                     subject: letter.subject,
-                    letterId: letter.id
+                    letterId: letter.id,
+                    letterTime: new Date(letterTime * 1000).toLocaleString(),
+                    hasLetterField: !!letter.letter,
+                    letterKeys: letter.letter ? Object.keys(letter.letter) : []
                   });
                   console.log('✓ NotLetters: Найдено письмо от Cursor:', letter.subject);
+                  console.log('📅 Время письма:', new Date(letterTime * 1000).toLocaleString());
+                  console.log('📧 Содержимое объекта letter:', {
+                    hasLetterField: !!letter.letter,
+                    letterType: typeof letter.letter,
+                    letterKeys: letter.letter ? Object.keys(letter.letter) : [],
+                    hasHtml: letter.letter?.html ? true : false,
+                    hasText: letter.letter?.text ? true : false
+                  });
                   
                   // Извлекаем код из письма
                   const code = extractCodeFromLetter(letter.letter || {});
@@ -522,14 +592,23 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     Logger.warning('background', 'Код не найден в письме', { 
                       sender: letter.sender, 
                       subject: letter.subject,
-                      letterContent: (letter.letter?.html || letter.letter?.text || '').substring(0, 200)
+                      hasLetter: !!letter.letter,
+                      letterKeys: letter.letter ? Object.keys(letter.letter) : [],
+                      htmlPreview: letter.letter?.html?.substring(0, 300),
+                      textPreview: letter.letter?.text?.substring(0, 300)
                     });
                     console.log('⚠ NotLetters: Код не найден в письме, возвращаем содержимое для ручного извлечения');
                     // Если код не найден автоматически, возвращаем содержимое письма
                     const letterContent = letter.letter?.html || letter.letter?.text || '';
+                    console.log('📧 Длина letterContent для возврата:', letterContent.length);
                     if (letterContent) {
                       safeSendResponse({ success: true, code: null, letterContent });
                       return;
+                    } else {
+                      console.log('❌ letterContent пустой! Письмо не содержит html или text');
+                      Logger.error('background', 'Письмо не содержит html или text', { 
+                        letter: JSON.stringify(letter).substring(0, 500)
+                      });
                     }
                   }
                 }
@@ -537,13 +616,24 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             } catch (error) {
               Logger.error('background', 'Ошибка при поиске писем', { error: error.message, searchQuery });
               console.error('NotLetters: Ошибка при поиске писем:', error);
+              
+              // Если ошибка 401 (неверные credentials), прерываем цикл
+              if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+                Logger.error('background', 'Критическая ошибка аутентификации, прерываем поиск', { error: error.message });
+                safeSendResponse({ success: false, error: 'Неверный email или пароль NotLetters аккаунта' });
+                return;
+              }
+              
+              // Для других ошибок - продолжаем со следующим запросом
+              await new Promise(r => setTimeout(r, 1000)); // Дополнительная пауза при ошибке
             }
           }
 
           if (responseSent) break; // Прерываем цикл если ответ уже отправлен
 
           // Ждем перед следующей проверкой
-          await new Promise((r) => setTimeout(r, 3000));
+          console.log('⏳ Ждем 3 секунды перед следующей проверкой...');
+          await new Promise((r) => setTimeout(r, 3000)); // 3 секунды оптимально
         }
 
         // Таймаут (только если ответ еще не отправлен)
