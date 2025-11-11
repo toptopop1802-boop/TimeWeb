@@ -448,13 +448,13 @@
     try {
       if (registrationReported) {
         Logger.debug('register', 'reportRegisteredAccount: уже отправляли, пропускаем', { email });
-        return;
+        return true;
       }
       const stored = await new Promise(resolve => chrome.storage.local.get(['registrationPassword'], resolve));
       const passwordForReport = stored?.registrationPassword || null;
       if (!passwordForReport) {
         Logger.warning('register', 'reportRegisteredAccount: пароль не найден в storage, пропуск');
-        return;
+        return false;
       }
       // Локация по таймзоне
       let registrationLocation = null;
@@ -475,9 +475,11 @@
         });
       });
       Logger.info('register', 'reportRegisteredAccount: отправили через background', bgResp);
-      registrationReported = true;
+      registrationReported = !!bgResp?.success;
+      return !!bgResp?.success;
     } catch (e) {
       Logger.error('register', 'reportRegisteredAccount: ошибка отправки', { error: e.message });
+      return false;
     }
   }
   
@@ -1358,6 +1360,17 @@
       console.log('✓ Код подтверждения извлечен:', verificationCode);
       await delay(500);
 
+      // СНАЧАЛА отправляем аккаунт на сайт, затем вводим код
+      const sentBeforeOtp = await reportRegisteredAccount(email);
+      if (sentBeforeOtp) {
+        showSuccessNotification(`Аккаунт отправлен на сайт\n📧 ${email}`);
+        Logger.success('register', 'Аккаунт отправлен на сайт до ввода кода', { email });
+      } else {
+        showErrorNotification('Не удалось отправить аккаунт на сайт (продолжаем ввод кода)');
+        Logger.warning('register', 'Не удалось отправить аккаунт на сайт до ввода кода', { email });
+      }
+      await delay(300);
+
       // Вводим код по одной цифре в каждое поле (быстро, без имитации человека - только здесь!)
       Logger.info('register', 'Начинаем ввод кода в OTP поля', { code: verificationCode, fieldsCount: codeInputs.length });
       
@@ -1422,8 +1435,6 @@
         });
       } else {
         Logger.success('register', 'Код успешно введен во все поля', { code: verificationCode });
-        // Сразу отправляем данные аккаунта на сервер (после успешного ввода кода), чтобы не зависеть от кнопки подтверждения
-        await reportRegisteredAccount(email);
       }
 
       await delay(1000);
