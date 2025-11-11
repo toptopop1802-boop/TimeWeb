@@ -1154,32 +1154,66 @@
       updateProgress(7, 'Получение кода из email...');
       console.log('📧 Ожидаем поля для ввода кода подтверждения...');
 
-      // Ждем появления всех 6 OTP полей
-      const codeInputs = await waitForElement('.ak-OtpInput input[data-index="0"]', 30000)
-        .then(async () => {
-          // Находим все 6 полей
-          const allInputs = document.querySelectorAll('.ak-OtpInput input[data-index]');
-          console.log(`✓ Найдено OTP полей: ${allInputs.length}`);
+      // Функция поиска OTP полей с разными селекторами
+      const findOTPFields = () => {
+        const selectors = [
+          '.ak-OtpInput input[data-index]',           // Стандартный селектор
+          'input[data-index]',                         // Без класса
+          'input[type="text"][maxlength="1"]',        // По типу и maxlength
+          'input[autocomplete="one-time-code"]',      // По autocomplete
+          '.otp-input input',                         // Общий класс OTP
+          '[class*="otp"] input',                     // Любой класс содержащий otp
+          '[class*="code"] input[maxlength="1"]'      // Класс code + maxlength
+        ];
 
-          if (allInputs.length >= 6) {
-            // Сортируем по data-index
-            return Array.from(allInputs)
-              .sort((a, b) => parseInt(a.getAttribute('data-index')) - parseInt(b.getAttribute('data-index')))
-              .slice(0, 6);
+        for (const selector of selectors) {
+          const inputs = document.querySelectorAll(selector);
+          console.log(`🔍 Селектор "${selector}": найдено ${inputs.length} полей`);
+          
+          if (inputs.length >= 6) {
+            console.log(`✅ Найдено ${inputs.length} OTP полей с селектором: ${selector}`);
+            return Array.from(inputs).slice(0, 6);
           }
-          return null;
-        })
-        .catch(() => {
-          console.log('⚠ OTP поля не найдены за 30 секунд');
-          return null;
-        });
+        }
+        
+        return null;
+      };
+
+      // Ждем появления OTP полей
+      let codeInputs = null;
+      let attempts = 0;
+      const maxAttempts = 60; // 30 секунд (по 500ms)
+
+      while (!codeInputs && attempts < maxAttempts) {
+        codeInputs = findOTPFields();
+        
+        if (!codeInputs) {
+          await delay(500);
+          attempts++;
+          
+          if (attempts % 10 === 0) {
+            console.log(`⏳ Ожидание OTP полей... Попытка ${attempts}/${maxAttempts}`);
+          }
+        }
+      }
 
       if (!codeInputs || codeInputs.length !== 6) {
+        // Дополнительная отладка - показываем все input поля
+        const allInputs = document.querySelectorAll('input');
+        console.log('🔍 ОТЛАДКА: Все input поля на странице:');
+        allInputs.forEach((input, idx) => {
+          console.log(`  ${idx + 1}. type="${input.type}" maxlength="${input.maxLength}" ` +
+                      `class="${input.className}" data-index="${input.getAttribute('data-index')}" ` +
+                      `autocomplete="${input.autocomplete}" id="${input.id}"`);
+        });
+        
         Logger.error('register', 'OTP поля не найдены или их недостаточно', { 
           found: codeInputs ? codeInputs.length : 0, 
-          expected: 6 
+          expected: 6,
+          totalInputsOnPage: allInputs.length
         });
         console.log('⚠ Поле для кода не найдено');
+        console.log('💡 Возможно страница изменилась. Проверьте URL:', window.location.href);
         updateProgress(7, 'Поле кода не найдено. Проверьте страницу.');
         showErrorNotification('Не удалось найти поле для кода.');
         hideProgressIndicator(5000);
