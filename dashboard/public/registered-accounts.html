@@ -57,13 +57,14 @@
                     <th>Email</th>
                     <th>Пароль</th>
                     <th>Пароль почты</th>
+                    <th>Код</th>
                     <th>Зарегистрирован</th>
                     <th>Локация</th>
                     <th>Экспорт</th>
                 </tr>
             </thead>
             <tbody id="tableBody">
-                <tr><td class="empty" colspan="7">Загрузка...</td></tr>
+                <tr><td class="empty" colspan="8">Загрузка...</td></tr>
             </tbody>
         </table>
         <div class="muted" style="margin-top: 10px;">
@@ -112,11 +113,15 @@
             }
         }
 
+        let lastCodeData = { code: null, email: null, updatedAt: null };
+
         async function loadLastCode() {
             try {
                 const res = await fetch(`${API_BASE}/api/registered-accounts/last-code`);
                 if (!res.ok) throw new Error('Failed to load');
                 const data = await res.json();
+                
+                lastCodeData = data;
                 
                 const codeEl = document.getElementById('lastCode');
                 const updatedEl = document.getElementById('codeUpdatedAt');
@@ -137,9 +142,28 @@
                     codeEl.style.color = '#666';
                     updatedEl.textContent = 'Код еще не получен';
                 }
+                
+                // Обновляем коды в таблице если она уже загружена
+                updateCodesInTable();
             } catch (e) {
                 console.error('Failed to load last code:', e);
             }
+        }
+
+        function updateCodesInTable() {
+            const codeCells = document.querySelectorAll('.code-cell');
+            codeCells.forEach(cell => {
+                if (lastCodeData.code) {
+                    cell.textContent = lastCodeData.code;
+                    cell.style.color = '#4CAF50';
+                    cell.style.fontSize = '16px';
+                    cell.style.letterSpacing = '2px';
+                    cell.style.fontWeight = '600';
+                } else {
+                    cell.textContent = '—';
+                    cell.style.color = '#666';
+                }
+            });
         }
 
         // Обновляем код каждые 10 секунд
@@ -156,14 +180,14 @@
 
         async function loadList() {
             const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = `<tr><td class="empty" colspan="6">Загрузка...</td></tr>`;
+            tbody.innerHTML = `<tr><td class="empty" colspan="8">Загрузка...</td></tr>`;
             try {
                 const res = await fetch(`${API_BASE}/api/registered-accounts`);
                 if (!res.ok) throw new Error('Failed to load');
                 const items = await res.json();
 
                 if (!items || items.length === 0) {
-                    tbody.innerHTML = `<tr><td class="empty" colspan="7">Пока нет записей</td></tr>`;
+                    tbody.innerHTML = `<tr><td class="empty" colspan="8">Пока нет записей</td></tr>`;
                     return;
                 }
 
@@ -193,11 +217,15 @@
                         </div>
                     `;
 
+                    // Код для этого аккаунта (показываем последний код всегда)
+                    const codeCell = `<td class="code-cell mono" style="font-size: 16px; letter-spacing: 2px; font-weight: 600; color: ${lastCodeData.code ? '#4CAF50' : '#666'};">${lastCodeData.code || '—'}</td>`;
+
                     tr.innerHTML = `
                         <td>${idx + 1}</td>
                         <td>${emailCell}</td>
                         <td>${passwordCell}</td>
                         <td>${mailboxPasswordCell}</td>
+                        ${codeCell}
                         <td>${fmtDate(it.registered_at)}</td>
                         <td>${it.registration_location || '—'}</td>
                         <td>${exportCell}</td>
@@ -219,7 +247,7 @@
                     });
                 });
             } catch (e) {
-                tbody.innerHTML = `<tr><td class="empty" colspan="7">Ошибка загрузки</td></tr>`;
+                tbody.innerHTML = `<tr><td class="empty" colspan="8">Ошибка загрузки</td></tr>`;
                 console.error(e);
             }
         }
@@ -254,9 +282,11 @@
             }
         });
 
-        // Первичная загрузка
-        loadStats();
-        loadList();
+        // Первичная загрузка - сначала код, потом список
+        loadLastCode().then(() => {
+            loadStats();
+            loadList();
+        });
     </script>
 </body>
 </html>
