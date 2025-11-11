@@ -2484,10 +2484,26 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
     // Список зарегистрированных аккаунтов (новые сверху)
     app.get('/api/registered-accounts', async (req, res) => {
         try {
-            const { data, error } = await supabase
+            // Пробуем получить с mailbox_password
+            let { data, error } = await supabase
                 .from('registered_accounts')
                 .select('*')
                 .order('registered_at', { ascending: false, nullsFirst: false });
+
+            // Fallback если колонки mailbox_password нет
+            if (error && (String(error.code) === '42703' || String(error.code) === 'PGRST204' || 
+                (error.message && error.message.includes('mailbox_password')))) {
+                const retry = await supabase
+                    .from('registered_accounts')
+                    .select('id, email, password, registered_at, registration_location, exported_at, export_batch, created_at')
+                    .order('registered_at', { ascending: false, nullsFirst: false });
+                data = retry.data;
+                error = retry.error;
+                // Добавляем mailbox_password как null для старых записей
+                if (data) {
+                    data = data.map(item => ({ ...item, mailbox_password: null }));
+                }
+            }
 
             if (error) throw error;
 
@@ -2501,7 +2517,7 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
     // Добавить зарегистрированный аккаунт
     app.post('/api/registered-accounts', async (req, res) => {
         try {
-            const { email, password, registered_at, registration_location } = req.body;
+            const { email, password, mailbox_password, registered_at, registration_location } = req.body;
 
             if (!email || !password) {
                 return res.status(400).json({ error: 'Email and password are required' });
@@ -2515,23 +2531,29 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                 .upsert({
                     email,
                     password,
+                    mailbox_password,
                     registered_at: isoRegisteredAt,
                     registration_location
                 }, { onConflict: 'email' })
                 .select()
                 .single();
 
-            // Fallback: если нет колонки registration_location (ошибки 42703 или PGRST204), пишем без нее
+            // Fallback: если нет колонок registration_location или mailbox_password, пишем без них
             if (error && (String(error.code) === '42703' || String(error.code) === 'PGRST204' || 
-                (error.message && error.message.includes('registration_location')))) {
-                console.log('⚠️ Колонка registration_location отсутствует, сохраняем без неё');
+                (error.message && (error.message.includes('registration_location') || error.message.includes('mailbox_password'))))) {
+                console.log('⚠️ Некоторые колонки отсутствуют, сохраняем без них');
+                const retryData = {
+                    email,
+                    password,
+                    registered_at: isoRegisteredAt
+                };
+                // Пробуем добавить mailbox_password если колонка есть
+                if (mailbox_password && !error.message.includes('mailbox_password')) {
+                    retryData.mailbox_password = mailbox_password;
+                }
                 const retry = await supabase
                     .from('registered_accounts')
-                    .upsert({
-                        email,
-                        password,
-                        registered_at: isoRegisteredAt
-                    }, { onConflict: 'email' })
+                    .upsert(retryData, { onConflict: 'email' })
                     .select()
                     .single();
                 data = retry.data;
@@ -2540,6 +2562,7 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
 
             if (error) throw error;
 
+            console.log(`✅ Зарегистрированный аккаунт сохранен: ${email}${mailbox_password ? ' (с паролем почты)' : ''}`);
             res.status(201).json(data);
         } catch (e) {
             console.error('Registered account create error:', e);
@@ -2551,27 +2574,50 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
     app.get('/api/registered-accounts/export.txt', async (req, res) => {
         try {
             const count = Math.max(1, Math.min(1000, parseInt(req.query.count || '10', 10) || 10));
+            console.log(`📥 Запрос экспорта: запрошено ${count} аккаунтов`);
 
-            // Получаем неэкспортированные записи
-            const { data: rows, error } = await supabase
+            // Получаем неэкспортированные записи (с mailbox_password если есть)
+            let { data: rows, error } = await supabase
                 .from('registered_accounts')
-                .select('email, password, registered_at, registration_location, exported_at')
+                .select('email, password, mailbox_password, registered_at, registration_location, exported_at')
                 .is('exported_at', null)
                 .order('registered_at', { ascending: true, nullsFirst: true })
                 .limit(count);
 
+            console.log(`📊 Запрос к БД: найдено ${rows?.length || 0} записей, ошибка: ${error ? error.message : 'нет'}`);
+
+            // Fallback: если ошибка из-за отсутствующих колонок
+            if (error && (String(error.code) === '42703' || String(error.code) === 'PGRST204' || 
+                (error.message && (error.message.includes('registration_location') || error.message.includes('mailbox_password'))))) {
+                console.log('⚠️ Некоторые колонки отсутствуют, запрашиваем базовые поля');
+                const retry = await supabase
+                    .from('registered_accounts')
+                    .select('email, password, registered_at, exported_at')
+                    .is('exported_at', null)
+                    .order('registered_at', { ascending: true, nullsFirst: true })
+                    .limit(count);
+                rows = retry.data;
+                error = retry.error;
+                console.log(`📊 Повторный запрос: найдено ${rows?.length || 0} записей`);
+            }
+
             if (error) {
                 // Если таблицы или колонок еще нет — отдаём пустой txt, а не 500
                 const msg = String(error.message || '').toLowerCase();
-                if ((msg.includes('relation') && msg.includes('does not exist')) || String(error.code) === '42703') {
+                if ((msg.includes('relation') && msg.includes('does not exist')) || String(error.code) === '42703' || String(error.code) === 'PGRST204') {
+                    console.log('⚠️ Таблица или колонки отсутствуют, возвращаем пустой файл');
                     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
                     return res.status(200).send('');
                 }
+                console.error('❌ Ошибка при запросе экспорта:', error);
                 throw error;
             }
 
             const items = rows || [];
+            console.log(`📋 Обработка экспорта: ${items.length} аккаунтов для экспорта`);
+            
             if (items.length === 0) {
+                console.log('⚠️ Нет неэкспортированных записей для экспорта');
                 res.setHeader('Content-Type', 'text/plain; charset=utf-8');
                 return res.status(200).send(''); // пустой ответ
             }
@@ -2609,11 +2655,13 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
             };
 
             const lines = items.map(it => {
-                const loc = it.registration_location ? it.registration_location : '—';
+                const loc = (it.registration_location !== undefined && it.registration_location !== null) ? it.registration_location : '—';
                 const ts = it.registered_at ? fmt(it.registered_at) : '';
+                const mailboxPwd = (it.mailbox_password !== undefined && it.mailbox_password !== null) ? it.mailbox_password : '—';
                 return [
                     '-----------------',
                     `${it.email} | ${it.password}`,
+                    `Пароль почты: ${mailboxPwd}`,
                     `Регистрация (${loc}): ${ts}`,
                     '-----------------'
                 ].join('\n');
@@ -2621,6 +2669,9 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
 
             const content = lines.join('\n');
             const fname = `accounts-${new Date().toISOString().replace(/[:T]/g,'-').slice(0,16)}.txt`;
+
+            console.log(`✅ Экспорт: ${items.length} аккаунтов, размер файла: ${content.length} байт`);
+            console.log(`📄 Первые 200 символов файла: ${content.substring(0, 200)}`);
 
             res.setHeader('Content-Type', 'text/plain; charset=utf-8');
             res.setHeader('Content-Disposition', `attachment; filename="${fname}"`);
@@ -2652,7 +2703,7 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
         try {
             const { data, error } = await supabase
                 .from('stripe_accounts')
-                .select('email, password, account_type')
+                .select('id, email, password, account_type')
                 .eq('is_active', true)
                 .order('last_used', { ascending: true, nullsFirst: true })
                 .limit(1)
@@ -2663,10 +2714,13 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                 return res.status(404).json({ error: 'No active accounts available' });
             }
 
-            // Обновляем last_used
+            // Помечаем аккаунт как неактивный и обновляем last_used
             await supabase
                 .from('stripe_accounts')
-                .update({ last_used: new Date().toISOString() })
+                .update({ 
+                    is_active: false,
+                    last_used: new Date().toISOString() 
+                })
                 .eq('email', data.email);
 
             // Логируем использование
@@ -2679,7 +2733,12 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                     user_agent: req.headers['user-agent']
                 });
 
-            res.json(data);
+            // Возвращаем только нужные поля (без id)
+            res.json({
+                email: data.email,
+                password: data.password,
+                account_type: data.account_type
+            });
         } catch (e) {
             console.error('Random account error:', e);
             res.status(500).json({ error: e.message });

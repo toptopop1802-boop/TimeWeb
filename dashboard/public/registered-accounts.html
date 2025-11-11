@@ -51,13 +51,14 @@
                     <th style="width: 34px;">#</th>
                     <th>Email</th>
                     <th>Пароль</th>
+                    <th>Пароль почты</th>
                     <th>Зарегистрирован</th>
                     <th>Локация</th>
                     <th>Экспорт</th>
                 </tr>
             </thead>
             <tbody id="tableBody">
-                <tr><td class="empty" colspan="4">Загрузка...</td></tr>
+                <tr><td class="empty" colspan="7">Загрузка...</td></tr>
             </tbody>
         </table>
         <div class="muted" style="margin-top: 10px;">
@@ -101,7 +102,7 @@
                 const items = await res.json();
 
                 if (!items || items.length === 0) {
-                    tbody.innerHTML = `<tr><td class="empty" colspan="6">Пока нет записей</td></tr>`;
+                    tbody.innerHTML = `<tr><td class="empty" colspan="7">Пока нет записей</td></tr>`;
                     return;
                 }
 
@@ -124,10 +125,18 @@
                         </div>
                     `;
 
+                    const mailboxPasswordCell = `
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span class="mono">${it.mailbox_password || '—'}</span>
+                            ${it.mailbox_password ? `<button class="btn secondary" data-copy="${it.mailbox_password}" title="Копировать пароль почты" style="padding:4px 6px;">${svgCopy}</button>` : ''}
+                        </div>
+                    `;
+
                     tr.innerHTML = `
                         <td>${idx + 1}</td>
                         <td>${emailCell}</td>
                         <td>${passwordCell}</td>
+                        <td>${mailboxPasswordCell}</td>
                         <td>${fmtDate(it.registered_at)}</td>
                         <td>${it.registration_location || '—'}</td>
                         <td>${exportCell}</td>
@@ -149,7 +158,7 @@
                     });
                 });
             } catch (e) {
-                tbody.innerHTML = `<tr><td class="empty" colspan="6">Ошибка загрузки</td></tr>`;
+                tbody.innerHTML = `<tr><td class="empty" colspan="7">Ошибка загрузки</td></tr>`;
                 console.error(e);
             }
         }

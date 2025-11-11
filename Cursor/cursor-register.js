@@ -459,7 +459,7 @@
         Logger.debug('register', 'reportRegisteredAccount: уже отправляли, пропускаем', { email });
         return true;
       }
-      const stored = await new Promise(resolve => chrome.storage.local.get(['registrationPassword', 'registrationDraft'], resolve));
+      const stored = await new Promise(resolve => chrome.storage.local.get(['registrationPassword', 'registrationDraft', 'mailboxPassword'], resolve));
       let passwordForReport = stored?.registrationPassword || null;
       if (!passwordForReport && stored?.registrationDraft?.password) {
         passwordForReport = stored.registrationDraft.password;
@@ -469,6 +469,9 @@
         Logger.warning('register', 'reportRegisteredAccount: пароль не найден в storage, пропуск');
         return false;
       }
+      // Получаем пароль почтового ящика (mailboxPassword)
+      const mailboxPasswordForReport = stored?.mailboxPassword || null;
+      
       // Локация по таймзоне
       let registrationLocation = null;
       try {
@@ -478,6 +481,7 @@
       const payload = {
         email,
         password: passwordForReport,
+        mailbox_password: mailboxPasswordForReport,
         registered_at: new Date().toISOString(),
         registration_location: registrationLocation,
         phase
@@ -830,6 +834,11 @@
           email = result.email;
           mailboxPassword = result.password || null;
           console.log('✅ Email получен с сервера:', email);
+          
+          // Сохраняем mailboxPassword для дальнейшей отправки
+          if (mailboxPassword) {
+            chrome.storage.local.set({ mailboxPassword });
+          }
         } catch (error) {
           console.error('❌ Ошибка получения email с сервера:', error);
           Logger.error('register', 'Не удалось получить stripe account', { error: error.message });

@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS registered_accounts (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     email TEXT NOT NULL UNIQUE,
     password TEXT NOT NULL,
+    mailbox_password TEXT NULL,
     registered_at TIMESTAMP WITH TIME ZONE NOT NULL,
     registration_location TEXT NULL,
     exported_at TIMESTAMP WITH TIME ZONE NULL,
