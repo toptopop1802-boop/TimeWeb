@@ -21,7 +21,7 @@ class Database:
             raise ValueError("SUPABASE_URL и SUPABASE_KEY должны быть установлены в .env файле")
         
         self.client: Client = create_client(url, key)
-        logging.info("Supabase client initialized successfully")
+        print("✅ Supabase client initialized successfully")
     
     # ============================================
     # GRADIENT ROLE REQUESTS

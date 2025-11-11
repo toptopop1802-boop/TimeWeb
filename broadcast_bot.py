@@ -643,10 +643,7 @@ async def start_http_server(bot: commands.Bot, port: int, secret: str):
     site = web.TCPSite(runner, '0.0.0.0', port)  # Слушаем на всех интерфейсах, а не только localhost
     await site.start()
     
-    logging.info(f"🌐 HTTP API server started on http://0.0.0.0:{port}")
-    logging.info(f"📋 Available endpoints:")
-    logging.info(f"   - POST /api/gradient-role")
-    logging.info(f"   - POST /api/tournament-application")
+    print(f"🌐 HTTP API server started on http://0.0.0.0:{port}")
     return runner
 
 
@@ -665,14 +662,25 @@ def main() -> None:
     intents.members = True
     intents.message_content = True
 
+    # Настраиваем логирование - только WARNING и выше, кроме наших важных сообщений
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging.WARNING,
         format="[%(asctime)s] %(levelname)s %(name)s: %(message)s",
     )
     
+    # Отключаем все логи от discord библиотеки
+    logging.getLogger("discord").setLevel(logging.ERROR)
+    logging.getLogger("discord.client").setLevel(logging.ERROR)
+    logging.getLogger("discord.gateway").setLevel(logging.ERROR)
+    logging.getLogger("discord.http").setLevel(logging.ERROR)
+    
     # Отключаем спам-логи от httpx (Supabase)
-    logging.getLogger("httpx").setLevel(logging.WARNING)
-    logging.getLogger("httpcore").setLevel(logging.WARNING)
+    logging.getLogger("httpx").setLevel(logging.ERROR)
+    logging.getLogger("httpcore").setLevel(logging.ERROR)
+    
+    # Создаем отдельный логгер для важных сообщений о запуске
+    startup_logger = logging.getLogger("startup")
+    startup_logger.setLevel(logging.INFO)
 
     VERIFICATION_ROLE_ID = 1_359_572_335_635_464_303
     ANNOUNCE_CHANNEL_ID = 1_426_314_731_903_258_764
@@ -951,7 +959,7 @@ def main() -> None:
     if DATABASE_ENABLED:
         try:
             bot.db = get_database()
-            logging.info("Database connection established successfully")
+            print("✅ Database connection established successfully")
         except Exception as db_init_exc:
             logging.error(f"Failed to initialize database: {db_init_exc}")
             bot.db = None
@@ -1212,8 +1220,6 @@ def main() -> None:
 
     @bot.event
     async def on_ready() -> None:
-        logging.info("Logged in as %s (ID: %s)", bot.user, bot.user.id if bot.user else "unknown")
-        
         # Выводим информацию о доступных командах при запуске
         print("=" * 50)
         print("БОТ ЗАПУЩЕН УСПЕШНО!")
@@ -1819,7 +1825,7 @@ def main() -> None:
             bot.members_scan_task = asyncio.create_task(members_scan_worker())
         # Запускаем фоновую задачу для обработки неотправленных заявок на турнир
         if DATABASE_ENABLED:
-            logging.info("🚀 [Tournament Worker] Starting tournament_applications_worker...")
+            print("🚀 [Tournament Worker] Starting tournament_applications_worker...")
             bot.tournament_applications_task = asyncio.create_task(tournament_applications_worker())
         else:
             logging.warning("⚠️ [Tournament Worker] Database not enabled, tournament worker will not start")
@@ -1833,7 +1839,7 @@ def main() -> None:
         
         TOURNAMENT_CHANNEL_ID = 1434605264241164431
         
-        logging.info("✅ [Tournament Worker] Worker started, checking every 30 seconds")
+        print("✅ [Tournament Worker] Worker started, checking every 30 seconds")
         
         while not bot.is_closed():
             try:

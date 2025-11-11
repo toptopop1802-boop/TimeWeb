@@ -365,7 +365,6 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
 
             res.json({ success: true, id, shortCode, directUrl });
         } catch (error) {
-            console.error('Image upload error:', error);
             res.status(500).json({ error: error.message });
         }
     });
@@ -698,7 +697,6 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
     // Setup auth routes
     if (supabase) {
         setupAuthRoutes(app, supabase);
-        console.log('✅ Auth routes initialized');
     }
 
     // Получить статистику за период
@@ -2506,7 +2504,6 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                 email: email || null,
                 updatedAt: new Date().toISOString()
             };
-            console.log(`✅ Код обновлен: ${code}${email ? ` для ${email}` : ''}`);
             res.json({ success: true, updatedAt: lastVerificationCode.updatedAt });
         } else {
             res.status(400).json({ error: 'Code is required' });
@@ -2598,7 +2595,6 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
 
             if (error) throw error;
 
-            console.log(`✅ Зарегистрированный аккаунт сохранен: ${email}${mailbox_password ? ' (с паролем почты)' : ''}${verification_code ? ' (с кодом)' : ''}`);
             res.status(201).json(data);
         } catch (e) {
             console.error('Registered account create error:', e);
@@ -2620,12 +2616,9 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                 .order('registered_at', { ascending: true, nullsFirst: true })
                 .limit(count);
 
-            console.log(`📊 Первый запрос: найдено ${rows?.length || 0} записей, ошибка: ${error ? error.message : 'нет'}`);
-
             // Fallback: если ошибка из-за отсутствующих колонок
             if (error && (String(error.code) === '42703' || String(error.code) === 'PGRST204' || 
                 (error.message && (error.message.includes('registration_location') || error.message.includes('mailbox_password') || error.message.includes('exported_at'))))) {
-                console.log('⚠️ Некоторые колонки отсутствуют, пробуем базовые поля');
                 
                 // Пробуем запрос без exported_at (возможно все записи неэкспортированы)
                 let retry = await supabase
@@ -2635,7 +2628,6 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                     .limit(count);
                 
                 if (retry.error) {
-                    console.log(`⚠️ Ошибка базового запроса: ${retry.error.message}, пробуем только email и password`);
                     // Последняя попытка - только email и password
                     retry = await supabase
                         .from('registered_accounts')
@@ -2645,33 +2637,21 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
                 
                 rows = retry.data;
                 error = retry.error;
-                console.log(`📊 Повторный запрос: найдено ${rows?.length || 0} записей, ошибка: ${error ? error.message : 'нет'}`);
             }
 
             if (error) {
                 // Если таблицы или колонок еще нет — отдаём пустой txt, а не 500
                 const msg = String(error.message || '').toLowerCase();
                 if ((msg.includes('relation') && msg.includes('does not exist')) || String(error.code) === '42703' || String(error.code) === 'PGRST204') {
-                    console.log('⚠️ Таблица или колонки отсутствуют, возвращаем пустой файл');
                     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
                     return res.status(200).send('');
                 }
-                console.error('❌ Ошибка при запросе экспорта:', error);
                 throw error;
             }
 
             const items = rows || [];
-            console.log(`📋 Обработка экспорта: ${items.length} аккаунтов для экспорта`);
             
             if (items.length === 0) {
-                // Проверяем есть ли вообще записи в таблице
-                const { count: totalCount } = await supabase
-                    .from('registered_accounts')
-                    .select('*', { count: 'exact', head: true });
-                console.log(`⚠️ Нет неэкспортированных записей. Всего записей в таблице: ${totalCount || 0}`);
-                if (totalCount > 0) {
-                    console.log('💡 Все записи уже экспортированы (exported_at не null)');
-                }
                 res.setHeader('Content-Type', 'text/plain; charset=utf-8');
                 return res.status(200).send(''); // пустой ответ
             }
@@ -2689,14 +2669,7 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
             // Fallback: если колонок нет — просто не помечаем, отдаем файл
             if (updErr && (String(updErr.code) === '42703' || String(updErr.code) === 'PGRST204' || 
                 (updErr.message && (updErr.message.includes('exported_at') || updErr.message.includes('export_batch'))))) {
-                console.log('⚠️ Колонки exported_at/export_batch отсутствуют, пропускаем пометку экспорта');
                 updErr = null;
-            }
-
-            if (updErr) {
-                console.error('❌ Export mark update error:', updErr);
-            } else {
-                console.log(`✅ Помечено как экспортировано: ${emails.length} аккаунтов`);
             }
 
             // Формируем TXT
@@ -2734,9 +2707,6 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
 
             const content = lines.join('\n');
             const fname = `accounts-${new Date().toISOString().replace(/[:T]/g,'-').slice(0,16)}.txt`;
-
-            console.log(`✅ Экспорт: ${items.length} аккаунтов, размер файла: ${content.length} байт`);
-            console.log(`📄 Первые 200 символов файла: ${content.substring(0, 200)}`);
 
             res.setHeader('Content-Type', 'text/plain; charset=utf-8');
             res.setHeader('Content-Disposition', `attachment; filename="${fname}"`);
