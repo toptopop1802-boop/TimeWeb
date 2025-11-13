@@ -119,11 +119,9 @@
         const hasVoted = localStorage.getItem('hasVoted');
         
         if (hasVoted) {
-            const savedRating = localStorage.getItem('userRating');
-            starsContainer.classList.add('voted');
-            ratingMessage.textContent = `Вы уже проголосовали (${savedRating} ${getStarWord(savedRating)})`;
-            ratingMessage.style.color = '#929292';
-            highlightStars(parseInt(savedRating));
+            // Если уже голосовал - сразу скрываем секцию
+            const ratingSection = document.querySelector('.rating-section');
+            ratingSection.style.display = 'none';
         }
         
         let selectedRating = 0;
@@ -173,13 +171,29 @@
                         localStorage.setItem('userRating', rating);
                         
                         // Эффект разрушения текста
+                        const ratingSection = document.querySelector('.rating-section');
                         destroyText(document.querySelector('.rating-title'));
                         destroyText(document.querySelector('.rating-subtitle'));
                         
+                        // Скрываем звезды
+                        starsContainer.style.transition = 'opacity 0.8s ease-out, transform 0.8s ease-out';
+                        starsContainer.style.opacity = '0';
+                        starsContainer.style.transform = 'scale(0.5)';
+                        
                         setTimeout(() => {
-                            ratingMessage.textContent = `Спасибо за вашу оценку! (${rating} ${getStarWord(rating)})`;
-                            ratingMessage.style.color = '#7AFF4A';
-                        }, 800);
+                            // Полностью скрываем всю секцию
+                            ratingSection.style.transition = 'all 1s ease-out';
+                            ratingSection.style.opacity = '0';
+                            ratingSection.style.maxHeight = '0';
+                            ratingSection.style.minHeight = '0';
+                            ratingSection.style.padding = '0';
+                            ratingSection.style.margin = '0';
+                            ratingSection.style.overflow = 'hidden';
+                            
+                            setTimeout(() => {
+                                ratingSection.style.display = 'none';
+                            }, 1000);
+                        }, 1500);
                     } else {
                         ratingMessage.textContent = 'Ошибка отправки. Попробуйте позже.';
                         ratingMessage.style.color = '#ff6b6b';
