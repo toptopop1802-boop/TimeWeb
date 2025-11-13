@@ -58,6 +58,29 @@
         </div>
     </section>
     
+    <section class="rating-section">
+        <h2 class="rating-title">ОЦЕНИТЕ НАШ САЙТ</h2>
+        <p class="rating-subtitle">Ваше мнение важно для нас</p>
+        <div class="stars-container" id="starsContainer">
+            <svg class="star" data-rating="1" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>
+            <svg class="star" data-rating="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>
+            <svg class="star" data-rating="3" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>
+            <svg class="star" data-rating="4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>
+            <svg class="star" data-rating="5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>
+        </div>
+        <p class="rating-message" id="ratingMessage"></p>
+    </section>
+    
     <div class="scroll-indicator">
         <div class="circle-small active" data-section="0"></div>
         <div class="circle-medium inactive" data-section="1"></div>
@@ -85,6 +108,106 @@
         
         window.addEventListener('scroll', updateActiveCircle);
         updateActiveCircle();
+        
+        // Rating system
+        const WEBHOOK_URL = 'https://discord.com/api/webhooks/1383867565964525799/EmzMadL49Jrs3yMrTUJlH3DxGgS8IWYtjhKWJxTgqOwO8sKW4_pfPt5SRG6gfBkf0_J_';
+        const stars = document.querySelectorAll('.star');
+        const ratingMessage = document.getElementById('ratingMessage');
+        const starsContainer = document.getElementById('starsContainer');
+        
+        // Check if user already voted
+        const hasVoted = localStorage.getItem('hasVoted');
+        
+        if (hasVoted) {
+            const savedRating = localStorage.getItem('userRating');
+            starsContainer.classList.add('voted');
+            ratingMessage.textContent = `Вы уже проголосовали (${savedRating} ${getStarWord(savedRating)})`;
+            ratingMessage.style.color = '#929292';
+            highlightStars(parseInt(savedRating));
+        }
+        
+        stars.forEach(star => {
+            star.addEventListener('mouseenter', function() {
+                if (!hasVoted) {
+                    const rating = this.getAttribute('data-rating');
+                    highlightStars(rating);
+                }
+            });
+            
+            star.addEventListener('click', async function() {
+                if (hasVoted) {
+                    ratingMessage.textContent = 'Вы уже голосовали!';
+                    ratingMessage.style.color = '#ff6b6b';
+                    return;
+                }
+                
+                const rating = this.getAttribute('data-rating');
+                highlightStars(rating);
+                starsContainer.classList.add('voted');
+                
+                // Send to Discord
+                try {
+                    const response = await fetch(WEBHOOK_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            embeds: [{
+                                title: '⭐ Новая оценка сайта',
+                                description: `Пользователь поставил **${rating}** ${getStarWord(rating)}`,
+                                color: getRatingColor(rating),
+                                timestamp: new Date().toISOString(),
+                                footer: {
+                                    text: 'Система оценки сайта'
+                                }
+                            }]
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        localStorage.setItem('hasVoted', 'true');
+                        localStorage.setItem('userRating', rating);
+                        ratingMessage.textContent = `Спасибо за вашу оценку! (${rating} ${getStarWord(rating)})`;
+                        ratingMessage.style.color = '#7AFF4A';
+                    } else {
+                        ratingMessage.textContent = 'Ошибка отправки. Попробуйте позже.';
+                        ratingMessage.style.color = '#ff6b6b';
+                        starsContainer.classList.remove('voted');
+                    }
+                } catch (error) {
+                    ratingMessage.textContent = 'Ошибка отправки. Попробуйте позже.';
+                    ratingMessage.style.color = '#ff6b6b';
+                    starsContainer.classList.remove('voted');
+                }
+            });
+        });
+        
+        starsContainer.addEventListener('mouseleave', function() {
+            if (!hasVoted) {
+                stars.forEach(star => star.classList.remove('active'));
+            }
+        });
+        
+        function highlightStars(rating) {
+            stars.forEach(star => {
+                if (star.getAttribute('data-rating') <= rating) {
+                    star.classList.add('active');
+                } else {
+                    star.classList.remove('active');
+                }
+            });
+        }
+        
+        function getStarWord(rating) {
+            const words = ['звезду', 'звезды', 'звезды', 'звезды', 'звезд'];
+            return words[rating - 1];
+        }
+        
+        function getRatingColor(rating) {
+            const colors = [0xff4444, 0xff8844, 0xffcc44, 0x88ff44, 0x44ff88];
+            return colors[rating - 1];
+        }
     </script>
 </body>
 </html>

@@ -519,3 +519,137 @@ body {
         bottom: 20px;
     }
 }
+
+
+/* Rating Section */
+.rating-section {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    min-height: 40vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 80px 20px;
+    margin-top: 60px;
+}
+
+.rating-title {
+    font-family: 'Gilroy', sans-serif;
+    font-style: normal;
+    font-weight: 700;
+    font-size: 48px;
+    line-height: 56px;
+    text-align: center;
+    background: linear-gradient(13.28deg, #616161 12.57%, #FFFFFF 90.46%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 12px;
+}
+
+.rating-subtitle {
+    font-family: 'Gilroy', sans-serif;
+    font-style: normal;
+    font-weight: 500;
+    font-size: 18px;
+    line-height: 24px;
+    text-align: center;
+    color: #929292;
+    margin-bottom: 40px;
+}
+
+.stars-container {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+.star {
+    width: 60px;
+    height: 60px;
+    fill: rgba(255, 255, 255, 0.15);
+    stroke: rgba(255, 255, 255, 0.26);
+    stroke-width: 1;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    filter: drop-shadow(0 0 0 transparent);
+}
+
+.star:hover {
+    transform: scale(1.15);
+    filter: drop-shadow(0 0 12px rgba(122, 255, 74, 0.4));
+}
+
+.star.active {
+    fill: rgba(122, 255, 74, 0.8);
+    stroke: rgba(122, 255, 74, 1);
+    filter: drop-shadow(0 0 16px rgba(122, 255, 74, 0.6));
+}
+
+.stars-container.voted .star {
+    cursor: not-allowed;
+}
+
+.stars-container.voted .star:hover {
+    transform: scale(1);
+    filter: drop-shadow(0 0 16px rgba(122, 255, 74, 0.6));
+}
+
+.rating-message {
+    font-family: 'Gilroy', sans-serif;
+    font-style: normal;
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 24px;
+    text-align: center;
+    color: #7AFF4A;
+    min-height: 24px;
+    transition: all 0.3s ease;
+}
+
+/* Адаптивная верстка для рейтинга */
+@media (max-width: 768px) {
+    .rating-title {
+        font-size: 36px;
+        line-height: 42px;
+    }
+    
+    .rating-subtitle {
+        font-size: 16px;
+    }
+    
+    .stars-container {
+        gap: 15px;
+    }
+    
+    .star {
+        width: 48px;
+        height: 48px;
+    }
+}
+
+@media (max-width: 480px) {
+    .rating-title {
+        font-size: 28px;
+        line-height: 34px;
+    }
+    
+    .rating-subtitle {
+        font-size: 14px;
+    }
+    
+    .stars-container {
+        gap: 10px;
+    }
+    
+    .star {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .rating-message {
+        font-size: 14px;
+    }
+}
