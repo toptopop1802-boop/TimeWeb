@@ -684,3 +684,38 @@ body {
         font-size: 14px;
     }
 }
+
+
+/* Falling Stars Animation */
+.falling-star {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    animation: fall-and-fade linear forwards;
+    transform-origin: center;
+}
+
+@keyframes fall-and-fade {
+    0% {
+        opacity: 0;
+        transform: translate(0, 0) rotate(0deg) scale(0);
+    }
+    10% {
+        opacity: 1;
+        transform: translate(0, 0) rotate(45deg) scale(1);
+    }
+    70% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+        transform: translate(
+            calc(var(--end-x) - var(--start-x, 0%)),
+            calc(var(--end-y) - var(--start-y, 0%))
+        ) rotate(360deg) scale(0.3);
+    }
+}
+
+.falling-star svg {
+    filter: drop-shadow(0 0 10px currentColor);
+}
