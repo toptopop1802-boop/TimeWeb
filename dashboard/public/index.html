@@ -126,11 +126,13 @@
             highlightStars(parseInt(savedRating));
         }
         
+        let selectedRating = 0;
+        
         stars.forEach(star => {
             star.addEventListener('mouseenter', function() {
-                if (!hasVoted) {
+                if (!hasVoted && selectedRating === 0) {
                     const rating = this.getAttribute('data-rating');
-                    highlightStars(rating);
+                    highlightStars(rating, true);
                 }
             });
             
@@ -142,7 +144,8 @@
                 }
                 
                 const rating = this.getAttribute('data-rating');
-                highlightStars(rating);
+                selectedRating = parseInt(rating);
+                highlightStars(rating, false);
                 starsContainer.classList.add('voted');
                 
                 // Send to Discord
@@ -184,17 +187,25 @@
         });
         
         starsContainer.addEventListener('mouseleave', function() {
-            if (!hasVoted) {
-                stars.forEach(star => star.classList.remove('active'));
+            if (!hasVoted && selectedRating === 0) {
+                stars.forEach(star => {
+                    star.classList.remove('active', 'star-1', 'star-2', 'star-3', 'star-4', 'star-5');
+                });
             }
         });
         
-        function highlightStars(rating) {
+        function highlightStars(rating, isHover = false) {
             stars.forEach(star => {
-                if (star.getAttribute('data-rating') <= rating) {
+                const starRating = star.getAttribute('data-rating');
+                star.classList.remove('active', 'star-1', 'star-2', 'star-3', 'star-4', 'star-5');
+                
+                if (starRating <= rating) {
                     star.classList.add('active');
-                } else {
-                    star.classList.remove('active');
+                    if (!isHover) {
+                        star.classList.add(`star-${starRating}`);
+                    } else {
+                        star.classList.add(`star-${rating}`);
+                    }
                 }
             });
         }
