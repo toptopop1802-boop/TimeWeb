@@ -111,8 +111,8 @@ body {
     position: absolute;
     width: 147.26px;
     height: 51.09px;
-    left: 1303px;
-    top: 275px;
+    left: 75%;
+    top: 30%;
     opacity: 0.61;
     transform: rotate(17.88deg);
     z-index: 4;
@@ -159,8 +159,8 @@ body {
     position: absolute;
     width: 77.13px;
     height: 51.09px;
-    left: 358px;
-    top: 399px;
+    left: 20%;
+    top: 55%;
     transform: rotate(16.06deg);
     z-index: 4;
     background: rgba(255, 255, 255, 0.15);
@@ -181,8 +181,8 @@ body {
     position: absolute;
     width: 133px;
     height: 51px;
-    left: 63px;
-    top: 279px;
+    left: 5%;
+    top: 30%;
     opacity: 0.33;
     transform: rotate(-12.86deg);
     z-index: 4;
@@ -204,8 +204,8 @@ body {
     position: absolute;
     width: 143.25px;
     height: 51.09px;
-    left: 1053px;
-    top: 392px;
+    left: 60%;
+    top: 55%;
     opacity: 0.39;
     transform: rotate(-15.31deg);
     z-index: 4;
