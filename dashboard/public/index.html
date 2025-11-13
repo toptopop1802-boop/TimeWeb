@@ -4,16 +4,117 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Сайт</title>
-    <link rel="stylesheet" href="main-page.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- Прелоадер -->
+    <div class="preloader">
+        <div class="preloader-content">
+            <div class="preloader-spinner"></div>
+            <div class="preloader-text">ЗАГРУЗКА</div>
+        </div>
+    </div>
+    
     <div class="background"></div>
     
+    <!-- Навигация -->
+    <header class="header">
+        <div class="header-left">
+            <div class="logo"></div>
+            <div class="online-counter">ОБЩИЙ ОНЛАЙН: 250</div>
+        </div>
+        <nav class="nav">
+            <a href="#" class="nav-link">ГЛАВНАЯ</a>
+            <a href="#" class="nav-link">РЕЖИМЫ</a>
+            <button class="btn-play">
+                <svg class="btn-play-icon" width="21" height="21" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <mask id="mask0_310_2097" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="-1" y="0" width="22" height="21">
+                        <path d="M18.4164 1H2.58309C1.70864 1 0.999756 1.70888 0.999756 2.58333V18.4167C0.999756 19.2911 1.70864 20 2.58309 20H18.4164C19.2909 20 19.9998 19.2911 19.9998 18.4167V2.58333C19.9998 1.70888 19.2909 1 18.4164 1Z" fill="white" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M7.59692 10.5V6.3865L11.1594 8.44325L14.7219 10.5L11.1594 12.5568L7.59692 14.6135V10.5Z" fill="black" stroke="black" stroke-width="2" stroke-linejoin="round"/>
+                    </mask>
+                    <g mask="url(#mask0_310_2097)">
+                        <path d="M0 0H21V21H0V0Z" fill="#E6FFDD"/>
+                    </g>
+                </svg>
+                <span>НАЧАТЬ ИГРАТЬ</span>
+            </button>
+            <a href="#" class="nav-link">О НАС</a>
+            <a href="#" class="nav-link">DISCORD</a>
+        </nav>
+        <button class="btn-auth">АВТОРИЗАЦИЯ</button>
+    </header>
+    
+    <div class="competitive-banner">
+        <h2 class="competitive-text">MUST HAVE COMPETITIVE PLAYERS</h2>
+    </div>
+    
     <section class="hero-section">
-        <img src="images/Group 119679.png" alt="Изображение">
+        <div class="hero-card">
+            <div class="hero-card-bg"></div>
+            <div class="hero-card-shadow"></div>
+            <div class="hero-card-letter">A</div>
+            <div class="hero-card-image" style="background-image: url('images/cards/Farmer 1.png');"></div>
+        </div>
+        <div class="hero-card">
+            <div class="hero-card-bg"></div>
+            <div class="hero-card-shadow"></div>
+            <div class="hero-card-letter">I</div>
+            <div class="hero-card-image" style="background-image: url('images/cards/Kalashist 1.png');"></div>
+        </div>
+        <div class="hero-card">
+            <div class="hero-card-bg"></div>
+            <div class="hero-card-shadow"></div>
+            <div class="hero-card-letter">M</div>
+            <div class="hero-card-image" style="background-image: url('images/cards/Electric.png');"></div>
+        </div>
+        <div class="hero-card">
+            <div class="hero-card-bg"></div>
+            <div class="hero-card-shadow"></div>
+            <div class="hero-card-letter">A</div>
+            <div class="hero-card-image" style="background-image: url('images/cards/kalashist 2.png');"></div>
+        </div>
+        <div class="hero-card">
+            <div class="hero-card-bg"></div>
+            <div class="hero-card-shadow"></div>
+            <div class="hero-card-letter">C</div>
+            <div class="hero-card-image" style="background-image: url('images/cards/farmer 2.png');"></div>
+        </div>
+        <div class="hero-card">
+            <div class="hero-card-bg"></div>
+            <div class="hero-card-shadow"></div>
+            <div class="hero-card-letter">A</div>
+            <div class="hero-card-image" style="background-image: url('images/cards/seek.png');"></div>
+        </div>
+        <div class="hero-card">
+            <div class="hero-card-bg"></div>
+            <div class="hero-card-shadow"></div>
+            <div class="hero-card-letter">D</div>
+            <div class="hero-card-image" style="background-image: url('images/cards/kalashist.png');"></div>
+        </div>
+        <div class="hero-card">
+            <div class="hero-card-bg"></div>
+            <div class="hero-card-shadow"></div>
+            <div class="hero-card-letter">E</div>
+            <div class="hero-card-image" style="background-image: url('images/cards/tomik.png');"></div>
+        </div>
+        <div class="hero-card">
+            <div class="hero-card-bg"></div>
+            <div class="hero-card-shadow"></div>
+            <div class="hero-card-letter">M</div>
+            <div class="hero-card-image" style="background-image: url('images/cards/kalashist 4.png');"></div>
+        </div>
+        <div class="hero-card">
+            <div class="hero-card-bg"></div>
+            <div class="hero-card-shadow"></div>
+            <div class="hero-card-letter">Y</div>
+            <div class="hero-card-image" style="background-image: url('images/cards/kalashist 5.png');"></div>
+        </div>
     </section>
     
-    <section class="second-section scroll-animate">
+    <section class="second-section">
         <img src="images/Mask group.png" alt="Изображение">
         <div class="glow-effect"></div>
         <h1 class="section-title-overlay">ИГРОВЫЕ РЕЖИМЫ</h1>
@@ -26,59 +127,167 @@
     </section>
     
     <section class="third-section">
-        <div class="game-card scroll-animate">
-            <img src="images/image 15.png" alt="CUBE" class="card-image">
-            <div class="card-new-badge">NEW</div>
-            <h2 class="card-title">CUBE</h2>
+        <div class="card-category">
+            <div class="category-header">
+                <h3 class="category-title">TRAINING</h3>
+                <div class="category-line"></div>
+            </div>
+            <div class="category-grid">
+                <div class="game-card">
+                    <div class="card-image-wrapper">
+                        <img src="images/image 15.png" alt="FACECHECK" class="card-image">
+                    </div>
+                    <h2 class="card-title">FACECHECK</h2>
+                    <div class="card-info">
+                        <div class="card-stat">PVP</div>
+                        <div class="card-stat">TRAINING</div>
+                        <div class="card-stat">1V1</div>
+                    </div>
+                    <div class="card-play-btn"></div>
+                    <div class="card-progress-bar">
+                        <div class="card-progress-track">
+                            <div class="card-progress-fill" style="width: 55%;"></div>
+                        </div>
+                        <div class="card-progress-text">11/20</div>
+                    </div>
+                </div>
+                <div class="game-card">
+                    <div class="card-image-wrapper">
+                        <img src="images/image temnone.png" alt="FACECHECK" class="card-image">
+                    </div>
+                    <h2 class="card-title">FACECHECK</h2>
+                    <div class="card-info">
+                        <div class="card-stat">PVP</div>
+                        <div class="card-stat">TRAINING</div>
+                        <div class="card-stat">1V1</div>
+                    </div>
+                    <div class="card-play-btn"></div>
+                    <div class="card-progress-bar">
+                        <div class="card-progress-track">
+                            <div class="card-progress-fill" style="width: 55%;"></div>
+                        </div>
+                        <div class="card-progress-text">11/20</div>
+                    </div>
+                </div>
+                <div class="game-card">
+                    <div class="card-image-wrapper">
+                        <img src="images/image 15.png" alt="FACECHECK" class="card-image">
+                    </div>
+                    <h2 class="card-title">FACECHECK</h2>
+                    <div class="card-info">
+                        <div class="card-stat">PVP</div>
+                        <div class="card-stat">TRAINING</div>
+                        <div class="card-stat">1V1</div>
+                    </div>
+                    <div class="card-play-btn"></div>
+                    <div class="card-progress-bar">
+                        <div class="card-progress-track">
+                            <div class="card-progress-fill" style="width: 55%;"></div>
+                        </div>
+                        <div class="card-progress-text">11/20</div>
+                    </div>
+                </div>
+                <div class="game-card">
+                    <div class="card-image-wrapper">
+                        <img src="images/image temnone.png" alt="FACECHECK" class="card-image">
+                    </div>
+                    <h2 class="card-title">FACECHECK</h2>
+                    <div class="card-info">
+                        <div class="card-stat">PVP</div>
+                        <div class="card-stat">TRAINING</div>
+                        <div class="card-stat">1V1</div>
+                    </div>
+                    <div class="card-play-btn"></div>
+                    <div class="card-progress-bar">
+                        <div class="card-progress-track">
+                            <div class="card-progress-fill" style="width: 55%;"></div>
+                        </div>
+                        <div class="card-progress-text">11/20</div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="game-card scroll-animate">
-            <img src="images/image temnone.png" alt="CUBE" class="card-image">
-            <div class="card-new-badge">NEW</div>
-            <h2 class="card-title">CUBE</h2>
+        
+        <div class="card-category">
+            <div class="category-header">
+                <h3 class="category-title">BATTLEFIELD</h3>
+                <div class="category-line"></div>
+            </div>
+            <div class="category-grid">
+                <div class="game-card">
+                    <div class="card-image-wrapper">
+                        <img src="images/image 15.png" alt="FACECHECK" class="card-image">
+                    </div>
+                    <h2 class="card-title">FACECHECK</h2>
+                    <div class="card-info">
+                        <div class="card-stat">PVP</div>
+                        <div class="card-stat">TRAINING</div>
+                        <div class="card-stat">1V1</div>
+                    </div>
+                    <div class="card-play-btn"></div>
+                    <div class="card-progress-bar">
+                        <div class="card-progress-track">
+                            <div class="card-progress-fill" style="width: 55%;"></div>
+                        </div>
+                        <div class="card-progress-text">11/20</div>
+                    </div>
+                </div>
+                <div class="game-card">
+                    <div class="card-image-wrapper">
+                        <img src="images/image temnone.png" alt="FACECHECK" class="card-image">
+                    </div>
+                    <h2 class="card-title">FACECHECK</h2>
+                    <div class="card-info">
+                        <div class="card-stat">PVP</div>
+                        <div class="card-stat">TRAINING</div>
+                        <div class="card-stat">1V1</div>
+                    </div>
+                    <div class="card-play-btn"></div>
+                    <div class="card-progress-bar">
+                        <div class="card-progress-track">
+                            <div class="card-progress-fill" style="width: 55%;"></div>
+                        </div>
+                        <div class="card-progress-text">11/20</div>
+                    </div>
+                </div>
+                <div class="game-card">
+                    <div class="card-image-wrapper">
+                        <img src="images/image 15.png" alt="FACECHECK" class="card-image">
+                    </div>
+                    <h2 class="card-title">FACECHECK</h2>
+                    <div class="card-info">
+                        <div class="card-stat">PVP</div>
+                        <div class="card-stat">TRAINING</div>
+                        <div class="card-stat">1V1</div>
+                    </div>
+                    <div class="card-play-btn"></div>
+                    <div class="card-progress-bar">
+                        <div class="card-progress-track">
+                            <div class="card-progress-fill" style="width: 55%;"></div>
+                        </div>
+                        <div class="card-progress-text">11/20</div>
+                    </div>
+                </div>
+                <div class="game-card">
+                    <div class="card-image-wrapper">
+                        <img src="images/image temnone.png" alt="FACECHECK" class="card-image">
+                    </div>
+                    <h2 class="card-title">FACECHECK</h2>
+                    <div class="card-info">
+                        <div class="card-stat">PVP</div>
+                        <div class="card-stat">TRAINING</div>
+                        <div class="card-stat">1V1</div>
+                    </div>
+                    <div class="card-play-btn"></div>
+                    <div class="card-progress-bar">
+                        <div class="card-progress-track">
+                            <div class="card-progress-fill" style="width: 55%;"></div>
+                        </div>
+                        <div class="card-progress-text">11/20</div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="game-card scroll-animate">
-            <img src="images/image temnone.png" alt="CUBE" class="card-image">
-            <div class="card-new-badge">NEW</div>
-            <h2 class="card-title">CUBE</h2>
-        </div>
-        <div class="game-card scroll-animate">
-            <img src="images/image 15.png" alt="CUBE" class="card-image">
-            <div class="card-new-badge">NEW</div>
-            <h2 class="card-title">CUBE</h2>
-        </div>
-        <div class="game-card scroll-animate">
-            <img src="images/image temnone.png" alt="CUBE" class="card-image">
-            <div class="card-new-badge">NEW</div>
-            <h2 class="card-title">CUBE</h2>
-        </div>
-        <div class="game-card scroll-animate">
-            <img src="images/image temnone.png" alt="CUBE" class="card-image">
-            <div class="card-new-badge">NEW</div>
-            <h2 class="card-title">CUBE</h2>
-        </div>
-    </section>
-    
-    <section class="rating-section scroll-animate">
-        <h2 class="rating-title">ОЦЕНИТЕ НАШ САЙТ</h2>
-        <p class="rating-subtitle">Ваше мнение важно для нас</p>
-        <div class="stars-container" id="starsContainer">
-            <svg class="star" data-rating="1" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-            </svg>
-            <svg class="star" data-rating="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-            </svg>
-            <svg class="star" data-rating="3" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-            </svg>
-            <svg class="star" data-rating="4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-            </svg>
-            <svg class="star" data-rating="5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-            </svg>
-        </div>
-        <p class="rating-message" id="ratingMessage"></p>
     </section>
     
     <div class="scroll-indicator">
@@ -86,7 +295,48 @@
         <div class="circle-medium inactive" data-section="1"></div>
         <div class="circle-large inactive" data-section="2"></div>
     </div>
+    
+    <!-- Модальное окно -->
+    <div class="modal" id="gameModal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <button class="modal-close">&times;</button>
+            <div class="modal-image-wrapper">
+                <img src="" alt="" class="modal-image">
+            </div>
+            <h2 class="modal-title">FACECHECK</h2>
+            <div class="modal-stats">
+                <div class="modal-stat-item">
+                    <span class="modal-stat-label">Режим:</span>
+                    <span class="modal-stat-value">PVP, TRAINING, 1V1</span>
+                </div>
+                <div class="modal-stat-item">
+                    <span class="modal-stat-label">Прогресс:</span>
+                    <span class="modal-stat-value">11/20</span>
+                </div>
+                <div class="modal-stat-item">
+                    <span class="modal-stat-label">Игроков онлайн:</span>
+                    <span class="modal-stat-value">1,234</span>
+                </div>
+            </div>
+            <p class="modal-description">
+                Проверьте свои навыки в интенсивных 1 на 1 поединках. 
+                Тренируйтесь, совершенствуйте технику и поднимайтесь в рейтинге.
+            </p>
+            <button class="modal-play-btn">ИГРАТЬ</button>
+        </div>
+    </div>
+    
     <script>
+        // Прелоадер
+        window.addEventListener('load', () => {
+            const preloader = document.querySelector('.preloader');
+            setTimeout(() => {
+                preloader.classList.add('hidden');
+            }, 1000);
+        });
+        
+        // Индикатор скролла
         const circles = document.querySelectorAll('.scroll-indicator > div');
         
         function updateActiveCircle() {
@@ -109,142 +359,10 @@
         window.addEventListener('scroll', updateActiveCircle);
         updateActiveCircle();
         
-        // Rating system
-        const WEBHOOK_URL = 'https://discord.com/api/webhooks/1383867565964525799/EmzMadL49Jrs3yMrTUJlH3DxGgS8IWYtjhKWJxTgqOwO8sKW4_pfPt5SRG6gfBkf0_J_';
-        const stars = document.querySelectorAll('.star');
-        const ratingMessage = document.getElementById('ratingMessage');
-        const starsContainer = document.getElementById('starsContainer');
-        
-        // Check if user already voted
-        const hasVoted = localStorage.getItem('hasVoted');
-        
-        if (hasVoted) {
-            // Если уже голосовал - сразу скрываем секцию
-            const ratingSection = document.querySelector('.rating-section');
-            ratingSection.style.display = 'none';
-        }
-        
-        let selectedRating = 0;
-        
-        stars.forEach(star => {
-            star.addEventListener('mouseenter', function() {
-                if (!hasVoted && selectedRating === 0) {
-                    const rating = this.getAttribute('data-rating');
-                    highlightStars(rating, true);
-                }
-            });
-            
-            star.addEventListener('click', async function() {
-                if (hasVoted) {
-                    ratingMessage.textContent = 'Вы уже голосовали!';
-                    ratingMessage.style.color = '#ff6b6b';
-                    return;
-                }
-                
-                const rating = this.getAttribute('data-rating');
-                selectedRating = parseInt(rating);
-                highlightStars(rating, false);
-                starsContainer.classList.add('voted');
-                
-                // Send to Discord
-                try {
-                    const response = await fetch(WEBHOOK_URL, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            embeds: [{
-                                title: '⭐ Новая оценка сайта',
-                                description: `Пользователь поставил **${rating}** ${getStarWord(rating)}`,
-                                color: getRatingColor(rating),
-                                timestamp: new Date().toISOString(),
-                                footer: {
-                                    text: 'Система оценки сайта'
-                                }
-                            }]
-                        })
-                    });
-                    
-                    if (response.ok) {
-                        localStorage.setItem('hasVoted', 'true');
-                        localStorage.setItem('userRating', rating);
-                        
-                        // Эффект разрушения текста
-                        const ratingSection = document.querySelector('.rating-section');
-                        destroyText(document.querySelector('.rating-title'));
-                        destroyText(document.querySelector('.rating-subtitle'));
-                        
-                        // Скрываем звезды
-                        starsContainer.style.transition = 'opacity 0.8s ease-out, transform 0.8s ease-out';
-                        starsContainer.style.opacity = '0';
-                        starsContainer.style.transform = 'scale(0.5)';
-                        
-                        setTimeout(() => {
-                            // Полностью скрываем всю секцию
-                            ratingSection.style.transition = 'all 1s ease-out';
-                            ratingSection.style.opacity = '0';
-                            ratingSection.style.maxHeight = '0';
-                            ratingSection.style.minHeight = '0';
-                            ratingSection.style.padding = '0';
-                            ratingSection.style.margin = '0';
-                            ratingSection.style.overflow = 'hidden';
-                            
-                            setTimeout(() => {
-                                ratingSection.style.display = 'none';
-                            }, 1000);
-                        }, 1500);
-                    } else {
-                        ratingMessage.textContent = 'Ошибка отправки. Попробуйте позже.';
-                        ratingMessage.style.color = '#ff6b6b';
-                        starsContainer.classList.remove('voted');
-                    }
-                } catch (error) {
-                    ratingMessage.textContent = 'Ошибка отправки. Попробуйте позже.';
-                    ratingMessage.style.color = '#ff6b6b';
-                    starsContainer.classList.remove('voted');
-                }
-            });
-        });
-        
-        starsContainer.addEventListener('mouseleave', function() {
-            if (!hasVoted && selectedRating === 0) {
-                stars.forEach(star => {
-                    star.classList.remove('active', 'star-1', 'star-2', 'star-3', 'star-4', 'star-5');
-                });
-            }
-        });
-        
-        function highlightStars(rating, isHover = false) {
-            stars.forEach(star => {
-                const starRating = star.getAttribute('data-rating');
-                star.classList.remove('active', 'star-1', 'star-2', 'star-3', 'star-4', 'star-5');
-                
-                if (starRating <= rating) {
-                    star.classList.add('active');
-                    if (!isHover) {
-                        star.classList.add(`star-${starRating}`);
-                    } else {
-                        star.classList.add(`star-${rating}`);
-                    }
-                }
-            });
-        }
-        
-        function getStarWord(rating) {
-            const words = ['звезду', 'звезды', 'звезды', 'звезды', 'звезд'];
-            return words[rating - 1];
-        }
-        
-        function getRatingColor(rating) {
-            const colors = [0xff4444, 0xff8844, 0xffcc44, 0x88ff44, 0x44ff88];
-            return colors[rating - 1];
-        }
-        
-        // Scroll animations
+        // Анимация при скролле
         const observerOptions = {
             threshold: 0.1,
-            rootMargin: '0px 0px -100px 0px'
+            rootMargin: '0px 0px -50px 0px'
         };
         
         const observer = new IntersectionObserver((entries) => {
@@ -255,82 +373,47 @@
             });
         }, observerOptions);
         
-        // Observe all sections and cards
-        document.querySelectorAll('.second-section, .rating-section').forEach(el => {
+        document.querySelectorAll('.game-card, .card-category').forEach(el => {
             observer.observe(el);
         });
         
-        document.querySelectorAll('.game-card').forEach((card, index) => {
-            card.style.animationDelay = `${index * 0.1}s`;
-            observer.observe(card);
+        // Модальное окно
+        const modal = document.getElementById('gameModal');
+        const modalOverlay = modal.querySelector('.modal-overlay');
+        const modalClose = modal.querySelector('.modal-close');
+        const gameCards = document.querySelectorAll('.game-card');
+        
+        gameCards.forEach(card => {
+            card.addEventListener('click', (e) => {
+                if (e.target.classList.contains('card-play-btn')) return;
+                
+                const img = card.querySelector('.card-image').src;
+                const title = card.querySelector('.card-title').textContent;
+                const stats = Array.from(card.querySelectorAll('.card-stat')).map(s => s.textContent).join(', ');
+                const progress = card.querySelector('.card-progress-text').textContent;
+                
+                modal.querySelector('.modal-image').src = img;
+                modal.querySelector('.modal-title').textContent = title;
+                modal.querySelector('.modal-stat-value').textContent = stats;
+                modal.querySelectorAll('.modal-stat-value')[1].textContent = progress;
+                
+                modal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
         });
         
-        // Функция разрушения текста на частицы
-        function destroyText(element) {
-            if (!element || element.classList.contains('destroyed')) return;
-            
-            const rect = element.getBoundingClientRect();
-            const text = element.textContent;
-            const computedStyle = window.getComputedStyle(element);
-            
-            // Создаем контейнер для частиц
-            const particleContainer = document.createElement('div');
-            particleContainer.style.position = 'fixed';
-            particleContainer.style.left = rect.left + 'px';
-            particleContainer.style.top = rect.top + 'px';
-            particleContainer.style.width = rect.width + 'px';
-            particleContainer.style.height = rect.height + 'px';
-            particleContainer.style.pointerEvents = 'none';
-            particleContainer.style.zIndex = '10000';
-            document.body.appendChild(particleContainer);
-            
-            // Скрываем оригинальный элемент
-            element.style.opacity = '0';
-            element.classList.add('destroyed');
-            
-            // Создаем частицы из каждой буквы
-            const letters = text.split('');
-            const fontSize = parseFloat(computedStyle.fontSize);
-            const letterWidth = fontSize * 0.6;
-            
-            letters.forEach((letter, index) => {
-                if (letter === ' ') return;
-                
-                const particle = document.createElement('div');
-                particle.textContent = letter;
-                particle.style.position = 'absolute';
-                particle.style.left = (index * letterWidth) + 'px';
-                particle.style.top = '0';
-                particle.style.fontSize = computedStyle.fontSize;
-                particle.style.fontFamily = computedStyle.fontFamily;
-                particle.style.fontWeight = computedStyle.fontWeight;
-                particle.style.background = computedStyle.background || computedStyle.color;
-                particle.style.webkitBackgroundClip = 'text';
-                particle.style.webkitTextFillColor = 'transparent';
-                particle.style.backgroundClip = 'text';
-                particle.style.color = computedStyle.color;
-                particle.style.opacity = '1';
-                particle.style.transition = 'all 1s ease-out';
-                
-                particleContainer.appendChild(particle);
-                
-                // Анимация разлета
-                setTimeout(() => {
-                    const angle = Math.random() * Math.PI * 2;
-                    const distance = 100 + Math.random() * 200;
-                    const tx = Math.cos(angle) * distance;
-                    const ty = Math.sin(angle) * distance + Math.random() * 300;
-                    
-                    particle.style.transform = `translate(${tx}px, ${ty}px) rotate(${Math.random() * 720 - 360}deg) scale(0)`;
-                    particle.style.opacity = '0';
-                }, index * 30);
-            });
-            
-            // Удаляем контейнер после анимации
-            setTimeout(() => {
-                particleContainer.remove();
-            }, 2000);
+        function closeModal() {
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
         }
+        
+        modalClose.addEventListener('click', closeModal);
+        modalOverlay.addEventListener('click', closeModal);
+        
+        modal.querySelector('.modal-play-btn').addEventListener('click', () => {
+            alert('Запуск игры...');
+            closeModal();
+        });
     </script>
 </body>
 </html>
