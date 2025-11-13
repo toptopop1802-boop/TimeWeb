@@ -171,8 +171,15 @@
                     if (response.ok) {
                         localStorage.setItem('hasVoted', 'true');
                         localStorage.setItem('userRating', rating);
-                        ratingMessage.textContent = `Спасибо за вашу оценку! (${rating} ${getStarWord(rating)})`;
-                        ratingMessage.style.color = '#7AFF4A';
+                        
+                        // Эффект разрушения текста
+                        destroyText(document.querySelector('.rating-title'));
+                        destroyText(document.querySelector('.rating-subtitle'));
+                        
+                        setTimeout(() => {
+                            ratingMessage.textContent = `Спасибо за вашу оценку! (${rating} ${getStarWord(rating)})`;
+                            ratingMessage.style.color = '#7AFF4A';
+                        }, 800);
                     } else {
                         ratingMessage.textContent = 'Ошибка отправки. Попробуйте позже.';
                         ratingMessage.style.color = '#ff6b6b';
@@ -243,6 +250,73 @@
             card.style.animationDelay = `${index * 0.1}s`;
             observer.observe(card);
         });
+        
+        // Функция разрушения текста на частицы
+        function destroyText(element) {
+            if (!element || element.classList.contains('destroyed')) return;
+            
+            const rect = element.getBoundingClientRect();
+            const text = element.textContent;
+            const computedStyle = window.getComputedStyle(element);
+            
+            // Создаем контейнер для частиц
+            const particleContainer = document.createElement('div');
+            particleContainer.style.position = 'fixed';
+            particleContainer.style.left = rect.left + 'px';
+            particleContainer.style.top = rect.top + 'px';
+            particleContainer.style.width = rect.width + 'px';
+            particleContainer.style.height = rect.height + 'px';
+            particleContainer.style.pointerEvents = 'none';
+            particleContainer.style.zIndex = '10000';
+            document.body.appendChild(particleContainer);
+            
+            // Скрываем оригинальный элемент
+            element.style.opacity = '0';
+            element.classList.add('destroyed');
+            
+            // Создаем частицы из каждой буквы
+            const letters = text.split('');
+            const fontSize = parseFloat(computedStyle.fontSize);
+            const letterWidth = fontSize * 0.6;
+            
+            letters.forEach((letter, index) => {
+                if (letter === ' ') return;
+                
+                const particle = document.createElement('div');
+                particle.textContent = letter;
+                particle.style.position = 'absolute';
+                particle.style.left = (index * letterWidth) + 'px';
+                particle.style.top = '0';
+                particle.style.fontSize = computedStyle.fontSize;
+                particle.style.fontFamily = computedStyle.fontFamily;
+                particle.style.fontWeight = computedStyle.fontWeight;
+                particle.style.background = computedStyle.background || computedStyle.color;
+                particle.style.webkitBackgroundClip = 'text';
+                particle.style.webkitTextFillColor = 'transparent';
+                particle.style.backgroundClip = 'text';
+                particle.style.color = computedStyle.color;
+                particle.style.opacity = '1';
+                particle.style.transition = 'all 1s ease-out';
+                
+                particleContainer.appendChild(particle);
+                
+                // Анимация разлета
+                setTimeout(() => {
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = 100 + Math.random() * 200;
+                    const tx = Math.cos(angle) * distance;
+                    const ty = Math.sin(angle) * distance + Math.random() * 300;
+                    
+                    particle.style.transform = `translate(${tx}px, ${ty}px) rotate(${Math.random() * 720 - 360}deg) scale(0)`;
+                    particle.style.opacity = '0';
+                }, index * 30);
+            });
+            
+            // Удаляем контейнер после анимации
+            setTimeout(() => {
+                particleContainer.remove();
+            }, 2000);
+        }
     </script>
 </body>
 </html>
