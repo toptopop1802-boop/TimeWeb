@@ -711,20 +711,10 @@ body {
 }
 
 /* Анимация для заголовков и текста */
-.section-title-overlay,
-.section-subtitle,
 .rating-title,
 .rating-subtitle {
     opacity: 0;
     animation: fadeInDown 1s ease-out forwards;
-}
-
-.section-title-overlay {
-    animation-delay: 0.2s;
-}
-
-.section-subtitle {
-    animation-delay: 0.4s;
 }
 
 .rating-title {
@@ -746,43 +736,4 @@ body {
     }
 }
 
-/* Анимация для бейджей */
-.combat-badge,
-.training-badge,
-.battlefield-badge,
-.pve-badge,
-.survival-badge {
-    opacity: 0;
-    animation: fadeInScale 0.6s ease-out forwards;
-}
 
-.combat-badge {
-    animation-delay: 0.5s;
-}
-
-.training-badge {
-    animation-delay: 0.6s;
-}
-
-.battlefield-badge {
-    animation-delay: 0.7s;
-}
-
-.pve-badge {
-    animation-delay: 0.8s;
-}
-
-.survival-badge {
-    animation-delay: 0.9s;
-}
-
-@keyframes fadeInScale {
-    from {
-        opacity: 0;
-        transform: scale(0.5) rotate(0deg);
-    }
-    to {
-        opacity: 0.88;
-        transform: scale(1) rotate(var(--rotation, 0deg));
-    }
-}
