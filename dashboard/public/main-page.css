@@ -686,36 +686,103 @@ body {
 }
 
 
-/* Falling Stars Animation */
-.falling-star {
-    position: fixed;
-    pointer-events: none;
-    z-index: 9999;
-    animation: fall-and-fade linear forwards;
-    transform-origin: center;
+/* Scroll Animations */
+.scroll-animate {
+    opacity: 0;
+    transform: translateY(50px);
+    transition: opacity 0.8s ease-out, transform 0.8s ease-out;
 }
 
-@keyframes fall-and-fade {
-    0% {
+.scroll-animate.animate-in {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Анимация для карточек игр */
+.game-card.scroll-animate {
+    opacity: 0;
+    transform: translateY(80px) scale(0.95);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.game-card.scroll-animate.animate-in {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+/* Анимация для заголовков и текста */
+.section-title-overlay,
+.section-subtitle,
+.rating-title,
+.rating-subtitle {
+    opacity: 0;
+    animation: fadeInDown 1s ease-out forwards;
+}
+
+.section-title-overlay {
+    animation-delay: 0.2s;
+}
+
+.section-subtitle {
+    animation-delay: 0.4s;
+}
+
+.rating-title {
+    animation-delay: 0.1s;
+}
+
+.rating-subtitle {
+    animation-delay: 0.3s;
+}
+
+@keyframes fadeInDown {
+    from {
         opacity: 0;
-        transform: translate(0, 0) scale(0);
+        transform: translateY(-30px);
     }
-    10% {
+    to {
         opacity: 1;
-        transform: translate(0, 0) scale(1);
-    }
-    70% {
-        opacity: 1;
-    }
-    100% {
-        opacity: 0;
-        transform: translate(
-            calc(var(--end-x) - var(--start-x, 0%)),
-            calc(var(--end-y) - var(--start-y, 0%))
-        ) scale(0.5);
+        transform: translateY(0);
     }
 }
 
-.falling-star svg {
-    filter: drop-shadow(0 0 10px currentColor);
+/* Анимация для бейджей */
+.combat-badge,
+.training-badge,
+.battlefield-badge,
+.pve-badge,
+.survival-badge {
+    opacity: 0;
+    animation: fadeInScale 0.6s ease-out forwards;
+}
+
+.combat-badge {
+    animation-delay: 0.5s;
+}
+
+.training-badge {
+    animation-delay: 0.6s;
+}
+
+.battlefield-badge {
+    animation-delay: 0.7s;
+}
+
+.pve-badge {
+    animation-delay: 0.8s;
+}
+
+.survival-badge {
+    animation-delay: 0.9s;
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.5) rotate(0deg);
+    }
+    to {
+        opacity: 0.88;
+        transform: scale(1) rotate(var(--rotation, 0deg));
+    }
 }
