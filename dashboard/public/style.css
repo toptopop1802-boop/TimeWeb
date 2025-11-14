@@ -185,11 +185,11 @@ body {
     top: 0;
     left: 0;
     width: 100%;
-    height: 110px;
+    height: 90px;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0 40px;
+    padding: 0 20px;
     z-index: 100;
     animation: fadeIn 1s ease-out;
     transition: background 0.3s ease, backdrop-filter 0.3s ease;
@@ -201,7 +201,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 20px;
+    padding: 0;
 }
 
 
@@ -237,8 +237,8 @@ body {
     font-family: 'Anton', 'Inter', sans-serif;
     font-style: normal;
     font-weight: 400;
-    font-size: 42px;
-    line-height: 63px;
+    font-size: 32px;
+    line-height: 48px;
     color: #FFFFFF;
     cursor: pointer;
     transition: opacity 0.3s ease;
@@ -266,27 +266,27 @@ body {
 
 .online-counter {
     box-sizing: border-box;
-    width: 135px;
-    height: 38px;
+    width: 120px;
+    height: 32px;
     background: rgba(255, 255, 255, 0.17);
     border: 1px solid rgba(255, 255, 255, 0.17);
     box-shadow: 0px 0px 34.7px rgba(255, 255, 255, 0.13);
     border-radius: 3px;
     display: flex;
     align-items: center;
-    padding-left: 14px;
+    padding-left: 12px;
     font-family: 'Helvetica Neue', 'Inter', sans-serif;
     font-style: normal;
     font-weight: 700;
-    font-size: 16px;
-    line-height: 16px;
+    font-size: 14px;
+    line-height: 14px;
     color: rgba(255, 255, 255, 0.72);
 }
 
 .nav {
     display: flex;
     align-items: center;
-    gap: 45px;
+    gap: 35px;
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
@@ -296,14 +296,14 @@ body {
     font-family: 'Helvetica Neue', 'Inter', sans-serif;
     font-style: normal;
     font-weight: 700;
-    font-size: 18px;
-    line-height: 18px;
+    font-size: 16px;
+    line-height: 16px;
     color: #FFFFFF;
     opacity: 0.67;
     text-decoration: none;
     transition: opacity 0.3s ease;
     white-space: nowrap;
-    padding: 10px 15px;
+    padding: 8px 10px;
 }
 
 .nav-link:hover {
@@ -316,10 +316,10 @@ body {
     flex-direction: row;
     justify-content: center;
     align-items: center;
-    padding: 12px;
-    gap: 12px;
-    width: 213px;
-    height: 43px;
+    padding: 10px;
+    gap: 10px;
+    width: 190px;
+    height: 38px;
     background: #759968;
     box-shadow: 0px 0px 34.7px rgba(90, 121, 79, 0.4);
     border-radius: 3px;
@@ -328,8 +328,8 @@ body {
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     font-family: 'Helvetica Neue', 'Inter', sans-serif;
     font-weight: 700;
-    font-size: 18px;
-    line-height: 18px;
+    font-size: 16px;
+    line-height: 16px;
     color: #E6FFDD;
     white-space: nowrap;
     position: relative;
@@ -447,9 +447,9 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 17px 31px;
-    width: 202px;
-    height: 53px;
+    padding: 14px 26px;
+    width: 180px;
+    height: 46px;
     background: #B43939;
     box-shadow: 0px 0px 34.7px rgba(134, 44, 44, 0.4);
     border-radius: 5px;
@@ -458,7 +458,7 @@ body {
     transition: all 0.3s ease;
     font-family: 'Helvetica Neue', 'Inter', sans-serif;
     font-weight: 700;
-    font-size: 18px;
+    font-size: 16px;
     line-height: 87.44%;
     color: #FFD8D8;
     white-space: nowrap;
@@ -495,14 +495,14 @@ body {
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    gap: 17px;
-    padding: 160px 20px 0 20px;
+    gap: 14px;
+    padding: 130px 20px 0 20px;
 }
 
 .hero-card {
     position: relative;
-    width: 169px;
-    height: 486px;
+    width: 145px;
+    height: 420px;
     animation: fadeIn 1s ease-out;
     flex-shrink: 0;
     cursor: pointer;
@@ -534,7 +534,7 @@ body {
 .hero-card-bg {
     position: absolute;
     width: 100%;
-    height: 486px;
+    height: 420px;
     left: 0;
     top: 0;
     background: #121212;
@@ -574,7 +574,7 @@ body {
 
 .hero-card-letter {
     position: absolute;
-    top: -30px;
+    top: -25px;
     left: 50%;
     transform: translateX(-50%);
     -webkit-transform: translateX(-50%);
@@ -583,8 +583,8 @@ body {
     font-family: 'Anton', sans-serif;
     font-style: normal;
     font-weight: 400;
-    font-size: 200px;
-    line-height: 301px;
+    font-size: 170px;
+    line-height: 255px;
     color: transparent;
     -webkit-text-stroke: 1px rgba(255, 255, 255, 0.25);
     text-stroke: 1px rgba(255, 255, 255, 0.25);
@@ -614,9 +614,9 @@ body {
 .hero-card-image {
     position: absolute;
     width: 100%;
-    height: 330px;
+    height: 285px;
     left: 0;
-    top: 156px;
+    top: 135px;
     background-size: cover;
     background-position: center bottom;
     background-repeat: no-repeat;
@@ -629,13 +629,13 @@ body {
     -moz-transition: filter 0.4s ease, transform 0.4s ease;
 }
 
-.hero-card:nth-child(2) .hero-card-image { height: 266px; top: 220px; }
-.hero-card:nth-child(5) .hero-card-image { height: 289px; top: 197px; }
+.hero-card:nth-child(2) .hero-card-image { height: 230px; top: 190px; }
+.hero-card:nth-child(5) .hero-card-image { height: 250px; top: 170px; }
 .hero-card:nth-child(6) .hero-card-image { opacity: 0.74; }
-.hero-card:nth-child(7) .hero-card-image { height: 341px; top: 145px; }
-.hero-card:nth-child(8) .hero-card-image { height: 309px; top: 177px; }
-.hero-card:nth-child(9) .hero-card-image { height: 338px; top: 148px; }
-.hero-card:nth-child(10) .hero-card-image { height: 338px; top: 148px; }
+.hero-card:nth-child(7) .hero-card-image { height: 295px; top: 125px; }
+.hero-card:nth-child(8) .hero-card-image { height: 267px; top: 153px; }
+.hero-card:nth-child(9) .hero-card-image { height: 292px; top: 128px; }
+.hero-card:nth-child(10) .hero-card-image { height: 292px; top: 128px; }
 
 /* Раздел "Начни играть прямо сейчас" */
 .start-playing-section {
@@ -646,8 +646,8 @@ body {
     left: 50%;
     transform: translateX(-50%);
     margin-left: 0;
-    margin-top: 200px;
-    padding: 0 40px;
+    margin-top: 150px;
+    padding: 0 20px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -672,10 +672,10 @@ body {
     z-index: 2;
     font-family: 'Alumni Sans', 'Anton', 'Inter', sans-serif;
     font-weight: 700;
-    font-size: 128px;
-    line-height: 154px;
+    font-size: 96px;
+    line-height: 115px;
     color: #FFFFFF;
-    margin: 0 0 30px 0;
+    margin: 0 0 20px 0;
     width: 100%;
     text-align: left;
 }
@@ -685,12 +685,12 @@ body {
     z-index: 2;
     font-family: 'Helvetica Neue', 'Inter', sans-serif;
     font-weight: 400;
-    font-size: 20px;
-    line-height: 28px;
+    font-size: 16px;
+    line-height: 22px;
     color: rgba(255, 255, 255, 0.67);
     width: 100%;
     text-align: left;
-    margin-bottom: 80px;
+    margin-bottom: 50px;
 }
 
 /* Теги режимов */
@@ -758,26 +758,26 @@ body {
     width: 100%;
     display: flex;
     flex-direction: column;
-    gap: 100px;
+    gap: 60px;
 }
 
 .modes-category {
     display: flex;
     flex-direction: column;
-    gap: 30px;
+    gap: 18px;
 }
 
 .modes-header {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 15px;
     width: 100%;
 }
 
 .modes-title {
     font-family: 'Gilroy', 'Inter', sans-serif;
     font-weight: 700;
-    font-size: 24px;
+    font-size: 20px;
     line-height: 85.39%;
     color: rgba(255, 255, 255, 0.35);
     text-transform: uppercase;
@@ -793,7 +793,7 @@ body {
 
 .modes-grid {
     display: flex;
-    gap: 25px;
+    gap: 18px;
     width: 100%;
     flex-wrap: wrap;
 }
@@ -801,15 +801,15 @@ body {
 /* Карточка режима */
 .mode-card {
     position: relative;
-    width: 360px;
-    height: 140px;
+    width: 320px;
+    height: 115px;
     background: linear-gradient(270deg, rgba(0, 0, 0, 0.51) 0%, rgba(0, 0, 0, 0.68) 100%);
     border: 1px solid rgba(255, 255, 255, 0.26);
     border-radius: 10px;
-    padding: 25px;
+    padding: 18px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
     cursor: pointer;
     transition: all 0.3s ease;
     overflow: hidden;
@@ -843,7 +843,7 @@ body {
 .mode-card-title {
     font-family: 'Helvetica Neue', 'Inter', sans-serif;
     font-weight: 700;
-    font-size: 22px;
+    font-size: 18px;
     line-height: 85.39%;
     color: #FFFFFF;
     margin: 0;
@@ -851,23 +851,23 @@ body {
 
 .mode-card-tags {
     display: flex;
-    gap: 8px;
+    gap: 6px;
 }
 
 .mode-tag {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 10px 12px;
-    height: 32px;
+    padding: 7px 9px;
+    height: 26px;
     background: rgba(255, 255, 255, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.26);
     backdrop-filter: blur(4.6px);
-    border-radius: 7px;
+    border-radius: 6px;
     font-family: 'Helvetica Neue', 'Inter', sans-serif;
     font-weight: 700;
-    font-size: 15px;
-    line-height: 12px;
+    font-size: 13px;
+    line-height: 10px;
     color: #FFFFFF;
     text-transform: uppercase;
 }
@@ -908,16 +908,16 @@ body {
     z-index: 2;
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 10px;
     margin-top: auto;
 }
 
 .mode-progress-bar {
     position: relative;
     flex: 1;
-    height: 8px;
+    height: 6px;
     background: rgba(217, 217, 217, 0.16);
-    border-radius: 4px;
+    border-radius: 3px;
 }
 
 .mode-progress-fill {
@@ -925,18 +925,18 @@ body {
     left: 0;
     top: 0;
     width: 55%;
-    height: 8px;
+    height: 6px;
     background: #FF4040;
-    border-radius: 4px;
+    border-radius: 3px;
 }
 
 .mode-progress-text {
     font-family: 'Helvetica Neue', 'Inter', sans-serif;
     font-weight: 700;
-    font-size: 17px;
+    font-size: 14px;
     line-height: 87.44%;
     color: #FFFFFF;
-    min-width: 50px;
+    min-width: 40px;
 }
 
 .third-section {
@@ -1823,14 +1823,14 @@ body {
     z-index: 4;
     width: 100%;
     max-width: 1920px;
-    min-height: 654px;
+    min-height: 500px;
     left: 50%;
     transform: translateX(-50%);
-    margin-top: 200px;
+    margin-top: 150px;
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 120px 40px;
+    padding: 80px 40px;
     box-sizing: border-box;
 }
 
@@ -1864,8 +1864,8 @@ body {
 .about-text {
     font-family: 'Helvetica Neue', 'Inter', sans-serif;
     font-weight: 700;
-    font-size: 22px;
-    line-height: 1.6;
+    font-size: 18px;
+    line-height: 1.5;
     text-align: center;
     color: #FFFFFF;
     max-width: 1171px;
@@ -1997,8 +1997,8 @@ body {
     max-width: 1920px;
     left: 50%;
     transform: translateX(-50%);
-    margin-top: 150px;
-    padding: 120px 50px;
+    margin-top: 100px;
+    padding: 80px 50px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -2058,11 +2058,11 @@ body {
     z-index: 2;
     font-family: 'Alumni Sans', 'Anton', 'Inter', sans-serif;
     font-weight: 700;
-    font-size: 128px;
+    font-size: 96px;
     line-height: 1.2;
     text-align: center;
     color: #FFFFFF;
-    margin: 0 0 30px 0;
+    margin: 0 0 20px 0;
     text-transform: uppercase;
 }
 
@@ -2071,12 +2071,12 @@ body {
     z-index: 2;
     font-family: 'Helvetica Neue', 'Inter', sans-serif;
     font-weight: 400;
-    font-size: 20px;
-    line-height: 1.6;
+    font-size: 16px;
+    line-height: 1.5;
     text-align: center;
     color: rgba(255, 255, 255, 0.67);
     max-width: 1061px;
-    margin-bottom: 80px;
+    margin-bottom: 60px;
     padding: 0 20px;
 }
 
@@ -2093,12 +2093,12 @@ body {
     position: absolute;
     box-sizing: border-box;
     backdrop-filter: blur(7.55px);
-    border-radius: 10px;
-    height: 110px;
+    border-radius: 8px;
+    height: 85px;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 25px;
+    gap: 18px;
     text-decoration: none;
     transition: all 0.3s ease;
     cursor: pointer;
@@ -2167,8 +2167,8 @@ body {
 .social-card span {
     font-family: 'Helvetica Neue', 'Inter', sans-serif;
     font-weight: 700;
-    font-size: 24px;
-    line-height: 24px;
+    font-size: 20px;
+    line-height: 20px;
     text-transform: uppercase;
 }
 
