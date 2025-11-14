@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Сайт</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="background"></div>
+    
+    <section class="hero-section">
+        <img src="images/Group 119679.png" alt="Изображение">
+    </section>
+    
+    <section class="second-section">
+        <img src="images/Mask group.png" alt="Изображение">
+        <div class="glow-effect"></div>
+        <h1 class="section-title-overlay">ИГРОВЫЕ РЕЖИМЫ</h1>
+        <p class="section-subtitle">Уникальные режимы под каждый стиль игры</p>
+        <div class="combat-badge">COMBAT</div>
+        <div class="training-badge">TRAINING</div>
+        <div class="battlefield-badge">BATTLEFIELD</div>
+        <div class="pve-badge">PVE</div>
+        <div class="survival-badge">SURVIVAL</div>
+    </section>
+    
+    <section class="third-section">
+        <div class="game-card">
+            <img src="images/image 15.png" alt="CUBE" class="card-image">
+            <div class="card-new-badge">NEW</div>
+            <h2 class="card-title">CUBE</h2>
+        </div>
+        <div class="game-card">
+            <img src="images/image temnone.png" alt="CUBE" class="card-image">
+            <div class="card-new-badge">NEW</div>
+            <h2 class="card-title">CUBE</h2>
+        </div>
+        <div class="game-card">
+            <img src="images/image temnone.png" alt="CUBE" class="card-image">
+            <div class="card-new-badge">NEW</div>
+            <h2 class="card-title">CUBE</h2>
+        </div>
+        <div class="game-card">
+            <img src="images/image 15.png" alt="CUBE" class="card-image">
+            <div class="card-new-badge">NEW</div>
+            <h2 class="card-title">CUBE</h2>
+        </div>
+        <div class="game-card">
+            <img src="images/image temnone.png" alt="CUBE" class="card-image">
+            <div class="card-new-badge">NEW</div>
+            <h2 class="card-title">CUBE</h2>
+        </div>
+        <div class="game-card">
+            <img src="images/image temnone.png" alt="CUBE" class="card-image">
+            <div class="card-new-badge">NEW</div>
+            <h2 class="card-title">CUBE</h2>
+        </div>
+    </section>
+    
+    <div class="scroll-indicator">
+        <div class="circle-small active" data-section="0"></div>
+        <div class="circle-medium inactive" data-section="1"></div>
+        <div class="circle-large inactive" data-section="2"></div>
+    </div>
+    <script>
+        const circles = document.querySelectorAll('.scroll-indicator > div');
+        
+        function updateActiveCircle() {
+            const scrollPosition = window.scrollY;
+            const windowHeight = window.innerHeight;
+            const section = Math.floor(scrollPosition / windowHeight);
+            const activeSection = Math.min(section, 2);
+            
+            circles.forEach((circle, index) => {
+                if (index === activeSection) {
+                    circle.classList.add('active');
+                    circle.classList.remove('inactive');
+                } else {
+                    circle.classList.remove('active');
+                    circle.classList.add('inactive');
+                }
+            });
+        }
+        
+        window.addEventListener('scroll', updateActiveCircle);
+        updateActiveCircle();
+    </script>
+</body>
+</html>
