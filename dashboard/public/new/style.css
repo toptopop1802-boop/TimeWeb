@@ -189,7 +189,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0 40px;
+    padding: 0;
     z-index: 100;
     animation: fadeIn 1s ease-out;
     transition: background 0.3s ease, backdrop-filter 0.3s ease;
@@ -201,7 +201,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 20px;
+    padding: 0;
 }
 
 
@@ -286,7 +286,7 @@ body {
 .nav {
     display: flex;
     align-items: center;
-    gap: 45px;
+    gap: 65px;
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
@@ -303,7 +303,6 @@ body {
     text-decoration: none;
     transition: opacity 0.3s ease;
     white-space: nowrap;
-    padding: 10px 15px;
 }
 
 .nav-link:hover {
@@ -641,13 +640,10 @@ body {
 .start-playing-section {
     position: relative;
     z-index: 4;
-    width: 90%;
-    max-width: 1845px;
+    width: 1845px;
     left: 50%;
-    transform: translateX(-50%);
-    margin-left: 0;
+    margin-left: -922.5px;
     margin-top: 200px;
-    padding: 0 40px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -675,8 +671,8 @@ body {
     font-size: 128px;
     line-height: 154px;
     color: #FFFFFF;
-    margin: 0 0 30px 0;
-    width: 100%;
+    margin: 0 0 20px 0;
+    width: 1845px;
     text-align: left;
 }
 
@@ -685,12 +681,12 @@ body {
     z-index: 2;
     font-family: 'Helvetica Neue', 'Inter', sans-serif;
     font-weight: 400;
-    font-size: 20px;
-    line-height: 28px;
+    font-size: 18px;
+    line-height: 18px;
     color: rgba(255, 255, 255, 0.67);
-    width: 100%;
+    width: 1845px;
     text-align: left;
-    margin-bottom: 80px;
+    margin-bottom: 60px;
 }
 
 /* Теги режимов */
@@ -755,29 +751,29 @@ body {
 .modes-container {
     position: relative;
     z-index: 2;
-    width: 100%;
+    width: 1845px;
     display: flex;
     flex-direction: column;
-    gap: 100px;
+    gap: 80px;
 }
 
 .modes-category {
     display: flex;
     flex-direction: column;
-    gap: 30px;
+    gap: 20px;
 }
 
 .modes-header {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 15px;
     width: 100%;
 }
 
 .modes-title {
     font-family: 'Gilroy', 'Inter', sans-serif;
     font-weight: 700;
-    font-size: 24px;
+    font-size: 22px;
     line-height: 85.39%;
     color: rgba(255, 255, 255, 0.35);
     text-transform: uppercase;
@@ -793,23 +789,22 @@ body {
 
 .modes-grid {
     display: flex;
-    gap: 25px;
+    gap: 20px;
     width: 100%;
-    flex-wrap: wrap;
 }
 
 /* Карточка режима */
 .mode-card {
     position: relative;
-    width: 360px;
-    height: 140px;
+    width: 353px;
+    height: 124px;
     background: linear-gradient(270deg, rgba(0, 0, 0, 0.51) 0%, rgba(0, 0, 0, 0.68) 100%);
     border: 1px solid rgba(255, 255, 255, 0.26);
     border-radius: 10px;
-    padding: 25px;
+    padding: 21px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
     cursor: pointer;
     transition: all 0.3s ease;
     overflow: hidden;
@@ -843,7 +838,7 @@ body {
 .mode-card-title {
     font-family: 'Helvetica Neue', 'Inter', sans-serif;
     font-weight: 700;
-    font-size: 22px;
+    font-size: 20px;
     line-height: 85.39%;
     color: #FFFFFF;
     margin: 0;
@@ -851,33 +846,33 @@ body {
 
 .mode-card-tags {
     display: flex;
-    gap: 8px;
+    gap: 5px;
 }
 
 .mode-tag {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 10px 12px;
-    height: 32px;
+    padding: 8px;
+    height: 27px;
     background: rgba(255, 255, 255, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.26);
     backdrop-filter: blur(4.6px);
     border-radius: 7px;
     font-family: 'Helvetica Neue', 'Inter', sans-serif;
     font-weight: 700;
-    font-size: 15px;
-    line-height: 12px;
+    font-size: 14px;
+    line-height: 10px;
     color: #FFFFFF;
     text-transform: uppercase;
 }
 
 .mode-card-play {
     position: absolute;
-    right: 25px;
-    top: 25px;
-    width: 24px;
-    height: 24px;
+    right: 21px;
+    top: 21px;
+    width: 20px;
+    height: 20px;
     background: rgba(255, 255, 255, 0.63);
     border-radius: 50%;
     z-index: 3;
@@ -893,9 +888,9 @@ body {
     transform: translate(-40%, -50%);
     width: 0;
     height: 0;
-    border-left: 8px solid #000000;
-    border-top: 5px solid transparent;
-    border-bottom: 5px solid transparent;
+    border-left: 7px solid #000000;
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
 }
 
 .mode-card-play:hover {
@@ -908,35 +903,34 @@ body {
     z-index: 2;
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 12px;
     margin-top: auto;
 }
 
 .mode-progress-bar {
     position: relative;
-    flex: 1;
-    height: 8px;
+    width: 259px;
+    height: 7px;
     background: rgba(217, 217, 217, 0.16);
-    border-radius: 4px;
+    border-radius: 2px;
 }
 
 .mode-progress-fill {
     position: absolute;
     left: 0;
     top: 0;
-    width: 55%;
-    height: 8px;
+    width: 149px;
+    height: 7px;
     background: #FF4040;
-    border-radius: 4px;
+    border-radius: 2px;
 }
 
 .mode-progress-text {
     font-family: 'Helvetica Neue', 'Inter', sans-serif;
     font-weight: 700;
-    font-size: 17px;
+    font-size: 16px;
     line-height: 87.44%;
     color: #FFFFFF;
-    min-width: 50px;
 }
 
 .third-section {
@@ -1823,14 +1817,14 @@ body {
     z-index: 4;
     width: 100%;
     max-width: 1920px;
-    min-height: 654px;
+    height: 654px;
     left: 50%;
     transform: translateX(-50%);
     margin-top: 200px;
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 120px 40px;
+    padding: 100px 20px;
     box-sizing: border-box;
 }
 
@@ -1864,13 +1858,12 @@ body {
 .about-text {
     font-family: 'Helvetica Neue', 'Inter', sans-serif;
     font-weight: 700;
-    font-size: 22px;
-    line-height: 1.6;
+    font-size: 20px;
+    line-height: 1.461;
     text-align: center;
     color: #FFFFFF;
     max-width: 1171px;
     margin-top: -100px;
-    padding: 0 20px;
 }
 
 /* Раздел "Последние новости" */
@@ -1997,8 +1990,8 @@ body {
     max-width: 1920px;
     left: 50%;
     transform: translateX(-50%);
-    margin-top: 150px;
-    padding: 120px 50px;
+    margin-top: 100px;
+    padding: 100px 50px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -2071,34 +2064,31 @@ body {
     z-index: 2;
     font-family: 'Helvetica Neue', 'Inter', sans-serif;
     font-weight: 400;
-    font-size: 20px;
-    line-height: 1.6;
+    font-size: 18px;
+    line-height: 1.5;
     text-align: center;
     color: rgba(255, 255, 255, 0.67);
     max-width: 1061px;
-    margin-bottom: 80px;
-    padding: 0 20px;
+    margin-bottom: 60px;
 }
 
 .social-grid {
     position: relative;
     z-index: 2;
-    width: 100%;
-    max-width: 1846px;
-    height: auto;
-    min-height: 216px;
+    width: 1846px;
+    height: 216px;
 }
 
 .social-card {
     position: absolute;
     box-sizing: border-box;
     backdrop-filter: blur(7.55px);
-    border-radius: 10px;
-    height: 110px;
+    border-radius: 7px;
+    height: 98px;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 25px;
+    gap: 20px;
     text-decoration: none;
     transition: all 0.3s ease;
     cursor: pointer;
@@ -2167,8 +2157,8 @@ body {
 .social-card span {
     font-family: 'Helvetica Neue', 'Inter', sans-serif;
     font-weight: 700;
-    font-size: 24px;
-    line-height: 24px;
+    font-size: 22px;
+    line-height: 22px;
     text-transform: uppercase;
 }
 
@@ -2300,13 +2290,10 @@ body {
 
 /* Адаптивность для новых разделов */
 @media (max-width: 1400px) {
-    .header {
-        padding: 0 30px;
-    }
-    
     .start-playing-section {
         width: 90%;
-        padding: 0 30px;
+        left: 5%;
+        margin-left: 0;
     }
     
     .start-playing-title,
@@ -2315,24 +2302,13 @@ body {
         font-size: 100px;
     }
     
-    .start-playing-subtitle {
-        font-size: 19px;
-    }
-    
     .modes-container {
         width: 100%;
-        gap: 80px;
     }
     
     .modes-grid {
         flex-wrap: wrap;
-        justify-content: flex-start;
-        gap: 20px;
-    }
-    
-    .mode-card {
-        width: calc(33.333% - 14px);
-        min-width: 320px;
+        justify-content: center;
     }
     
     .news-grid {
@@ -2340,32 +2316,16 @@ body {
     }
     
     .social-grid {
-        display: grid;
         grid-template-columns: repeat(2, 1fr);
-        gap: 20px;
-        height: auto;
-    }
-    
-    .social-card {
-        position: relative !important;
-        left: auto !important;
-        top: auto !important;
-        width: 100% !important;
-    }
-    
-    .social-card.vk {
-        grid-column: 1 / -1;
     }
 }
 
 @media (max-width: 1024px) {
-    .header {
-        padding: 0 25px;
-    }
-    
     .start-playing-section {
         width: 90%;
-        padding: 0 25px;
+        left: 5%;
+        margin-left: 0;
+        padding: 0 20px;
     }
     
     .start-playing-title,
@@ -2374,35 +2334,13 @@ body {
         font-size: 80px;
     }
     
-    .start-playing-subtitle {
-        font-size: 18px;
-        line-height: 26px;
-    }
-    
-    .modes-container {
-        gap: 60px;
-    }
-    
     .modes-grid {
-        gap: 20px;
-        justify-content: center;
+        gap: 15px;
     }
     
     .mode-card {
         width: 100%;
-        max-width: 400px;
-        height: 150px;
-        padding: 28px;
-    }
-    
-    .mode-card-title {
-        font-size: 24px;
-    }
-    
-    .mode-tag {
-        font-size: 16px;
-        padding: 11px 14px;
-        height: 35px;
+        max-width: 353px;
     }
     
     .game-mode-tags {
@@ -2415,17 +2353,7 @@ body {
     }
     
     .social-grid {
-        display: grid;
         grid-template-columns: 1fr;
-        gap: 20px;
-    }
-    
-    .social-card {
-        position: relative !important;
-        left: auto !important;
-        top: auto !important;
-        width: 100% !important;
-        height: 120px;
     }
     
     .footer-content {
@@ -2441,101 +2369,47 @@ body {
 }
 
 @media (max-width: 768px) {
-    .header {
-        padding: 0 20px;
-    }
-    
     .start-playing-section {
-        width: 95%;
-        padding: 0 20px;
+        width: 90%;
+        left: 5%;
+        margin-left: 0;
+        padding: 0 15px;
     }
     
     .start-playing-title,
     .news-title,
     .social-title {
         font-size: 60px;
-        line-height: 1.2;
     }
     
     .start-playing-subtitle,
     .news-subtitle,
     .social-subtitle {
-        font-size: 18px;
-        line-height: 26px;
+        font-size: 16px;
     }
     
     .modes-container {
-        gap: 50px;
-    }
-    
-    .modes-category {
-        gap: 25px;
-    }
-    
-    .modes-title {
-        font-size: 22px;
+        gap: 30px;
     }
     
     .modes-grid {
         flex-direction: column;
         align-items: center;
-        gap: 20px;
     }
     
     .mode-card {
         width: 100%;
-        max-width: 500px;
-        height: 160px;
-        padding: 30px;
-    }
-    
-    .mode-card-title {
-        font-size: 26px;
-    }
-    
-    .mode-tag {
-        font-size: 17px;
-        padding: 12px 16px;
-        height: 38px;
     }
     
     .game-mode-tags {
         position: static;
         width: 100%;
         justify-content: center;
-        margin-bottom: 30px;
-        opacity: 1;
-    }
-    
-    .mode-tag-badge {
-        font-size: 18px;
-        padding: 12px 18px;
-        height: 44px;
-    }
-    
-    .about-section {
-        padding: 100px 30px;
+        margin-bottom: 20px;
     }
     
     .about-text {
-        font-size: 20px;
-        line-height: 1.7;
-    }
-    
-    .social-section {
-        padding: 100px 30px;
-    }
-    
-    .social-card {
-        height: 130px;
-    }
-    
-    .social-card span {
-        font-size: 26px;
-    }
-    
-    .footer {
-        padding: 50px 30px 30px;
+        font-size: 18px;
     }
     
     .footer-nav {
@@ -2545,84 +2419,58 @@ body {
 }
 
 @media (max-width: 480px) {
-    .header {
-        padding: 0 15px;
-    }
-    
     .start-playing-section {
-        width: 100%;
-        padding: 0 15px;
+        width: 95%;
+        left: 2.5%;
+        margin-left: 0;
+        padding: 0 10px;
     }
     
     .start-playing-title,
     .news-title,
     .social-title {
-        font-size: 42px;
-        line-height: 1.2;
+        font-size: 40px;
+        line-height: 1.1;
     }
     
     .start-playing-subtitle,
     .news-subtitle,
     .social-subtitle {
-        font-size: 16px;
-        line-height: 24px;
-    }
-    
-    .modes-container {
-        gap: 40px;
+        font-size: 14px;
     }
     
     .modes-title {
-        font-size: 20px;
+        font-size: 18px;
     }
     
     .mode-card {
         height: auto;
-        min-height: 150px;
-        padding: 25px;
+        min-height: 124px;
     }
     
     .mode-card-title {
-        font-size: 22px;
+        font-size: 18px;
     }
     
     .mode-tag {
-        font-size: 14px;
-        padding: 10px 12px;
-        height: 34px;
+        font-size: 12px;
+        padding: 6px;
     }
     
     .game-mode-tags {
-        gap: 8px;
-        flex-wrap: wrap;
+        gap: 5px;
     }
     
     .mode-tag-badge {
         font-size: 16px;
-        padding: 11px 16px;
-        height: 40px;
+        padding: 10px 14px;
+        height: 36px;
     }
     
-    .about-section {
-        padding: 80px 20px;
-    }
-    
-    .about-text {
-        font-size: 18px;
-        line-height: 1.6;
-    }
-    
+    .about-section,
     .news-section,
     .social-section {
-        padding: 80px 20px;
-    }
-    
-    .social-card {
-        height: 110px;
-    }
-    
-    .social-card span {
-        font-size: 22px;
+        padding: 60px 20px;
     }
     
     .footer {
