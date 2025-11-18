@@ -382,8 +382,12 @@
             successDiv.classList.remove('show');
         }
 
-        // Simple registration/login form
-        document.getElementById('register-form').addEventListener('submit', async (e) => {
+        // Wait for DOM to be ready
+        document.addEventListener('DOMContentLoaded', () => {
+            // Simple registration/login form
+            const registerForm = document.getElementById('register-form');
+            if (registerForm) {
+                registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             hideError();
             hideSuccess();
@@ -418,8 +422,13 @@
                     
                     showSuccess('Успешный вход! Перенаправление...');
                     
+                    // Проверяем, есть ли hash в URL для редиректа (например, #api)
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const redirectHash = urlParams.get('redirect') || window.location.hash || '';
+                    const redirectUrl = redirectHash ? `/${redirectHash}` : '/';
+                    
                     setTimeout(() => {
-                        window.location.href = '/';
+                        window.location.href = redirectUrl;
                     }, 500);
                 } else {
                     showError(result.error || 'Ошибка входа');
@@ -432,29 +441,35 @@
                 submitBtn.disabled = false;
                 submitBtn.textContent = originalText;
             }
-        });
-
-        // Admin login modal
-        const adminToggleBtn = document.getElementById('admin-login-toggle');
-        const adminModal = document.getElementById('admin-login-modal');
-        const adminCancelBtn = document.getElementById('admin-cancel-btn');
-        const adminLoginForm = document.getElementById('admin-login-form');
-
-        adminToggleBtn.addEventListener('click', () => {
-            adminModal.style.display = 'flex';
-        });
-
-        adminCancelBtn.addEventListener('click', () => {
-            adminModal.style.display = 'none';
-        });
-
-        adminModal.addEventListener('click', (e) => {
-            if (e.target === adminModal) {
-                adminModal.style.display = 'none';
+                });
             }
-        });
+            const adminToggleBtn = document.getElementById('admin-login-toggle');
+            const adminModal = document.getElementById('admin-login-modal');
+            const adminCancelBtn = document.getElementById('admin-cancel-btn');
+            const adminLoginForm = document.getElementById('admin-login-form');
 
-        adminLoginForm.addEventListener('submit', async (e) => {
+            if (!adminToggleBtn || !adminModal || !adminCancelBtn || !adminLoginForm) {
+                console.error('Admin login elements not found');
+                return;
+            }
+
+            adminToggleBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                adminModal.style.display = 'flex';
+            });
+
+            adminCancelBtn.addEventListener('click', () => {
+                adminModal.style.display = 'none';
+            });
+
+            adminModal.addEventListener('click', (e) => {
+                if (e.target === adminModal) {
+                    adminModal.style.display = 'none';
+                }
+            });
+
+            adminLoginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             hideError();
             hideSuccess();
@@ -481,8 +496,13 @@
                     
                     showSuccess('Вход выполнен! Перенаправление...');
                     
+                    // Проверяем, есть ли hash в URL для редиректа (например, #api)
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const redirectHash = urlParams.get('redirect') || window.location.hash || '';
+                    const redirectUrl = redirectHash ? `/${redirectHash}` : '/';
+                    
                     setTimeout(() => {
-                        window.location.href = '/';
+                        window.location.href = redirectUrl;
                     }, 500);
                 } else {
                     showError(result.error || 'Неверный логин или пароль');
@@ -494,6 +514,7 @@
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Войти';
             }
+            });
         });
 
         // Check if already logged in
@@ -510,7 +531,10 @@
             })
             .then(data => {
                 localStorage.setItem('user', JSON.stringify(data.user));
-                window.location.href = '/';
+                // Проверяем hash для редиректа
+                const hash = window.location.hash || '';
+                const redirectUrl = hash ? `/${hash}` : '/';
+                window.location.href = redirectUrl;
             })
             .catch(() => {
                 localStorage.removeItem('auth_token');

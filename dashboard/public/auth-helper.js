@@ -17,11 +17,17 @@ async function createGuestSession() {
         }
         
         // Если не удалось создать гостя, редиректим на login
-        window.location.href = '/login.html';
+        // Сохраняем hash для редиректа после входа
+        const hash = window.location.hash || '';
+        const loginUrl = hash ? `/login.html${hash}` : '/login.html';
+        window.location.href = loginUrl;
         return null;
     } catch (error) {
         console.error('Failed to create guest session:', error);
-        window.location.href = '/login.html';
+        // Сохраняем hash для редиректа после входа
+        const hash = window.location.hash || '';
+        const loginUrl = hash ? `/login.html${hash}` : '/login.html';
+        window.location.href = loginUrl;
         return null;
     }
 }
@@ -48,7 +54,10 @@ async function requireAuth() {
     const authData = getAuthData();
     
     if (!authData) {
-        window.location.href = '/login.html';
+        // Сохраняем hash для редиректа после входа
+        const hash = window.location.hash || '';
+        const loginUrl = hash ? `/login.html${hash}` : '/login.html';
+        window.location.href = loginUrl;
         return null;
     }
     
@@ -64,7 +73,10 @@ async function requireAuth() {
             // Токен недействителен
             localStorage.removeItem('auth_token');
             localStorage.removeItem('user');
-            window.location.href = '/login.html';
+            // Сохраняем hash для редиректа после входа
+            const hash = window.location.hash || '';
+            const loginUrl = hash ? `/login.html${hash}` : '/login.html';
+            window.location.href = loginUrl;
             return null;
         }
         
