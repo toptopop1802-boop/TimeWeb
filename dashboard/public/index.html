@@ -55,7 +55,6 @@
         
         // Сразу скрываем элементы если открыта страница API
         if (window.location.hash === '#api') {
-            document.body.setAttribute('data-api-page', 'true');
             window.__API_PAGE_ACTIVE__ = true;
             
             // Удаляем style.css сразу
@@ -65,8 +64,12 @@
                 }
             });
             
-            // Скрываем все элементы index.html сразу
+            // Функция для скрытия элементов
             const hideElements = () => {
+                if (!document.body) return;
+                
+                document.body.setAttribute('data-api-page', 'true');
+                
                 const elementsToHide = [
                     '.header', '.preloader', '.background', '.cards-background', '.cards-glow',
                     '.competitive-banner', '.hero-section', '.start-playing-section',
@@ -84,11 +87,14 @@
                 });
             };
             
-            // Выполняем сразу и после загрузки DOM
-            hideElements();
-            if (document.readyState === 'loading') {
+            // Выполняем после загрузки DOM
+            if (document.body) {
+                hideElements();
+            } else {
                 document.addEventListener('DOMContentLoaded', hideElements);
             }
+            // Также выполняем после полной загрузки страницы
+            window.addEventListener('load', hideElements);
         }
     </script>
 </head>
