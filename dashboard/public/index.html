@@ -11,12 +11,43 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css?v=1.2.0">
+    <style>
+        /* Скрываем все элементы index.html если открыта страница API */
+        body:has(+ *)[data-api-page="true"],
+        body[data-api-page="true"] .header,
+        body[data-api-page="true"] .preloader,
+        body[data-api-page="true"] .background,
+        body[data-api-page="true"] .cards-background,
+        body[data-api-page="true"] .cards-glow,
+        body[data-api-page="true"] .competitive-banner,
+        body[data-api-page="true"] .hero-section,
+        body[data-api-page="true"] .start-playing-section,
+        body[data-api-page="true"] .about-section,
+        body[data-api-page="true"] .social-section,
+        body[data-api-page="true"] .footer,
+        body[data-api-page="true"] .scroll-indicator {
+            display: none !important;
+        }
+    </style>
     <script>
         // Автоматическое обновление при изменении файлов
         const CACHE_VERSION = '1.2.0';
         if (localStorage.getItem('cache_version') !== CACHE_VERSION) {
             localStorage.setItem('cache_version', CACHE_VERSION);
             location.reload(true);
+        }
+        
+        // Сразу скрываем элементы если открыта страница API
+        if (window.location.hash === '#api') {
+            document.body.setAttribute('data-api-page', 'true');
+            window.__API_PAGE_ACTIVE__ = true;
+            
+            // Удаляем style.css сразу
+            document.querySelectorAll('link[href*="style.css"]').forEach(link => {
+                if (link.href.includes('style.css')) {
+                    link.remove();
+                }
+            });
         }
     </script>
 </head>

@@ -1081,7 +1081,9 @@ function setupNavigation() {
     // Полностью отключаем index.html если сразу открыта страница API
     if (initialHash === 'api') {
         window.__API_PAGE_ACTIVE__ = true;
+        document.body.setAttribute('data-api-page', 'true');
         
+        // Скрываем все элементы через CSS атрибут (уже применен через CSS)
         const header = document.querySelector('.header');
         const preloader = document.querySelector('.preloader');
         const background = document.querySelector('.background');
@@ -1095,10 +1097,16 @@ function setupNavigation() {
         const footer = document.querySelector('.footer');
         const scrollIndicator = document.querySelector('.scroll-indicator');
         
-        // Скрываем все элементы
+        // Дополнительно скрываем все элементы
         [header, preloader, background, cardsBackground, cardsGlow, competitiveBanner,
          heroSection, startPlayingSection, aboutSection, socialSection, footer, scrollIndicator].forEach(el => {
-            if (el) el.style.display = 'none';
+            if (el) {
+                el.style.display = 'none';
+                el.style.visibility = 'hidden';
+                el.style.opacity = '0';
+                el.style.height = '0';
+                el.style.overflow = 'hidden';
+            }
         });
         
         // Отключаем style.css от index.html
@@ -1167,6 +1175,7 @@ function navigateToPage(page) {
     // Восстанавливаем меню index.html если переходим не на API страницу
     if (pageName !== 'api') {
         window.__API_PAGE_ACTIVE__ = false;
+        document.body.removeAttribute('data-api-page');
         
         const header = document.querySelector('.header');
         const preloader = document.querySelector('.preloader');
@@ -1184,7 +1193,15 @@ function navigateToPage(page) {
         // Восстанавливаем элементы
         [header, preloader, background, cardsBackground, cardsGlow, competitiveBanner,
          heroSection, startPlayingSection, aboutSection, socialSection, footer, scrollIndicator].forEach(el => {
-            if (el) el.style.display = '';
+            if (el) {
+                el.style.display = '';
+                el.style.visibility = '';
+                el.style.opacity = '';
+                el.style.height = '';
+                el.style.overflow = '';
+                el.style.position = '';
+                el.style.left = '';
+            }
         });
         
         // Восстанавливаем style.css если он был удален
@@ -1247,6 +1264,9 @@ function navigateToPage(page) {
         }
     } else if (page === 'api') {
         // Полностью отключаем все элементы от index.html
+        window.__API_PAGE_ACTIVE__ = true;
+        document.body.setAttribute('data-api-page', 'true');
+        
         const header = document.querySelector('.header');
         const preloader = document.querySelector('.preloader');
         const background = document.querySelector('.background');
@@ -1260,10 +1280,18 @@ function navigateToPage(page) {
         const footer = document.querySelector('.footer');
         const scrollIndicator = document.querySelector('.scroll-indicator');
         
-        // Скрываем все элементы
+        // Скрываем все элементы через несколько способов
         [header, preloader, background, cardsBackground, cardsGlow, competitiveBanner, 
          heroSection, startPlayingSection, aboutSection, socialSection, footer, scrollIndicator].forEach(el => {
-            if (el) el.style.display = 'none';
+            if (el) {
+                el.style.display = 'none';
+                el.style.visibility = 'hidden';
+                el.style.opacity = '0';
+                el.style.height = '0';
+                el.style.overflow = 'hidden';
+                el.style.position = 'absolute';
+                el.style.left = '-9999px';
+            }
         });
         
         // Отключаем style.css от index.html
@@ -1274,10 +1302,6 @@ function navigateToPage(page) {
                 link.remove();
             }
         });
-        
-        // Отключаем скрипты от index.html (встроенные скрипты уже выполнены, но можем заблокировать их эффекты)
-        // Устанавливаем флаг что мы на странице API
-        window.__API_PAGE_ACTIVE__ = true;
         
         // Загрузка и отрисовка токенов API
         if (typeof loadApiTokens === 'function') {
