@@ -5,11 +5,31 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Галерея изображений</title>
+  <!-- Изоляция от внешних стилей -->
+  <style>
+    /* Блокируем загрузку внешних стилей */
+    link[rel="stylesheet"]:not([data-gallery]) { display: none !important; }
+  </style>
+  <script>
+    // Блокируем выполнение внешних скриптов до загрузки страницы
+    window.__GALLERY_PAGE__ = true;
+    // Удаляем все внешние стили если они были загружены
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('link[rel="stylesheet"]:not([data-gallery])').forEach(link => {
+        if (!link.href.includes('chart.js') && !link.href.includes('fonts.googleapis')) {
+          link.remove();
+        }
+      });
+    });
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
+    /* Полная изоляция стилей - сброс всех глобальных стилей */
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{width:100%;height:100%;overflow-x:hidden}
+    body *{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif !important}
     :root{--bg:#f5f7fa;--card:#ffffff;--card-hover:#f0f4f8;--text:#1a202c;--muted:#64748b;--primary:#2563eb;--accent:#06b6d4;--border:#e2e8f0;--hover:#cbd5e1}
-    *{box-sizing:border-box}
-    body{margin:0;background:linear-gradient(135deg,#f5f7fa 0%,#e0e7ff 100%);color:var(--text);font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;min-height:100vh}
+    body{margin:0 !important;padding:0 !important;background:linear-gradient(135deg,#f5f7fa 0%,#e0e7ff 100%) !important;color:var(--text) !important;font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif !important;min-height:100vh !important}
     header{position:sticky;top:0;background:rgba(255,255,255,.95);backdrop-filter:blur(12px);z-index:5;border-bottom:2px solid var(--border);box-shadow:0 4px 20px rgba(37,99,235,.1)}
     .wrap{max-width:1200px;margin:0 auto;padding:16px}
     .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
