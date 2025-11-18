@@ -457,12 +457,18 @@
     </div>
     
     <script>
+        // Проверка: не выполняем скрипты если открыта страница API
+        if (window.__API_PAGE_ACTIVE__ || window.location.hash === '#api') {
+            window.__API_PAGE_ACTIVE__ = true;
+        } else {
         // Прелоадер
         window.addEventListener('load', () => {
             const preloader = document.querySelector('.preloader');
-            setTimeout(() => {
-                preloader.classList.add('hidden');
-            }, 1000);
+            if (preloader && !window.__API_PAGE_ACTIVE__) {
+                setTimeout(() => {
+                    preloader.classList.add('hidden');
+                }, 1000);
+            }
         });
         
         // Индикатор скролла
@@ -549,24 +555,23 @@
         const heroCards = document.querySelectorAll('.hero-card');
         const cardsGlow = document.querySelector('.cards-glow');
         
-        btnPlay.addEventListener('mouseenter', () => {
+        if (btnPlay && !window.__API_PAGE_ACTIVE__) {
+            btnPlay.addEventListener('mouseenter', () => {
             heroCards.forEach(card => {
                 card.classList.add('glow-active');
             });
             cardsGlow.style.opacity = '0.41';
         });
         
-        btnPlay.addEventListener('mouseleave', () => {
-            heroCards.forEach(card => {
-                card.classList.remove('glow-active');
+            btnPlay.addEventListener('mouseleave', () => {
+                heroCards.forEach(card => {
+                    card.classList.remove('glow-active');
+                });
+                if (cardsGlow) cardsGlow.style.opacity = '0';
             });
-            cardsGlow.style.opacity = '0';
-        });
-        
-
-        
-        // Плавный скролл до секции "ИГРОВЫЕ РЕЖИМЫ" при клике на кнопку
-        btnPlay.addEventListener('click', (e) => {
+            
+            // Плавный скролл до секции "ИГРОВЫЕ РЕЖИМЫ" при клике на кнопку
+            btnPlay.addEventListener('click', (e) => {
             e.preventDefault();
             const secondSection = document.querySelector('.second-section');
             const targetPosition = secondSection.offsetTop;
@@ -590,19 +595,24 @@
                 return c / 2 * (t * t * t + 2) + b;
             }
             
-            requestAnimationFrame(animation);
-        });
+                requestAnimationFrame(animation);
+            });
+        }
         
         // Добавление блюра к хедеру при скролле
         const header = document.querySelector('.header');
         
-        window.addEventListener('scroll', () => {
-            if (window.scrollY > 50) {
-                header.classList.add('scrolled');
-            } else {
-                header.classList.remove('scrolled');
-            }
-        });
+        if (header && !window.__API_PAGE_ACTIVE__) {
+            window.addEventListener('scroll', () => {
+                if (window.__API_PAGE_ACTIVE__) return;
+                if (window.scrollY > 50) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+            });
+        }
+        }
     </script>
 </body>
 </html>
