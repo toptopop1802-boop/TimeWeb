@@ -13,7 +13,6 @@
     <link rel="stylesheet" href="style.css?v=1.2.0">
     <style>
         /* Скрываем все элементы index.html если открыта страница API */
-        body:has(+ *)[data-api-page="true"],
         body[data-api-page="true"] .header,
         body[data-api-page="true"] .preloader,
         body[data-api-page="true"] .background,
@@ -25,8 +24,15 @@
         body[data-api-page="true"] .about-section,
         body[data-api-page="true"] .social-section,
         body[data-api-page="true"] .footer,
-        body[data-api-page="true"] .scroll-indicator {
+        body[data-api-page="true"] .scroll-indicator,
+        body[data-api-page="true"] > *:not([id^="page-"]):not(script):not(style) {
             display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            height: 0 !important;
+            overflow: hidden !important;
+            position: absolute !important;
+            left: -9999px !important;
         }
     </style>
     <script>
