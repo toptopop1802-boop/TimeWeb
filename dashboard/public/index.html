@@ -25,7 +25,7 @@
         body[data-api-page="true"] .social-section,
         body[data-api-page="true"] .footer,
         body[data-api-page="true"] .scroll-indicator,
-        body[data-api-page="true"] > *:not([id^="page-"]):not(script):not(style) {
+        body[data-api-page="true"] > *:not([id^="page-"]):not(script):not(style):not([class*="page"]) {
             display: none !important;
             visibility: hidden !important;
             opacity: 0 !important;
@@ -33,6 +33,16 @@
             overflow: hidden !important;
             position: absolute !important;
             left: -9999px !important;
+            width: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        /* Скрываем все секции и элементы внутри body */
+        body[data-api-page="true"] section,
+        body[data-api-page="true"] header:not([id^="page-"]),
+        body[data-api-page="true"] footer:not([id^="page-"]),
+        body[data-api-page="true"] div:not([id^="page-"]):not([class*="page"]) {
+            display: none !important;
         }
     </style>
     <script>
@@ -54,6 +64,31 @@
                     link.remove();
                 }
             });
+            
+            // Скрываем все элементы index.html сразу
+            const hideElements = () => {
+                const elementsToHide = [
+                    '.header', '.preloader', '.background', '.cards-background', '.cards-glow',
+                    '.competitive-banner', '.hero-section', '.start-playing-section',
+                    '.about-section', '.social-section', '.footer', '.scroll-indicator'
+                ];
+                elementsToHide.forEach(selector => {
+                    document.querySelectorAll(selector).forEach(el => {
+                        el.style.display = 'none';
+                        el.style.visibility = 'hidden';
+                        el.style.opacity = '0';
+                        el.style.height = '0';
+                        el.style.position = 'absolute';
+                        el.style.left = '-9999px';
+                    });
+                });
+            };
+            
+            // Выполняем сразу и после загрузки DOM
+            hideElements();
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', hideElements);
+            }
         }
     </script>
 </head>
