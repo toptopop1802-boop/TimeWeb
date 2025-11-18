@@ -7,36 +7,36 @@
   <title>Галерея изображений</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
-    :root{--bg:#0a0a0a;--card:#1a1a1a;--card-hover:#222;--text:#e5e5e5;--muted:#888;--primary:#c40552;--accent:#e4735c;--border:#2a2a2a;--hover:#2a2a2a}
+    :root{--bg:#f5f7fa;--card:#ffffff;--card-hover:#f0f4f8;--text:#1a202c;--muted:#64748b;--primary:#2563eb;--accent:#06b6d4;--border:#e2e8f0;--hover:#cbd5e1}
     *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif}
-    header{position:sticky;top:0;background:rgba(10,10,10,.95);backdrop-filter:blur(12px);z-index:5;border-bottom:1px solid var(--border);box-shadow:0 4px 20px rgba(0,0,0,.5)}
+    body{margin:0;background:linear-gradient(135deg,#f5f7fa 0%,#e0e7ff 100%);color:var(--text);font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;min-height:100vh}
+    header{position:sticky;top:0;background:rgba(255,255,255,.95);backdrop-filter:blur(12px);z-index:5;border-bottom:2px solid var(--border);box-shadow:0 4px 20px rgba(37,99,235,.1)}
     .wrap{max-width:1200px;margin:0 auto;padding:16px}
     .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
     .search{flex:1;min-width:220px}
-    input,select{background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:12px;padding:12px 16px;width:100%;outline:none;transition:all .3s ease;font-size:14px}
-    input:focus,select:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(196,5,82,.15);background:var(--card-hover)}
+    input,select{background:var(--card);border:2px solid var(--border);color:var(--text);border-radius:12px;padding:12px 16px;width:100%;outline:none;transition:all .3s ease;font-size:14px}
+    input:focus,select:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(37,99,235,.15);background:var(--card-hover)}
     input::placeholder{color:var(--muted)}
     main{max-width:1200px;margin:20px auto;padding:0 16px}
     .controls{display:flex;gap:10px;align-items:center;justify-content:space-between;margin:10px 0}
     .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:24px}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:20px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4);transition:all .3s ease}
-    .card:hover{transform:translateY(-6px);box-shadow:0 12px 40px rgba(196,5,82,.3);border-color:var(--primary);background:var(--card-hover)}
-    .thumb{background:#0f0f0f;display:flex;align-items:center;justify-content:center;height:200px;overflow:hidden;position:relative}
+    .card{background:var(--card);border:2px solid var(--border);border-radius:20px;overflow:hidden;box-shadow:0 8px 24px rgba(37,99,235,.08);transition:all .3s ease}
+    .card:hover{transform:translateY(-6px);box-shadow:0 12px 40px rgba(37,99,235,.2);border-color:var(--primary);background:var(--card-hover)}
+    .thumb{background:#f8fafc;display:flex;align-items:center;justify-content:center;height:200px;overflow:hidden;position:relative;border-bottom:2px solid var(--border)}
     .thumb img{max-width:100%;max-height:100%;object-fit:contain;transition:transform .3s ease}
     .card:hover .thumb img{transform:scale(1.05)}
-    .meta{padding:16px;border-top:1px solid var(--border)}
+    .meta{padding:16px;border-top:2px solid var(--border)}
     .meta .name{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text);margin-bottom:10px;font-size:15px}
     .meta .row{justify-content:space-between;color:var(--muted);font-size:12px;margin-top:8px}
     .btns{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
-    button{background:linear-gradient(135deg,var(--primary),var(--accent));border:none;color:#fff;border-radius:12px;padding:11px 16px;cursor:pointer;font-weight:600;transition:all .3s ease;font-size:13px;white-space:nowrap;flex:1;min-width:80px;box-shadow:0 4px 12px rgba(196,5,82,.3)}
-    button:hover{opacity:.9;transform:translateY(-2px);box-shadow:0 6px 20px rgba(196,5,82,.5)}
-    .copy{background:var(--card);color:var(--primary);border:1px solid var(--primary)}
+    button{background:linear-gradient(135deg,var(--primary),var(--accent));border:none;color:#fff;border-radius:12px;padding:11px 16px;cursor:pointer;font-weight:600;transition:all .3s ease;font-size:13px;white-space:nowrap;flex:1;min-width:80px;box-shadow:0 4px 12px rgba(37,99,235,.3)}
+    button:hover{opacity:.9;transform:translateY(-2px);box-shadow:0 6px 20px rgba(37,99,235,.5)}
+    .copy{background:var(--card);color:var(--primary);border:2px solid var(--primary)}
     .copy:hover{background:var(--primary);color:#fff}
     footer{color:var(--muted);text-align:center;margin:26px 0;font-size:12px}
-    .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--card);color:#fff;border:1px solid var(--primary);padding:14px 20px;border-radius:16px;opacity:0;transition:opacity .3s, transform .3s;pointer-events:none;box-shadow:0 12px 32px rgba(196,5,82,.4);font-weight:600}
+    .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--card);color:var(--text);border:2px solid var(--primary);padding:14px 20px;border-radius:16px;opacity:0;transition:opacity .3s, transform .3s;pointer-events:none;box-shadow:0 12px 32px rgba(37,99,235,.4);font-weight:600}
     .toast.show{opacity:1;transform:translateX(-50%) translateY(-6px)}
-    #chart{background:var(--card);border-radius:16px;padding:16px;border:1px solid var(--border)}
+    #chart{background:var(--card);border-radius:16px;padding:16px;border:2px solid var(--border);box-shadow:0 4px 12px rgba(37,99,235,.08)}
   </style>
   <script>
     // Access guard in UI: only admins can view data
@@ -50,7 +50,7 @@
         if(!me.user || me.user.role !== 'admin') throw new Error('not admin');
         return true;
       }catch(e){
-        document.body.innerHTML = '<div style="max-width:800px;margin:80px auto;color:#e5e7eb;background:#111827;border:1px solid rgba(255,255,255,.1);padding:20px;border-radius:12px;text-align:center">⛔ Доступ запрещён. Требуются права администратора.</div>';
+        document.body.innerHTML = '<div style="max-width:800px;margin:80px auto;color:#1a202c;background:#ffffff;border:2px solid #e2e8f0;padding:20px;border-radius:12px;text-align:center;box-shadow:0 8px 24px rgba(37,99,235,.1)">⛔ Доступ запрещён. Требуются права администратора.</div>';
         return false;
       }
     }
@@ -123,7 +123,7 @@
         });
         io.observe(sentinel);
       }catch(e){
-        document.getElementById('grid').innerHTML = `<div style="color:#ef4444">Ошибка загрузки: ${e.message}</div>`
+        document.getElementById('grid').innerHTML = `<div style="color:#ef4444;padding:20px;text-align:center;background:#fff;border:2px solid #fee2e2;border-radius:12px">Ошибка загрузки: ${e.message}</div>`
       }
     }
     addEventListener('DOMContentLoaded', init);
@@ -164,15 +164,15 @@
         
         // Градиент для изображений
         const gradientImages = ctx.createLinearGradient(0, 0, 0, ctx.canvas.height || 220);
-        gradientImages.addColorStop(0, 'rgba(196,5,82,0.45)');
-        gradientImages.addColorStop(0.5, 'rgba(196,5,82,0.2)');
-        gradientImages.addColorStop(1, 'rgba(196,5,82,0)');
+        gradientImages.addColorStop(0, 'rgba(37,99,235,0.45)');
+        gradientImages.addColorStop(0.5, 'rgba(37,99,235,0.2)');
+        gradientImages.addColorStop(1, 'rgba(37,99,235,0)');
         
         // Градиент для MB
         const gradientMB = ctx.createLinearGradient(0, 0, 0, ctx.canvas.height || 220);
-        gradientMB.addColorStop(0, 'rgba(106,193,255,0.35)');
-        gradientMB.addColorStop(0.5, 'rgba(106,193,255,0.15)');
-        gradientMB.addColorStop(1, 'rgba(106,193,255,0)');
+        gradientMB.addColorStop(0, 'rgba(6,182,212,0.35)');
+        gradientMB.addColorStop(0.5, 'rgba(6,182,212,0.15)');
+        gradientMB.addColorStop(1, 'rgba(6,182,212,0)');
         
         new Chart(ctx, { 
           type:'line', 
@@ -182,18 +182,18 @@
               { 
                 label:'Изображений', 
                 data:counts, 
-                borderColor:'rgba(196,5,82,1)', 
+                borderColor:'rgba(37,99,235,1)', 
                 backgroundColor:gradientImages, 
                 fill:true, 
                 tension:0.4, 
                 borderWidth:3,
                 pointRadius:0,
                 pointHoverRadius:8,
-                pointBackgroundColor:'#1a1a1a',
-                pointBorderColor:'rgba(196,5,82,1)',
+                pointBackgroundColor:'#ffffff',
+                pointBorderColor:'rgba(37,99,235,1)',
                 pointBorderWidth:3,
                 pointHoverBorderWidth:4,
-                pointHoverBackgroundColor:'rgba(196,5,82,1)',
+                pointHoverBackgroundColor:'rgba(37,99,235,1)',
                 spanGaps:true,
                 cubicInterpolationMode: 'monotone'
               },
@@ -201,18 +201,18 @@
                 label:'MB', 
                 data:bytes, 
                 yAxisID:'y1', 
-                borderColor:'#6ac1ff', 
+                borderColor:'#06b6d4', 
                 backgroundColor:gradientMB, 
                 fill:true, 
                 tension:0.4,
                 borderWidth:3,
                 pointRadius:0,
                 pointHoverRadius:8,
-                pointBackgroundColor:'#1a1a1a',
-                pointBorderColor:'#6ac1ff',
+                pointBackgroundColor:'#ffffff',
+                pointBorderColor:'#06b6d4',
                 pointBorderWidth:3,
                 pointHoverBorderWidth:4,
-                pointHoverBackgroundColor:'#6ac1ff',
+                pointHoverBackgroundColor:'#06b6d4',
                 spanGaps:true,
                 cubicInterpolationMode: 'monotone'
               }
@@ -224,7 +224,7 @@
               legend:{ 
                 display:true,
                 labels: {
-                  color: '#e5e5e5',
+                  color: '#1a202c',
                   font: { size: 13, weight: '600' },
                   padding: 15,
                   usePointStyle: true,
@@ -232,10 +232,10 @@
                 }
               },
               tooltip: {
-                backgroundColor: 'rgba(26,26,26,0.95)',
-                titleColor: '#e5e5e5',
-                bodyColor: '#e5e5e5',
-                borderColor: '#2a2a2a',
+                backgroundColor: 'rgba(255,255,255,0.95)',
+                titleColor: '#1a202c',
+                bodyColor: '#1a202c',
+                borderColor: '#e2e8f0',
                 borderWidth: 1,
                 padding: 12,
                 cornerRadius: 8,
@@ -246,18 +246,18 @@
             scales:{ 
               y:{ 
                 beginAtZero:true,
-                grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
-                ticks: { color: '#888', font: { size: 11 } }
+                grid: { color: 'rgba(37,99,235,0.1)', drawBorder: false },
+                ticks: { color: '#64748b', font: { size: 11 } }
               },
               y1:{ 
                 position:'right', 
                 beginAtZero:true,
                 grid: { display: false },
-                ticks: { color: '#888', font: { size: 11 } }
+                ticks: { color: '#64748b', font: { size: 11 } }
               },
               x: {
-                grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
-                ticks: { color: '#888', font: { size: 11 }, maxRotation: 45, minRotation: 0 }
+                grid: { color: 'rgba(37,99,235,0.1)', drawBorder: false },
+                ticks: { color: '#64748b', font: { size: 11 }, maxRotation: 45, minRotation: 0 }
               }
             }
           }
@@ -274,7 +274,7 @@
       <div class="row">
         <div style="font-weight:800;letter-spacing:.5px;font-size:18px;color:var(--primary)">🖼️ Галерея изображений</div>
         <div class="search"><input id="q" placeholder="Поиск по имени или коду" onkeypress="if(event.key==='Enter'){onSearch()}" ></div>
-        <div id="count" style="color:var(--text);font-weight:700;padding:8px 16px;background:var(--card);border-radius:12px;border:1px solid var(--border);box-shadow:0 4px 12px rgba(0,0,0,.3)">0</div>
+        <div id="count" style="color:var(--text);font-weight:700;padding:8px 16px;background:var(--card);border-radius:12px;border:2px solid var(--border);box-shadow:0 4px 12px rgba(37,99,235,.1)">0</div>
       </div>
     </div>
   </header>
@@ -294,7 +294,7 @@
           <div id="totals" style="color:var(--muted);font-weight:600"></div>
         </div>
       </div>
-      <div style="background:var(--card);border:1px solid var(--border);border-radius:20px;padding:24px;margin:16px 0;box-shadow:0 8px 24px rgba(0,0,0,.4)">
+      <div style="background:var(--card);border:2px solid var(--border);border-radius:20px;padding:24px;margin:16px 0;box-shadow:0 8px 24px rgba(37,99,235,.08)">
         <canvas id="chart" height="120"></canvas>
         <div id="totalsAll" style="color:var(--muted);margin-top:12px;font-weight:600;font-size:13px"></div>
       </div>
