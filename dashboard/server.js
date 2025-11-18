@@ -397,13 +397,9 @@ curl -X POST https://bublickrust.ru/api/images/upload \\
 
     // List images (admin only)
     app.get('/api/images/list', async (req, res) => {
-        // Admin gate
-        await requireAuth(req, res, async () => {
-            if (!req.user || req.user.role !== 'admin') {
-                return res.status(403).json({ error: 'Требуются права администратора' });
-            }
-        }, supabase);
-        if (!req.user || req.user.role !== 'admin') return;
+        // Require auth (any authenticated user can view images)
+        await requireAuth(req, res, async () => {}, supabase);
+        if (!req.user) return;
         try {
             if (!supabase) return res.status(503).json({ error: 'Supabase not configured' });
             const limit = Math.min(Math.max(parseInt(req.query.limit) || 60, 1), 200);

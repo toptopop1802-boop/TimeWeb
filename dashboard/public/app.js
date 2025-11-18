@@ -1303,9 +1303,57 @@ function navigateToPage(page) {
             }
         });
         
+        // Создаем контейнер страницы API если его нет
+        let pageContainer = document.getElementById('page-api');
+        if (!pageContainer) {
+            const pagesContainer = document.querySelector('.pages-container') || 
+                                  document.querySelector('#app') || 
+                                  document.querySelector('main') ||
+                                  document.body;
+            
+            pageContainer = document.createElement('div');
+            pageContainer.id = 'page-api';
+            pageContainer.className = 'page';
+            pageContainer.style.display = 'block';
+            pagesContainer.appendChild(pageContainer);
+        }
+        
+        // Создаем HTML структуру страницы API со стилями
+        pageContainer.innerHTML = `
+            <div style="min-height: 100vh; background: var(--bg-primary, #0a0a0a); color: var(--text-primary, #e5e5e5); padding: 40px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;">
+                <div style="max-width: 1200px; margin: 0 auto;">
+                    <h1 style="font-size: 32px; font-weight: 700; margin-bottom: 8px; color: var(--text-primary, #e5e5e5);">🔑 API Токены</h1>
+                    <p style="color: var(--text-secondary, #888); margin-bottom: 32px;">Управление токенами для доступа к API</p>
+                    
+                    <div style="background: var(--bg-card, #1a1a1a); border: 1px solid var(--border-color, #2a2a2a); border-radius: 12px; padding: 24px; margin-bottom: 24px;">
+                        <h2 style="font-size: 20px; font-weight: 600; margin-bottom: 16px; color: var(--text-primary, #e5e5e5);">Мои токены</h2>
+                        <div id="api-tokens-container" style="min-height: 100px;"></div>
+                        <button id="api-create-btn" class="btn" style="margin-top: 16px; padding: 10px 20px; background: var(--accent-primary, #c40552); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">+ Создать новый токен</button>
+                    </div>
+                    
+                    <div id="api-new-token" style="display: none; background: var(--bg-card, #1a1a1a); border: 1px solid var(--border-color, #2a2a2a); border-radius: 12px; padding: 24px; margin-bottom: 24px;">
+                        <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 12px; color: var(--text-primary, #e5e5e5);">⚠️ Сохраните токен!</h3>
+                        <p style="color: var(--text-secondary, #888); margin-bottom: 12px; font-size: 14px;">Токен показывается только один раз. Скопируйте его сейчас.</p>
+                        <input id="api-new-token-input" type="text" readonly style="width: 100%; padding: 12px; background: var(--bg-secondary, #222); border: 1px solid var(--border-color, #2a2a2a); border-radius: 8px; color: var(--text-primary, #e5e5e5); font-family: monospace; font-size: 14px; margin-bottom: 12px;">
+                        <button onclick="navigator.clipboard.writeText(document.getElementById('api-new-token-input').value).then(() => alert('Токен скопирован!'))" style="padding: 8px 16px; background: var(--accent-primary, #c40552); color: white; border: none; border-radius: 6px; cursor: pointer;">📋 Копировать</button>
+                    </div>
+                    
+                    <div style="background: var(--bg-card, #1a1a1a); border: 1px solid var(--border-color, #2a2a2a); border-radius: 12px; padding: 24px;">
+                        <h2 style="font-size: 20px; font-weight: 600; margin-bottom: 16px; color: var(--text-primary, #e5e5e5);">📊 Статистика API</h2>
+                        <div id="api-analytics-container" style="min-height: 200px;"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
         // Загрузка и отрисовка токенов API
         if (typeof loadApiTokens === 'function') {
             loadApiTokens();
+        }
+        
+        // Загрузка аналитики API
+        if (typeof loadAPIAnalytics === 'function') {
+            loadAPIAnalytics();
         }
     } else if (page === 'admin') {
         loadAdminChangelog();
