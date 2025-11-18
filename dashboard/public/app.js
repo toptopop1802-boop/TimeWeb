@@ -1078,6 +1078,23 @@ function setupNavigation() {
         window.location.hash = 'analytics';
     }
     
+    // Скрываем меню index.html если сразу открыта страница API
+    if (initialHash === 'api') {
+        const header = document.querySelector('.header');
+        const preloader = document.querySelector('.preloader');
+        const background = document.querySelector('.background');
+        const cardsBackground = document.querySelector('.cards-background');
+        const cardsGlow = document.querySelector('.cards-glow');
+        const competitiveBanner = document.querySelector('.competitive-banner');
+        
+        if (header) header.style.display = 'none';
+        if (preloader) preloader.style.display = 'none';
+        if (background) background.style.display = 'none';
+        if (cardsBackground) cardsBackground.style.display = 'none';
+        if (cardsGlow) cardsGlow.style.display = 'none';
+        if (competitiveBanner) competitiveBanner.style.display = 'none';
+    }
+    
     // Check if it's a changelog detail page
     const changelogDetailMatch = initialHash.match(/^changelog\/(.+)$/);
     if (changelogDetailMatch) {
