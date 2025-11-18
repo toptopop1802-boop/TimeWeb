@@ -1048,91 +1048,31 @@ function setupNavigation() {
     window.addEventListener('hashchange', () => {
         const hash = window.location.hash.substring(1); // Remove #
         
-        // Check if it's a changelog detail page
-        const changelogDetailMatch = hash.match(/^changelog\/(.+)$/);
-        if (changelogDetailMatch) {
-            const id = changelogDetailMatch[1];
-            navigateToPage('changelog');
-            // Wait for changelog to load, then open detail
-            setTimeout(() => {
-                openChangelogDetailPageById(id);
-            }, 100);
-            return;
-        }
-        
-        // Check if it's player-stats with parameters
-        if (hash.startsWith('player-stats')) {
-            navigateToPage(hash);
-            return;
-        }
-        
-        if (hash) {
-            navigateToPage(hash);
+        if (hash === 'api') {
+            navigateToPage('api');
+        } else {
+            // Если hash не API, перенаправляем на API
+            window.location.hash = 'api';
+            navigateToPage('api');
         }
     });
 
     // Handle initial page load
     let initialHash = window.location.hash.substring(1);
     if (!initialHash || initialHash === 'undefined') {
-        initialHash = 'analytics';
-        window.location.hash = 'analytics';
+        initialHash = 'api';
+        window.location.hash = 'api';
     }
     
     // Полностью отключаем index.html если сразу открыта страница API
     if (initialHash === 'api') {
         window.__API_PAGE_ACTIVE__ = true;
         document.body.setAttribute('data-api-page', 'true');
-        
-        // Скрываем все элементы через CSS атрибут (уже применен через CSS)
-        const header = document.querySelector('.header');
-        const preloader = document.querySelector('.preloader');
-        const background = document.querySelector('.background');
-        const cardsBackground = document.querySelector('.cards-background');
-        const cardsGlow = document.querySelector('.cards-glow');
-        const competitiveBanner = document.querySelector('.competitive-banner');
-        const heroSection = document.querySelector('.hero-section');
-        const startPlayingSection = document.querySelector('.start-playing-section');
-        const aboutSection = document.querySelector('.about-section');
-        const socialSection = document.querySelector('.social-section');
-        const footer = document.querySelector('.footer');
-        const scrollIndicator = document.querySelector('.scroll-indicator');
-        
-        // Дополнительно скрываем все элементы
-        [header, preloader, background, cardsBackground, cardsGlow, competitiveBanner,
-         heroSection, startPlayingSection, aboutSection, socialSection, footer, scrollIndicator].forEach(el => {
-            if (el) {
-                el.style.display = 'none';
-                el.style.visibility = 'hidden';
-                el.style.opacity = '0';
-                el.style.height = '0';
-                el.style.overflow = 'hidden';
-            }
-        });
-        
-        // Отключаем style.css от index.html
-        const styleLinks = document.querySelectorAll('link[href*="style.css"]');
-        styleLinks.forEach(link => {
-            if (link.href.includes('style.css')) {
-                link.disabled = true;
-                link.remove();
-            }
-        });
     }
     
-    // Check if it's a changelog detail page
-    const changelogDetailMatch = initialHash.match(/^changelog\/(.+)$/);
-    if (changelogDetailMatch) {
-        const id = changelogDetailMatch[1];
-        navigateToPage('changelog');
-        // Wait for changelog to load, then open detail
-        setTimeout(() => {
-            openChangelogDetailPageById(id);
-        }, 500);
-    } else if (initialHash) {
-        navigateToPage(initialHash);
-    } else {
-        // Default to analytics if no hash
-        navigateToPage('analytics');
+    // Navigate to API page
+    if (initialHash === 'api') {
+        navigateToPage('api');
     }
 }
 
@@ -1140,25 +1080,6 @@ function navigateToPage(page) {
     // Извлекаем имя страницы из hash (убираем параметры после ?)
     const pageName = page.split('?')[0];
     
-    // Check admin-only pages
-    const adminPages = ['server', 'analytics', 'channels', 'admin', 'users'];
-    if (adminPages.includes(pageName)) {
-        const authData = getAuthData();
-        if (!authData || !isAdmin(authData)) {
-            console.warn('⛔ Доступ запрещен. Требуются права администратора.');
-            window.location.hash = '#maps';
-            return;
-        }
-    }
-
-    // Update active link
-    document.querySelectorAll('.nav-link').forEach(l => {
-        l.classList.remove('active');
-        if (l.dataset.page === pageName || l.getAttribute('href') === `#${pageName}`) {
-            l.classList.add('active');
-        }
-    });
-
     // Update URL hash (сохраняем параметры если они есть)
     const currentHash = window.location.hash.substring(1);
     if (!currentHash.startsWith(pageName)) {
@@ -1172,97 +1093,7 @@ function navigateToPage(page) {
         p.style.display = 'none';
     });
     
-    // Восстанавливаем меню index.html если переходим не на API страницу
-    if (pageName !== 'api') {
-        window.__API_PAGE_ACTIVE__ = false;
-        document.body.removeAttribute('data-api-page');
-        
-        const header = document.querySelector('.header');
-        const preloader = document.querySelector('.preloader');
-        const background = document.querySelector('.background');
-        const cardsBackground = document.querySelector('.cards-background');
-        const cardsGlow = document.querySelector('.cards-glow');
-        const competitiveBanner = document.querySelector('.competitive-banner');
-        const heroSection = document.querySelector('.hero-section');
-        const startPlayingSection = document.querySelector('.start-playing-section');
-        const aboutSection = document.querySelector('.about-section');
-        const socialSection = document.querySelector('.social-section');
-        const footer = document.querySelector('.footer');
-        const scrollIndicator = document.querySelector('.scroll-indicator');
-        
-        // Восстанавливаем элементы
-        [header, preloader, background, cardsBackground, cardsGlow, competitiveBanner,
-         heroSection, startPlayingSection, aboutSection, socialSection, footer, scrollIndicator].forEach(el => {
-            if (el) {
-                el.style.display = '';
-                el.style.visibility = '';
-                el.style.opacity = '';
-                el.style.height = '';
-                el.style.overflow = '';
-                el.style.position = '';
-                el.style.left = '';
-            }
-        });
-        
-        // Восстанавливаем style.css если он был удален
-        const existingStyle = document.querySelector('link[href*="style.css"]');
-        if (!existingStyle) {
-            const styleLink = document.createElement('link');
-            styleLink.rel = 'stylesheet';
-            styleLink.href = '/style.css?v=1.2.0';
-            document.head.appendChild(styleLink);
-        }
-    }
-    
-    const targetPage = document.getElementById(`page-${pageName}`);
-    if (targetPage) {
-        targetPage.style.display = 'block';
-    }
-    
-    // Hide changelog detail page if switching away from changelog
-    const changelogDetailPage = document.getElementById('page-changelog-detail');
-    if (changelogDetailPage && pageName !== 'changelog') {
-        changelogDetailPage.style.display = 'none';
-    }
-    
-    // Clear changelog detail hash if not on changelog page
-    if (pageName !== 'changelog') {
-        const changelogHashMatch = window.location.hash.match(/^#changelog\/(\d+)$/);
-        if (changelogHashMatch) {
-            window.location.hash = 'changelog';
-        }
-    }
-
-    // Load page data
-    // Специальная обработка для страницы статистики игроков с параметрами
-    if (pageName === 'player-stats' && typeof handlePlayerStatsPageLoad === 'function') {
-        setTimeout(() => {
-            handlePlayerStatsPageLoad();
-        }, 100);
-    }
-    if (page === 'analytics') {
-        const periodSelect = document.getElementById('period-select');
-        const days = periodSelect ? parseInt(periodSelect.value) : 30;
-        loadAnalytics(days);
-    } else if (page === 'channels') {
-        loadAutoDeleteChannels();
-    } else if (page === 'pipette') {
-        // Инициализируем color wheel
-        initColorWheel();
-        // nothing to load, but ensure canvas resizes
-        resizePipetteCanvas();
-        // layout pass first
-        setTimeout(resizePipetteCanvas, 0);
-    } else if (page === 'maps') {
-        loadMaps();
-    } else if (page === 'changelog') {
-        loadChangelog();
-    } else if (page === 'images') {
-        // Загружаем историю изображений
-        if (typeof renderImagesHistory === 'function') {
-            renderImagesHistory();
-        }
-    } else if (page === 'api') {
+    if (page === 'api') {
         // Полностью отключаем все элементы от index.html
         window.__API_PAGE_ACTIVE__ = true;
         document.body.setAttribute('data-api-page', 'true');
