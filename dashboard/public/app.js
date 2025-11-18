@@ -1202,7 +1202,44 @@ function navigateToPage(page) {
         loadServerPlayers();
     } else if (page === 'users') {
         loadUsers();
+    } else if (page === 'test') {
+        // Страница с главной страницей сайта
+        loadTestPage();
     }
+}
+
+// ============================================
+// TEST PAGE - Главная страница сайта
+// ============================================
+function loadTestPage() {
+    console.log('🧪 Loading test page (main site)');
+    let pageContainer = document.getElementById('page-test');
+    
+    // Создаем контейнер страницы если его нет
+    if (!pageContainer) {
+        // Ищем контейнер для страниц (обычно это элемент с классом .page или #app)
+        const pagesContainer = document.querySelector('.pages-container') || 
+                              document.querySelector('#app') || 
+                              document.querySelector('main') ||
+                              document.body;
+        
+        pageContainer = document.createElement('div');
+        pageContainer.id = 'page-test';
+        pageContainer.className = 'page';
+        pageContainer.style.display = 'block';
+        pagesContainer.appendChild(pageContainer);
+    }
+    
+    // Встраиваем главную страницу через iframe
+    pageContainer.innerHTML = `
+        <div style="width: 100%; height: 100vh; border: none; overflow: hidden; position: fixed; top: 0; left: 0; z-index: 1000; background: #fff;">
+            <iframe 
+                src="/index.html" 
+                style="width: 100%; height: 100vh; border: none; display: block;"
+                title="Главная страница сайта"
+            ></iframe>
+        </div>
+    `;
 }
 
 // ============================================
