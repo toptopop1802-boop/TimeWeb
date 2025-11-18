@@ -1186,27 +1186,10 @@ function navigateToPage(page) {
         if (typeof loadAPIAnalytics === 'function') {
             loadAPIAnalytics();
         }
-    } else if (page === 'admin') {
-        loadAdminChangelog();
-        // Используем улучшенную панель если она доступна
-        if (typeof loadImprovedTournamentAdminPanel === 'function') {
-            loadImprovedTournamentAdminPanel();
-        } else {
-            loadTournamentAdminPanel();
-        }
-    } else if (page === 'gradient-role') {
-        // Инициализация страницы заявки на градиентную роль
-        initGradientRolePage();
-    } else if (page === 'training-request') {
-        // Инициализация страницы заявки на турнир
-        initTrainingRequestPage();
-    } else if (page === 'server') {
-        loadServerPlayers();
-    } else if (page === 'users') {
-        loadUsers();
-    } else if (page === 'test') {
-        // Страница с главной страницей сайта
-        loadTestPage();
+    } else {
+        // Если страница не API, перенаправляем на API
+        window.location.hash = 'api';
+        navigateToPage('api');
     }
 }
 
