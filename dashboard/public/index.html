@@ -472,83 +472,98 @@
         });
         
         // Индикатор скролла
-        const circles = document.querySelectorAll('.scroll-indicator > div');
-        
-        function updateActiveCircle() {
-            const scrollPosition = window.scrollY;
-            const windowHeight = window.innerHeight;
-            const section = Math.floor(scrollPosition / windowHeight);
-            const activeSection = Math.min(section, 2);
+        if (!window.__API_PAGE_ACTIVE__) {
+            const circles = document.querySelectorAll('.scroll-indicator > div');
             
-            circles.forEach((circle, index) => {
-                if (index === activeSection) {
-                    circle.classList.add('active');
-                    circle.classList.remove('inactive');
-                } else {
-                    circle.classList.remove('active');
-                    circle.classList.add('inactive');
-                }
-            });
+            function updateActiveCircle() {
+                if (window.__API_PAGE_ACTIVE__) return;
+                const scrollPosition = window.scrollY;
+                const windowHeight = window.innerHeight;
+                const section = Math.floor(scrollPosition / windowHeight);
+                const activeSection = Math.min(section, 2);
+                
+                circles.forEach((circle, index) => {
+                    if (index === activeSection) {
+                        circle.classList.add('active');
+                        circle.classList.remove('inactive');
+                    } else {
+                        circle.classList.remove('active');
+                        circle.classList.add('inactive');
+                    }
+                });
+            }
+            
+            window.addEventListener('scroll', updateActiveCircle);
+            updateActiveCircle();
         }
-        
-        window.addEventListener('scroll', updateActiveCircle);
-        updateActiveCircle();
         
         // Анимация при скролле
-        const observerOptions = {
-            threshold: 0.1,
-            rootMargin: '0px 0px -50px 0px'
-        };
-        
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('animate-in');
-                }
+        if (!window.__API_PAGE_ACTIVE__) {
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting && !window.__API_PAGE_ACTIVE__) {
+                        entry.target.classList.add('animate-in');
+                    }
+                });
+            }, observerOptions);
+            
+            document.querySelectorAll('.game-card, .card-category').forEach(el => {
+                observer.observe(el);
             });
-        }, observerOptions);
-        
-        document.querySelectorAll('.game-card, .card-category').forEach(el => {
-            observer.observe(el);
-        });
-        
-        // Модальное окно
-        const modal = document.getElementById('gameModal');
-        const modalOverlay = modal.querySelector('.modal-overlay');
-        const modalClose = modal.querySelector('.modal-close');
-        const gameCards = document.querySelectorAll('.game-card');
-        
-        gameCards.forEach(card => {
-            card.addEventListener('click', (e) => {
-                if (e.target.classList.contains('card-play-btn')) return;
-                
-                const img = card.querySelector('.card-image').src;
-                const title = card.querySelector('.card-title').textContent;
-                const stats = Array.from(card.querySelectorAll('.card-stat')).map(s => s.textContent).join(', ');
-                const progress = card.querySelector('.card-progress-text').textContent;
-                
-                modal.querySelector('.modal-image').src = img;
-                modal.querySelector('.modal-title').textContent = title;
-                modal.querySelector('.modal-stat-value').textContent = stats;
-                modal.querySelectorAll('.modal-stat-value')[1].textContent = progress;
-                
-                modal.classList.add('active');
-                document.body.style.overflow = 'hidden';
-            });
-        });
-        
-        function closeModal() {
-            modal.classList.remove('active');
-            document.body.style.overflow = '';
         }
         
-        modalClose.addEventListener('click', closeModal);
-        modalOverlay.addEventListener('click', closeModal);
-        
-        modal.querySelector('.modal-play-btn').addEventListener('click', () => {
-            alert('Запуск игры...');
-            closeModal();
-        });
+        // Модальное окно
+        if (!window.__API_PAGE_ACTIVE__) {
+            const modal = document.getElementById('gameModal');
+            if (modal) {
+                const modalOverlay = modal.querySelector('.modal-overlay');
+                const modalClose = modal.querySelector('.modal-close');
+                const gameCards = document.querySelectorAll('.game-card');
+                
+                gameCards.forEach(card => {
+                    card.addEventListener('click', (e) => {
+                        if (e.target.classList.contains('card-play-btn')) return;
+                        
+                        const img = card.querySelector('.card-image');
+                        const title = card.querySelector('.card-title');
+                        const stats = Array.from(card.querySelectorAll('.card-stat')).map(s => s.textContent).join(', ');
+                        const progress = card.querySelector('.card-progress-text');
+                        
+                        if (img && title && progress) {
+                            modal.querySelector('.modal-image').src = img.src;
+                            modal.querySelector('.modal-title').textContent = title.textContent;
+                            modal.querySelector('.modal-stat-value').textContent = stats;
+                            const progressElements = modal.querySelectorAll('.modal-stat-value');
+                            if (progressElements[1]) progressElements[1].textContent = progress.textContent;
+                            
+                            modal.classList.add('active');
+                            document.body.style.overflow = 'hidden';
+                        }
+                    });
+                });
+                
+                function closeModal() {
+                    modal.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+                
+                if (modalClose) modalClose.addEventListener('click', closeModal);
+                if (modalOverlay) modalOverlay.addEventListener('click', closeModal);
+                
+                const playBtn = modal.querySelector('.modal-play-btn');
+                if (playBtn) {
+                    playBtn.addEventListener('click', () => {
+                        alert('Запуск игры...');
+                        closeModal();
+                    });
+                }
+            }
+        }
         
         // Эффект свечения всех карточек при наведении на кнопку "НАЧАТЬ ИГРАТЬ"
         const btnPlay = document.querySelector('.btn-play');
