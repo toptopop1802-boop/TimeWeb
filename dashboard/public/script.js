@@ -1,28 +1,38 @@
-// Прелоадер
-window.addEventListener('load', () => {
-    const preloader = document.querySelector('.preloader');
-    setTimeout(() => {
-        preloader.classList.add('hidden');
-    }, 1000);
-});
+// Проверка: не выполняем скрипты если открыта страница API
+if (window.__API_PAGE_ACTIVE__ || window.location.hash === '#api') {
+    // Отключаем все скрипты для страницы API
+    window.__API_PAGE_ACTIVE__ = true;
+} else {
+    // Прелоадер
+    window.addEventListener('load', () => {
+        const preloader = document.querySelector('.preloader');
+        if (preloader && !window.__API_PAGE_ACTIVE__) {
+            setTimeout(() => {
+                preloader.classList.add('hidden');
+            }, 1000);
+        }
+    });
 
-// Скролл эффект для хедера
-window.addEventListener('scroll', () => {
-    const header = document.querySelector('.header');
-    if (window.scrollY > 50) {
-        header.classList.add('scrolled');
-    } else {
-        header.classList.remove('scrolled');
-    }
-});
+    // Скролл эффект для хедера
+    window.addEventListener('scroll', () => {
+        if (window.__API_PAGE_ACTIVE__) return;
+        const header = document.querySelector('.header');
+        if (header && window.scrollY > 50) {
+            header.classList.add('scrolled');
+        } else if (header) {
+            header.classList.remove('scrolled');
+        }
+    });
 
 // Эффект свечения карточек при наведении на кнопку "НАЧАТЬ ИГРАТЬ"
-const btnPlay = document.querySelector('.btn-play');
-const heroCards = document.querySelectorAll('.hero-card');
-const cardsGlow = document.querySelector('.cards-glow');
-const cardsBackground = document.querySelector('.cards-background');
+if (!window.__API_PAGE_ACTIVE__) {
+    const btnPlay = document.querySelector('.btn-play');
+    const heroCards = document.querySelectorAll('.hero-card');
+    const cardsGlow = document.querySelector('.cards-glow');
+    const cardsBackground = document.querySelector('.cards-background');
 
-btnPlay.addEventListener('mouseenter', () => {
+    if (btnPlay) {
+        btnPlay.addEventListener('mouseenter', () => {
     heroCards.forEach(card => {
         card.classList.add('glow-active');
     });

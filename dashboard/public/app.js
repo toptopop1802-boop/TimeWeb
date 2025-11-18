@@ -1078,21 +1078,37 @@ function setupNavigation() {
         window.location.hash = 'analytics';
     }
     
-    // Скрываем меню index.html если сразу открыта страница API
+    // Полностью отключаем index.html если сразу открыта страница API
     if (initialHash === 'api') {
+        window.__API_PAGE_ACTIVE__ = true;
+        
         const header = document.querySelector('.header');
         const preloader = document.querySelector('.preloader');
         const background = document.querySelector('.background');
         const cardsBackground = document.querySelector('.cards-background');
         const cardsGlow = document.querySelector('.cards-glow');
         const competitiveBanner = document.querySelector('.competitive-banner');
+        const heroSection = document.querySelector('.hero-section');
+        const startPlayingSection = document.querySelector('.start-playing-section');
+        const aboutSection = document.querySelector('.about-section');
+        const socialSection = document.querySelector('.social-section');
+        const footer = document.querySelector('.footer');
+        const scrollIndicator = document.querySelector('.scroll-indicator');
         
-        if (header) header.style.display = 'none';
-        if (preloader) preloader.style.display = 'none';
-        if (background) background.style.display = 'none';
-        if (cardsBackground) cardsBackground.style.display = 'none';
-        if (cardsGlow) cardsGlow.style.display = 'none';
-        if (competitiveBanner) competitiveBanner.style.display = 'none';
+        // Скрываем все элементы
+        [header, preloader, background, cardsBackground, cardsGlow, competitiveBanner,
+         heroSection, startPlayingSection, aboutSection, socialSection, footer, scrollIndicator].forEach(el => {
+            if (el) el.style.display = 'none';
+        });
+        
+        // Отключаем style.css от index.html
+        const styleLinks = document.querySelectorAll('link[href*="style.css"]');
+        styleLinks.forEach(link => {
+            if (link.href.includes('style.css')) {
+                link.disabled = true;
+                link.remove();
+            }
+        });
     }
     
     // Check if it's a changelog detail page
@@ -1150,19 +1166,35 @@ function navigateToPage(page) {
     
     // Восстанавливаем меню index.html если переходим не на API страницу
     if (pageName !== 'api') {
+        window.__API_PAGE_ACTIVE__ = false;
+        
         const header = document.querySelector('.header');
         const preloader = document.querySelector('.preloader');
         const background = document.querySelector('.background');
         const cardsBackground = document.querySelector('.cards-background');
         const cardsGlow = document.querySelector('.cards-glow');
         const competitiveBanner = document.querySelector('.competitive-banner');
+        const heroSection = document.querySelector('.hero-section');
+        const startPlayingSection = document.querySelector('.start-playing-section');
+        const aboutSection = document.querySelector('.about-section');
+        const socialSection = document.querySelector('.social-section');
+        const footer = document.querySelector('.footer');
+        const scrollIndicator = document.querySelector('.scroll-indicator');
         
-        if (header) header.style.display = '';
-        if (preloader) preloader.style.display = '';
-        if (background) background.style.display = '';
-        if (cardsBackground) cardsBackground.style.display = '';
-        if (cardsGlow) cardsGlow.style.display = '';
-        if (competitiveBanner) competitiveBanner.style.display = '';
+        // Восстанавливаем элементы
+        [header, preloader, background, cardsBackground, cardsGlow, competitiveBanner,
+         heroSection, startPlayingSection, aboutSection, socialSection, footer, scrollIndicator].forEach(el => {
+            if (el) el.style.display = '';
+        });
+        
+        // Восстанавливаем style.css если он был удален
+        const existingStyle = document.querySelector('link[href*="style.css"]');
+        if (!existingStyle) {
+            const styleLink = document.createElement('link');
+            styleLink.rel = 'stylesheet';
+            styleLink.href = '/style.css?v=1.2.0';
+            document.head.appendChild(styleLink);
+        }
     }
     
     const targetPage = document.getElementById(`page-${pageName}`);
@@ -1214,20 +1246,38 @@ function navigateToPage(page) {
             renderImagesHistory();
         }
     } else if (page === 'api') {
-        // Скрываем меню от index.html
+        // Полностью отключаем все элементы от index.html
         const header = document.querySelector('.header');
         const preloader = document.querySelector('.preloader');
         const background = document.querySelector('.background');
         const cardsBackground = document.querySelector('.cards-background');
         const cardsGlow = document.querySelector('.cards-glow');
         const competitiveBanner = document.querySelector('.competitive-banner');
+        const heroSection = document.querySelector('.hero-section');
+        const startPlayingSection = document.querySelector('.start-playing-section');
+        const aboutSection = document.querySelector('.about-section');
+        const socialSection = document.querySelector('.social-section');
+        const footer = document.querySelector('.footer');
+        const scrollIndicator = document.querySelector('.scroll-indicator');
         
-        if (header) header.style.display = 'none';
-        if (preloader) preloader.style.display = 'none';
-        if (background) background.style.display = 'none';
-        if (cardsBackground) cardsBackground.style.display = 'none';
-        if (cardsGlow) cardsGlow.style.display = 'none';
-        if (competitiveBanner) competitiveBanner.style.display = 'none';
+        // Скрываем все элементы
+        [header, preloader, background, cardsBackground, cardsGlow, competitiveBanner, 
+         heroSection, startPlayingSection, aboutSection, socialSection, footer, scrollIndicator].forEach(el => {
+            if (el) el.style.display = 'none';
+        });
+        
+        // Отключаем style.css от index.html
+        const styleLinks = document.querySelectorAll('link[href*="style.css"]');
+        styleLinks.forEach(link => {
+            if (link.href.includes('style.css')) {
+                link.disabled = true;
+                link.remove();
+            }
+        });
+        
+        // Отключаем скрипты от index.html (встроенные скрипты уже выполнены, но можем заблокировать их эффекты)
+        // Устанавливаем флаг что мы на странице API
+        window.__API_PAGE_ACTIVE__ = true;
         
         // Загрузка и отрисовка токенов API
         if (typeof loadApiTokens === 'function') {
