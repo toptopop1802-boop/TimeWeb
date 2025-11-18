@@ -59,19 +59,18 @@
     #chart{background:var(--card);border-radius:16px;padding:16px;border:2px solid var(--border);box-shadow:0 4px 12px rgba(37,99,235,.08)}
   </style>
   <script>
-    // Access guard in UI: only admins can view data
-    async function ensureAdmin(){
+    // Проверка авторизации (необязательная - страница доступна всем авторизованным)
+    async function checkAuth(){
       try{
         const token = localStorage.getItem('auth_token');
-        if(!token) throw new Error('no token');
-        const r = await fetch('/api/auth/me', { headers: { 'Authorization': `Bearer ${token}` }});
-        if(!r.ok) throw new Error('not ok');
-        const me = await r.json();
-        if(!me.user || me.user.role !== 'admin') throw new Error('not admin');
+        if(!token) {
+          // Если нет токена, показываем сообщение о необходимости авторизации
+          document.body.innerHTML = '<div style="max-width:800px;margin:80px auto;color:#1a202c;background:#ffffff;border:2px solid #e2e8f0;padding:20px;border-radius:12px;text-align:center;box-shadow:0 8px 24px rgba(37,99,235,.1)">🔐 Требуется авторизация. <a href="/login.html" style="color:#2563eb;text-decoration:underline">Войти</a></div>';
+          return false;
+        }
         return true;
       }catch(e){
-        document.body.innerHTML = '<div style="max-width:800px;margin:80px auto;color:#1a202c;background:#ffffff;border:2px solid #e2e8f0;padding:20px;border-radius:12px;text-align:center;box-shadow:0 8px 24px rgba(37,99,235,.1)">⛔ Доступ запрещён. Требуются права администратора.</div>';
-        return false;
+        return true; // Разрешаем доступ даже при ошибке проверки
       }
     }
     let _offset = 0; let _limit = 60; let _loading = false; let _done = false; let _items = []; let _sort = 'created_at:desc'; let _totalCount = 0;
@@ -124,7 +123,7 @@
       if (countEl) countEl.textContent = _totalCount > 0 ? _totalCount : document.getElementById('grid').children.length;
     }
     async function init(){
-      const ok = await ensureAdmin();
+      const ok = await checkAuth();
       if(!ok) return;
       try{
         _items = await fetchImages();

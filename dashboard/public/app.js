@@ -1131,6 +1131,23 @@ function navigateToPage(page) {
         p.style.display = 'none';
     });
     
+    // Восстанавливаем меню index.html если переходим не на API страницу
+    if (pageName !== 'api') {
+        const header = document.querySelector('.header');
+        const preloader = document.querySelector('.preloader');
+        const background = document.querySelector('.background');
+        const cardsBackground = document.querySelector('.cards-background');
+        const cardsGlow = document.querySelector('.cards-glow');
+        const competitiveBanner = document.querySelector('.competitive-banner');
+        
+        if (header) header.style.display = '';
+        if (preloader) preloader.style.display = '';
+        if (background) background.style.display = '';
+        if (cardsBackground) cardsBackground.style.display = '';
+        if (cardsGlow) cardsGlow.style.display = '';
+        if (competitiveBanner) competitiveBanner.style.display = '';
+    }
+    
     const targetPage = document.getElementById(`page-${pageName}`);
     if (targetPage) {
         targetPage.style.display = 'block';
@@ -1180,6 +1197,21 @@ function navigateToPage(page) {
             renderImagesHistory();
         }
     } else if (page === 'api') {
+        // Скрываем меню от index.html
+        const header = document.querySelector('.header');
+        const preloader = document.querySelector('.preloader');
+        const background = document.querySelector('.background');
+        const cardsBackground = document.querySelector('.cards-background');
+        const cardsGlow = document.querySelector('.cards-glow');
+        const competitiveBanner = document.querySelector('.competitive-banner');
+        
+        if (header) header.style.display = 'none';
+        if (preloader) preloader.style.display = 'none';
+        if (background) background.style.display = 'none';
+        if (cardsBackground) cardsBackground.style.display = 'none';
+        if (cardsGlow) cardsGlow.style.display = 'none';
+        if (competitiveBanner) competitiveBanner.style.display = 'none';
+        
         // Загрузка и отрисовка токенов API
         if (typeof loadApiTokens === 'function') {
             loadApiTokens();
