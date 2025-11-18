@@ -1907,11 +1907,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupDeleteConfirmModal();
 
     // Setup changelog navigation
-    setupChangelogNavigation();
-
-    // Setup admin page
-    setupAdminPage();
-
     // Sidebar всегда свернут - отключено расширение
     // setupSidebarHover();
     
